@@ -484,6 +484,11 @@ html.remote .tagrow{flex-wrap:nowrap; gap:6px}
 html.remote .tagrow .remote-chip{display:none !important}
 /* "remote" now lives in the Floating count: a live dot, and the count says where the bubbles are */
 html.remote #cur-count{display:inline-flex; align-items:center; gap:6px}
+html.remote:not(.paired) #cur-count::before{display:none}
+.unpaired-note{display:none}
+html.remote .unpaired-note:not([hidden]){all:unset; box-sizing:border-box; cursor:pointer; display:flex; align-items:center; justify-content:space-between; gap:10px; margin:0 0 4px; padding:11px 14px;
+  border:1px dashed var(--ink); border-radius:16px; font-size:12.5px; color:var(--ink); -webkit-tap-highlight-color:transparent}
+html.remote .unpaired-note b{font-family:var(--f-mono); font-weight:600; font-size:10px; letter-spacing:.08em; text-transform:uppercase; background:var(--ink); color:var(--paper); border-radius:999px; padding:7px 11px; flex:none}
 html.remote #cur-count::before{content:""; width:6px; height:6px; border-radius:50%; background:var(--ink); animation:breathe 3.2s ease-in-out infinite}
 html.remote .tagrow .remote-chip i{width:5px !important; height:5px !important}
 html.remote .remote-chip i{width:7px; height:7px; border-radius:50%; background:var(--ink); animation:breathe 3.2s ease-in-out infinite}
@@ -914,6 +919,7 @@ html.remote .panel > .pz > .sync{margin:0 16px 10px; padding:14px 16px; border:1
   <section class="acc" id="acc-cur">
     <button class="acc-head" aria-expanded="false" aria-controls="body-cur"><span>Floating</span><span class="count" id="cur-count">0 FLOATING</span><span class="chev"></span></button>
     <div class="acc-wrap"><div class="acc-body" id="body-cur"><div class="acc-inner">
+      <button type="button" class="unpaired-note" id="unpaired-note" hidden><span>Not connected to your computer.</span><b>Scan code</b></button>
       <div class="arrange" role="group" aria-label="Arrange bubbles">
         <button type="button" class="tool arrow" id="shuffle" title="Shuffle into a new layout" aria-label="Shuffle bubbles into a new layout"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M1.5 4.5h2.6c1.3 0 2.1.6 2.8 1.6l2.2 3.8c.7 1 1.5 1.6 2.8 1.6h2.6M1.5 11.5h2.6c1.3 0 2.1-.6 2.8-1.6M9.1 6.1c.7-1 1.5-1.6 2.8-1.6h2.6M12.6 2.6l1.9 1.9-1.9 1.9M12.6 9.6l1.9 1.9-1.9 1.9"/></svg></button>
         <span class="lineup">
@@ -1087,6 +1093,7 @@ const DESKTOP = !!window.todopop;
 if(DESKTOP) document.documentElement.classList.add('desktop');
 // Phone = remote control: the whole control panel, no floating bubbles (they live on your computer).
 // Also on with ?remote in the address, for trying it on a laptop.
+let PAIRED = false; // the phone: signed in to the same list as a computer
 const REMOTE = !DESKTOP && (matchMedia('(max-width: 700px) and (pointer: coarse)').matches || /[?&]remote\b/.test(location.search));
 if(REMOTE) document.documentElement.classList.add('remote');
 // On a computer the control panel is the logo itself: each filled O opens one part. The phone keeps the full panel.
@@ -1311,7 +1318,7 @@ const age = ts => { const m = Math.max(0, (Date.now()-ts)/60000); return m<1 ? '
 function renderTasks(){
   if(reorder) return; // don't rebuild the list under the user's finger
   const list = [...tasks()].sort((a,b)=> a.order - b.order);
-  $('#cur-count').textContent = (REMOTE ? `${tasks().length} ON YOUR COMPUTER` : `${tasks().length} FLOATING`) + (isPaused() ? ' · PAUSED' : screenFull ? ' · SCREEN FULL' : '');
+  $('#cur-count').textContent = (REMOTE ? `${tasks().length} ${PAIRED ? 'ON YOUR COMPUTER' : 'ON THIS PHONE'}` : `${tasks().length} FLOATING`) + (isPaused() ? ' · PAUSED' : screenFull ? ' · SCREEN FULL' : '');
   renderFilter();
   $('#tasks').innerHTML = list.length ? list.map(b => {
     const s = [0,8,12,17,24][b.level], g = gById(b.group);
@@ -3190,6 +3197,8 @@ async function loadDevices(){ try{ const { data } = await sync.sb.from('items').
 function renderSync(){
   syncLanding();
   const ready = SYNC_READY, on = !!sync.user;
+  if(PAIRED !== on){ PAIRED = on; document.documentElement.classList.toggle('paired', on); renderTasks(); }
+  if(REMOTE) $('#unpaired-note').hidden = on || !ready; // skipped pairing: say so, and offer it again
   $('#sync-off').hidden = on; $('#sync-on').hidden = !on;
   $('#sync-get').hidden = !ready;
   if(!ready){ $('#sync-why').textContent = 'The phone app isn’t set up in this copy yet.'; setSyncState('', 'Off'); return; }
@@ -3265,6 +3274,7 @@ $('#pair').addEventListener('pointerdown', e => { if(e.target === $('#pair')) cl
 $('#pair').addEventListener('keydown', e => { e.stopPropagation(); if(e.key === 'Escape') closePair(); });
 $('#pair-copy').addEventListener('click', async () => { try{ await navigator.clipboard.writeText(pairLink()); showToast('Link copied. Send it to your phone and open it there.', false); }catch(e){} });
 $('#sync-get').addEventListener('click', () => REMOTE ? scanCode() : showPairCode());
+$('#unpaired-note').addEventListener('click', () => scanCode());
 $('#sync-show').addEventListener('click', showPairCode);
 $('#sync-out').addEventListener('click', async () => {
   if(!(await ask(REMOTE ? 'Unpair this phone? Your computer keeps the list.' : 'Unpair? Your list stays on this computer, but stops syncing with your phone.', 'Unpair', 'Keep'))) return;
