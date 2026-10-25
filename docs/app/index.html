@@ -3045,6 +3045,14 @@ function localItems(){
   return m;
 }
 function setSyncState(s, text){ const el = $('#sync-state'); el.dataset.s = s; el.textContent = text; }
+// say what actually went wrong, so a setup problem can be found from a screenshot
+function syncFail(e){
+  const m = String(e?.message || e?.error_description || e || ''), c = e?.code ? ` (${e.code})` : '';
+  syncErr(!navigator.onLine ? 'You’re offline. Changes will sync when you’re back.'
+    : /does not exist|could not find the table|PGRST205|42P01/i.test(m + c) ? `The sync table isn’t set up yet: run schema.sql in Supabase.${c}`
+    : /permission denied|42501|row-level security/i.test(m + c) ? `Supabase refused access: run schema.sql again in Supabase.${c}`
+    : `Couldn’t sync: ${m.slice(0, 140)}${c}`);
+}
 function syncErr(msg){ const e = $('#sync-err'); e.hidden = !msg; e.textContent = msg || ''; }
 function saveSnap(){ store.set('syncSnap', sync.snap); }
 
@@ -3068,8 +3076,8 @@ async function syncPush(){
       if(error) throw error;
     }
     for(const [key, c] of done){ if(c === null) delete sync.snap[key]; else { sync.snap[key] = c; if(key.startsWith('task:')) sync.volAt[key] = now; } }
-    saveSnap(); setSyncState('on', 'Synced');
-  }catch(e){ setSyncState('off', 'Offline'); console.warn('sync push', e); }
+    saveSnap(); setSyncState('on', 'Synced'); syncErr('');
+  }catch(e){ setSyncState('off', 'Offline'); syncFail(e); console.warn('sync push', e); }
   finally{ sync.pushing = false; }
 }
 
@@ -3190,7 +3198,7 @@ async function syncStart(keep){
   if(store.get('syncJoined') !== sync.user.id) joinAs(keep ?? !REMOTE);
   sync.on = true; setSyncState('busy', 'Syncing');
   try{ await syncPull(!sync.lastPull); syncListen(); await syncPush(); sayHello(); }
-  catch(e){ setSyncState('off', 'Offline'); console.warn('sync start', e); }
+  catch(e){ setSyncState('off', 'Offline'); syncFail(e); console.warn('sync start', e); }
 }
 // each device leaves a small note, so the computer can tell when the phone has joined
 const DEVICE_ID = store.get('deviceId') || (() => { const d = rand(8); store.set('deviceId', d); return d; })();
