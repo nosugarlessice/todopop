@@ -235,7 +235,11 @@ html.paused .task:not(.lv1) .dot i{border-style:dashed}
 .day-list .ttl{font-family:var(--f-mono); font-size:10.5px; color:var(--ink-soft); letter-spacing:.05em; text-transform:uppercase; padding:0 0 4px}
 .redo{all:unset; box-sizing:border-box; cursor:pointer; width:100%; display:flex; gap:8px; align-items:center; padding:6px 8px; margin:0 -8px; width:calc(100% + 16px); border-radius:10px}
 .redo::before{content:""; width:6px; height:6px; border-radius:50%; border:1.2px solid var(--ink); flex:none}
-.redo .nm{flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:normal}
+.redo .nm{flex:1 1 0; min-width:0; white-space:nowrap; line-height:normal;
+  overflow-x:auto; overflow-y:hidden; scrollbar-width:thin; scrollbar-color:var(--rule) transparent; overscroll-behavior-x:contain} /* a long name scrolls sideways inside its own box */
+.redo .nm::-webkit-scrollbar{height:4px} .redo .nm::-webkit-scrollbar-thumb{background:var(--rule); border-radius:4px}
+.redo .fx, .redo .lv, .redo .again{flex:none} /* time, urgency and + AGAIN always stay in the row */
+.day-list{grid-template-columns:minmax(0, 1fr)} .day-list > li{min-width:0}
 .redo .lv{font-family:var(--f-mono); font-size:10px; letter-spacing:.05em; color:var(--ink-soft)}
 .redo .again{font-family:var(--f-mono); font-size:10px; letter-spacing:.05em; color:var(--ink); opacity:0; transition:opacity .15s}
 .redo:hover, .redo:focus-visible{background:var(--ink-wash)}
