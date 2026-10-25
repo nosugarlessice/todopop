@@ -2197,8 +2197,8 @@ function keepApart(b, which){
 /* A: the control panel is solid, open or tucked into its sticker. Bubble centres stay outside it and outlines squish against it. */
 let wall = null;
 function panelWall(){
-  if(focus){ const n = document.getElementById('focus-note'); if(!n || n.hidden) return null; // inside: steps float around the name card
-    const r = n.getBoundingClientRect(), g = 10; return {x0:r.left-g, y0:r.top-g, x1:r.right+g, y1:r.bottom+g}; }
+  if(focus){ const n = document.getElementById('focus-note'); if(n && !n.hidden){ // inside: steps float around the name card
+    const r = n.getBoundingClientRect(), g = 10; return {x0:r.left-g, y0:r.top-g, x1:r.right+g, y1:r.bottom+g}; } } // (or around the panel, if you open it)
   if(typeof panel === 'undefined') return null;
   const g = 9;
   if(panel.hidden){ // tucked away: the small TODOPOP sticker is just as solid as the open panel
@@ -2647,18 +2647,18 @@ $('#launcher').addEventListener('click', () => setPanel(true));
 var popupClosedAt = -1e9; // a click that just closed a popup doesn't also tuck the panel away
 const anyPopup = () => !ed.hidden || (!DOCK && !tintPop.hidden) || !$('#gcolor').hidden || !$('#info-pop').hidden || performance.now() - popupClosedAt < 80;
 addEventListener('pointerdown', e => {
-  if(e.button !== 0 || focus || entering || panel.hidden || anyPopup() || onUI(e) || hit(e.clientX, e.clientY)) return;
+  if(e.button !== 0 || entering || panel.hidden || anyPopup() || onUI(e) || hit(e.clientX, e.clientY)) return; // (in focus mode too)
   setPanel(false);
 }, {capture:true});
 // desktop: empty screen passes clicks to the app underneath, so "clicking away" shows up as the overlay losing focus
 if(DESKTOP) addEventListener('blur', () => {
-  if(focus || entering || drag || pdrag) return;
+  if(entering || drag || pdrag) return;
   if(!ed.hidden) closeEdit(); setTint(false); setGColor(null); setInfo(false);
   if(!panel.hidden) setPanel(false);
 });
 // the same shortcut as the desktop app shows or hides the panel in the browser too
 addEventListener('keydown', e => {
-  if(e.code === 'Space' && e.shiftKey && (e.ctrlKey || e.metaKey) && !focus){ e.preventDefault(); setPanel(panel.hidden); }
+  if(e.code === 'Space' && e.shiftKey && (e.ctrlKey || e.metaKey)){ e.preventDefault(); setPanel(panel.hidden); }
 });
 // Space (when TODOPOP was the last thing you touched): straight to Blow a bubble, from anywhere in the app
 addEventListener('keydown', e => {
@@ -2669,7 +2669,7 @@ addEventListener('keydown', e => {
   if(panel.hidden) setPanel(true);
   if(dockOpen !== 'new'){ setTint(false); setDock('new'); } else nameIn.focus({preventScroll:true});
 });
-window.todopop?.onTogglePanel?.(() => { if(!focus) setPanel(panel.hidden); });
+window.todopop?.onTogglePanel?.(() => setPanel(panel.hidden));
 window.todopop?.onShowPanel?.(() => setPanel(true));
 if(REMOTE) $('#info-pop').innerHTML = '<li>This is your <b>remote</b>. Your bubbles float on your computer.</li><li><b>Tap +</b> to blow a bubble. <b>Popped</b> shows what you’ve popped.</li><li><b>Tap a task</b> to edit it, change its group, or get in the bubble.</li><li><b>Tap ✓</b> to pop it.</li><li><b>Tap Edit</b> beside your groups to rename, recolor, or delete one.</li><li id="info-unpair" hidden><button type="button" class="link" id="unpair-phone">Unpair this phone</button></li>';
 else if(DESKTOP) $('#info-esc').innerHTML = '<b>Click anywhere else</b> or press <b>Esc</b> to tuck it into the TODOPOP button; <b>Ctrl/⌘ + Shift + Space</b> brings it back from any app.';
@@ -2933,7 +2933,8 @@ function endFocus(popIt){
   setStepInput(false); answer(false);
   focus = null; $('#focus-frame').hidden = true; $('#focus-note').hidden = true; document.documentElement.classList.remove('focusing'); if(REMOTE) renderTasks();
   clearInterval(focusTimer); $('#focus').hidden = true;
-  if(panelWasOpen) panel.hidden = false; else $('#launcher').hidden = false;
+  if(panel.hidden && $('#launcher').hidden && panelWasOpen) panel.hidden = false; // untouched while inside: back as it was
+  $('#launcher').hidden = !panel.hidden; // opened or tucked away while inside: it stays that way
   b.focusTotal = (b.focusTotal || 0) + (Date.now()-start)/1000;
   if(popIt) pop(b, true, b.focusTotal); else save();
   updateInteractive();
@@ -3003,7 +3004,8 @@ $('#focus-done').addEventListener('click', () => { if(!focus) return; const li =
 $('#focus-exit').addEventListener('click', () => endFocus(false));
 
 addEventListener('keydown', e => {
-  if(e.key !== 'Escape' || focus) return;
+  if(e.key !== 'Escape') return;
+  if(focus){ if(!panel.hidden && !anyPopup()) setPanel(false); return; } // inside a bubble, Esc only tucks the panel away
   if(!$('#gcolor').hidden) setGColor(null); else if(!ed.hidden) closeEdit(); else if(!tintPop.hidden) setTint(false); else if(!panel.hidden) setPanel(false);
 });
 
