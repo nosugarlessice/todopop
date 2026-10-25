@@ -859,9 +859,9 @@ html.remote .panel > .pz > .sync{margin:0 16px 10px; padding:14px 16px; border:1
 .gedit .chips{padding-top:4px}
 .task .dot i{background:var(--glow, var(--ink-wash))}
 .task .name small{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:normal}
-/* Chinese is drawn at twice the size (see fonts.css): anything showing a name makes room for it */
+/* Chinese is drawn a third larger, with wider spacing (see fonts.css): anything showing a name makes room for it */
 .chips button, .gedit input, .steps-edit li, .step-in{line-height:normal}
-input.has-cjk{line-height:2; padding-top:2px !important; padding-bottom:2px !important}
+input.has-cjk{line-height:1.5}
 .redo[style]::before{background:var(--glow)}
 .wday .pip[style]{background:var(--glow)}
 .wday .pip[style]{width:11px; height:11px; border-width:1px}
@@ -2427,11 +2427,11 @@ function draw(){
       const ft = showMeta ? focusSoFar(b) : 0, timeLine = ft >= 1 ? fmtClock(ft) : '';
       const grp = showMeta && b.group ? gById(b.group) : null; // its group, named: a coloured dot and the group's name
       const dueLine = showMeta && b.due ? fmtDue(b.due) : '';
-      // Chinese is drawn at twice the size and rides high on the line: give those lines more room and nudge them down to centre
-      const lh = fs*1.15, lhOf = l => CJK.test(l) ? fs*1.9 : lh, grpTall = grp && CJK.test(grp.name) ? ms*.9 : 0;
+      // Chinese is drawn a third larger and rides a little high on the line: give those lines more room and nudge them down to centre
+      const lh = fs*1.15, lhOf = l => CJK.test(l) ? fs*1.4 : lh, grpTall = grp && CJK.test(grp.name) ? ms*.3 : 0;
       const total = lines.reduce((a, l) => a + lhOf(l), 0) + (showMeta ? ms*1.9 : 0) + (dueLine ? ms*1.5 : 0) + (grp ? ms*1.6 + grpTall : 0) + (timeLine ? ms*1.5 : 0);
       let y = ly - total/2;
-      for(const l of lines){ const h = lhOf(l); ctx.fillText(l, lx, y + h/2 + (CJK.test(l) ? fs*.34 : 0)); y += h; }
+      for(const l of lines){ const h = lhOf(l); ctx.fillText(l, lx, y + h/2 + (CJK.test(l) ? fs*.1 : 0)); y += h; }
       y += lh/2; // the meta below is placed as before: half a line under the last name line
       if(showMeta){
         ctx.font = `400 ${ms}px "Unbounded", "WDXL Lubrifont SC", "Varela Round", system-ui, sans-serif`; ctx.fillStyle = rgba(.62);
@@ -2452,7 +2452,7 @@ function draw(){
           ctx.beginPath(); ctx.arc(x0 + dr, ty, dr, 0, 6.283); ctx.fillStyle = gHex(grp); ctx.fill();
           ctx.lineWidth = .8; ctx.strokeStyle = rgba(.35); ctx.stroke();
           if(grpTall) ty += grpTall/2;
-          ctx.fillStyle = rgba(.82); ctx.textAlign = 'left'; ctx.fillText(label, x0 + dr*2 + gap, ty + (grpTall ? ms*.3 : 0)); ctx.textAlign = 'center';
+          ctx.fillStyle = rgba(.82); ctx.textAlign = 'left'; ctx.fillText(label, x0 + dr*2 + gap, ty + (grpTall ? ms*.1 : 0)); ctx.textAlign = 'center';
           ty += ms*1.6 + grpTall/2;
         }
         if(timeLine){ // the clock inside, e.g. 3:56
