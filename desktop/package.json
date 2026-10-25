@@ -1,7 +1,7 @@
 {
   "name": "todopop",
   "productName": "TODOPOP",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "A to-do app whose tasks float on your screen as bubbles and slowly take it over until you pop them.",
   "main": "main.js",
   "author": "TODOPOP",
