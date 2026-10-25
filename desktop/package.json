@@ -19,16 +19,37 @@
   "build": {
     "appId": "app.todopop.desktop",
     "productName": "TODOPOP",
-    "files": ["main.js", "openwin.js", "preload.js", "app/**", "assets/**"],
+    "files": [
+      "main.js",
+      "openwin.js",
+      "preload.js",
+      "app/**",
+      "assets/**"
+    ],
     "mac": {
       "target": "dmg",
       "category": "public.app-category.productivity",
       "icon": "assets/icon.png",
-      "extendInfo": { "LSUIElement": true }
+      "extendInfo": {
+        "LSUIElement": true
+      },
+      "identity": "-",
+      "artifactName": "TODOPOP-mac.${ext}"
     },
     "win": {
       "target": "nsis",
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "artifactName": "TODOPOP-windows-setup.${ext}"
+    },
+    "dmg": {
+      "title": "TODOPOP"
+    },
+    "nsis": {
+      "oneClick": true,
+      "perMachine": false,
+      "shortcutName": "TODOPOP",
+      "artifactName": "TODOPOP-windows-setup.${ext}"
     }
-  }
+  },
+  "repository": "github:nosugarlessice/todopop"
 }
