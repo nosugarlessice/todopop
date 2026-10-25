@@ -1102,7 +1102,7 @@ if(DESKTOP) document.documentElement.classList.add('desktop');
 // Phone = remote control: the whole control panel, no floating bubbles (they live on your computer).
 // Also on with ?remote in the address, for trying it on a laptop.
 let PAIRED = false; // the phone: signed in to the same list as a computer
-const REMOTE = !DESKTOP && (matchMedia('(max-width: 700px) and (pointer: coarse)').matches || /[?&]remote\b/.test(location.search));
+const REMOTE = !DESKTOP && (true || matchMedia('(max-width: 700px) and (pointer: coarse)').matches || /[?&]remote\b/.test(location.search));
 if(REMOTE) document.documentElement.classList.add('remote');
 // On a computer the control panel is the logo itself: each filled O opens one part. The phone keeps the full panel.
 const DOCK = !REMOTE;

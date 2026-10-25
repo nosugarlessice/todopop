@@ -56,9 +56,11 @@ p{margin:0}
 @media (max-width:700px){ .nav .hide-s{display:none} .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} }
 
 /* hero: real bubbles you can pop */
-.hero{position:relative; min-height:min(820px, 100svh); display:grid; align-items:center; margin-top:-80px; padding:150px 0 90px; overflow:hidden}
-#field{position:absolute; inset:0; width:100%; height:100%; touch-action:pan-y}
-@media (max-width:700px){ .hero{padding-bottom:230px; align-items:start} } /* on a phone the bubbles float below the words */
+.hero{position:relative; min-height:min(820px, 100svh); display:grid; align-items:center; margin-top:-80px; padding:150px 0 90px}
+/* the bubbles float over the whole page, like they float over your screen: clicks pass through everywhere but on a bubble */
+#field{position:fixed; inset:0; width:100vw; height:100vh; z-index:15; pointer-events:none}
+html.grab, html.grab *{cursor:grab !important} html.grabbing, html.grabbing *{cursor:grabbing !important; user-select:none !important}
+@media (max-width:700px){ .hero{padding-bottom:170px; align-items:start} } /* on a phone, room for a few bubbles below the words */
 .hero .wrap{position:relative; pointer-events:none; display:grid; justify-items:center; text-align:center; gap:26px}
 .hero .wrap > *{pointer-events:auto}
 .hero h1{font-size:clamp(34px, 7vw, 76px); max-width:12ch}
@@ -106,6 +108,13 @@ section{padding:96px 0}
 .dots{display:flex; gap:6px; margin-top:4px} .dots i{width:16px; height:16px; border-radius:50%; border:1.5px solid var(--ink)}
 @media (max-width:820px){ .feats{grid-template-columns:1fr} }
 
+/* phone: a real screenshot of the phone app, in a simple frame */
+.device{justify-self:center; margin:0; width:min(300px, 100%); padding:10px; border-radius:48px; background:#1d1a1b; box-shadow:0 30px 60px -30px rgba(80,10,16,.5)}
+.device img{display:block; width:100%; height:auto; border-radius:38px}
+.qr-box{display:flex; align-items:center; gap:20px; padding:18px; border:1px solid var(--rule); border-radius:28px; background:var(--paper); max-width:460px}
+.qr-box svg{width:112px; height:112px; flex:none; color:var(--ink)}
+.qr-box p{font-size:14px} .qr-box b{font-weight:400; display:block; font-size:17px; margin-top:4px}
+.on-phone{display:none} html.mobile .on-phone{display:inline-flex} html.mobile .qr-box{display:none}
 /* phone */
 .phone{display:grid; grid-template-columns:1.1fr .9fr; gap:48px; align-items:center}
 .howto{list-style:none; counter-reset:n; margin:0 0 30px; padding:0; display:grid; gap:16px}
@@ -124,7 +133,7 @@ section{padding:96px 0}
 .mock .row small{display:block; font-size:7px; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase}
 .mock .bar{display:grid; grid-template-columns:1fr 46px 1fr; align-items:center; background:var(--paper); border-radius:999px; height:40px; box-shadow:inset 0 0 0 1px var(--rule); font-size:9px; font-weight:600; text-align:center}
 .mock .bar span:nth-child(2){width:46px; height:46px; margin-top:-18px; border-radius:50%; background:var(--ink); color:var(--paper); display:grid; place-items:center; font-size:22px; font-weight:300; box-shadow:0 0 0 4px var(--bg)}
-@media (max-width:820px){ .phone{grid-template-columns:1fr} .mock{order:-1; width:min(260px, 100%)} }
+@media (max-width:820px){ .phone{grid-template-columns:1fr} .device{order:-1; width:min(260px, 100%)} }
 
 /* download */
 .dl{background:var(--ink); color:var(--paper); border-radius:44px; padding:clamp(34px, 6vw, 64px); display:grid; gap:26px; justify-items:center; text-align:center}
@@ -172,9 +181,9 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
   </div>
 </header>
 
+<canvas id="field" aria-hidden="true"></canvas>
 <main id="top">
   <section class="hero" aria-labelledby="hero-title">
-    <canvas id="field" aria-hidden="true"></canvas>
     <div class="wrap">
       <span class="cap">A to-do list that won't be ignored</span>
       <h1 id="hero-title">Pop it before it fills your screen.</h1>
@@ -184,7 +193,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
         <a class="btn" data-os="mac" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.5-1-2.5-3.9ZM14 5.4c.7-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.9-1 2.9 1.1.1 2.1-.5 2.8-1.3Z"/></svg>Download for Mac</a>
       </div>
       <p class="meta" id="hero-meta">Windows 10 and 11 · macOS · No account, no email</p>
-      <p class="cap hint">Go on, pop a bubble.</p>
+      <p class="cap hint">Drag a bubble anywhere. Press and hold one to pop it.</p>
     </div>
   </section>
 
@@ -240,7 +249,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
           <span class="ico"><svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3.5"/><circle cx="16" cy="9" r="3.5"/><circle cx="12" cy="16" r="3.5"/></svg></span>
           <h3>Groups in color</h3>
           <p>Sort bubbles into up to six groups, each with its own soft color. Send a group to one edge of the screen so school stays on the left and work on the right.</p>
-          <div class="dots" aria-hidden="true"><i style="background:#D8B9F5"></i><i style="background:#F7A9C4"></i><i style="background:#F6B783"></i><i style="background:#C9CF73"></i><i style="background:#62D8BC"></i><i style="background:#5FD3F5"></i></div>
+          <div class="dots" aria-hidden="true"><i style="background:#ADA3FF"></i><i style="background:#F288C8"></i><i style="background:#F29A39"></i><i style="background:#A5BE43"></i><i style="background:#01CEAE"></i><i style="background:#1EC0FF"></i></div>
         </div>
         <div class="feat">
           <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></span>
@@ -264,20 +273,14 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
           <li><span>Scan the code with your phone's camera.</span></li>
           <li><span>Keep it on your home screen: <b>Share → Add to Home Screen</b> on iPhone, or <b>⋮ → Install app</b> on Android. Open it from there and tap <b>Scan code</b> once more.</span></li>
         </ol>
-        <a class="btn" href="app/">Open the phone app</a>
-      </div>
-      <div class="mock" aria-hidden="true">
-        <span class="rod"><span class="logo" style="--s:17px">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</span></span>
-        <div class="card">
-          <b>Floating</b>
-          <div class="row"><i style="width:17px;height:17px"></i><span>Problem set 4<small>Now!</small></span><s>✓</s></div>
-          <div class="row"><i style="width:13px;height:13px"></i><span>Reply to Melody<small>Today</small></span><s>✓</s></div>
-          <div class="row"><i style="width:13px;height:13px;background:#D8B9F5"></i><span>Figma critique<small>Today · Design</small></span><s>✓</s></div>
-          <div class="row"><i style="width:9px;height:9px"></i><span>Book dentist<small>Soon</small></span><s>✓</s></div>
-          <div class="row"><i style="width:7px;height:7px"></i><span>Water the pothos<small>Remind</small></span><s>✓</s></div>
+        <div class="qr-box">
+          <svg viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QR code for todopop.app/app"><path fill="currentColor" d="M0,0H1V1H0zM1,0H2V1H1zM2,0H3V1H2zM3,0H4V1H3zM4,0H5V1H4zM5,0H6V1H5zM6,0H7V1H6zM8,0H9V1H8zM10,0H11V1H10zM11,0H12V1H11zM12,0H13V1H12zM13,0H14V1H13zM18,0H19V1H18zM19,0H20V1H19zM20,0H21V1H20zM21,0H22V1H21zM22,0H23V1H22zM23,0H24V1H23zM24,0H25V1H24zM0,1H1V2H0zM6,1H7V2H6zM9,1H10V2H9zM16,1H17V2H16zM18,1H19V2H18zM24,1H25V2H24zM0,2H1V3H0zM2,2H3V3H2zM3,2H4V3H3zM4,2H5V3H4zM6,2H7V3H6zM8,2H9V3H8zM10,2H11V3H10zM11,2H12V3H11zM13,2H14V3H13zM14,2H15V3H14zM15,2H16V3H15zM16,2H17V3H16zM18,2H19V3H18zM20,2H21V3H20zM21,2H22V3H21zM22,2H23V3H22zM24,2H25V3H24zM0,3H1V4H0zM2,3H3V4H2zM3,3H4V4H3zM4,3H5V4H4zM6,3H7V4H6zM9,3H10V4H9zM10,3H11V4H10zM13,3H14V4H13zM14,3H15V4H14zM18,3H19V4H18zM20,3H21V4H20zM21,3H22V4H21zM22,3H23V4H22zM24,3H25V4H24zM0,4H1V5H0zM2,4H3V5H2zM3,4H4V5H3zM4,4H5V5H4zM6,4H7V5H6zM10,4H11V5H10zM12,4H13V5H12zM13,4H14V5H13zM18,4H19V5H18zM20,4H21V5H20zM21,4H22V5H21zM22,4H23V5H22zM24,4H25V5H24zM0,5H1V6H0zM6,5H7V6H6zM8,5H9V6H8zM9,5H10V6H9zM11,5H12V6H11zM18,5H19V6H18zM24,5H25V6H24zM0,6H1V7H0zM1,6H2V7H1zM2,6H3V7H2zM3,6H4V7H3zM4,6H5V7H4zM5,6H6V7H5zM6,6H7V7H6zM8,6H9V7H8zM10,6H11V7H10zM12,6H13V7H12zM14,6H15V7H14zM16,6H17V7H16zM18,6H19V7H18zM19,6H20V7H19zM20,6H21V7H20zM21,6H22V7H21zM22,6H23V7H22zM23,6H24V7H23zM24,6H25V7H24zM9,7H10V8H9zM11,7H12V8H11zM12,7H13V8H12zM15,7H16V8H15zM16,7H17V8H16zM0,8H1V9H0zM2,8H3V9H2zM6,8H7V9H6zM7,8H8V9H7zM9,8H10V9H9zM10,8H11V9H10zM11,8H12V9H11zM12,8H13V9H12zM14,8H15V9H14zM16,8H17V9H16zM19,8H20V9H19zM22,8H23V9H22zM24,8H25V9H24zM3,9H4V10H3zM7,9H8V10H7zM8,9H9V10H8zM11,9H12V10H11zM12,9H13V10H12zM13,9H14V10H13zM15,9H16V10H15zM18,9H19V10H18zM19,9H20V10H19zM21,9H22V10H21zM23,9H24V10H23zM24,9H25V10H24zM0,10H1V11H0zM1,10H2V11H1zM2,10H3V11H2zM3,10H4V11H3zM5,10H6V11H5zM6,10H7V11H6zM8,10H9V11H8zM9,10H10V11H9zM10,10H11V11H10zM15,10H16V11H15zM16,10H17V11H16zM19,10H20V11H19zM20,10H21V11H20zM21,10H22V11H21zM22,10H23V11H22zM24,10H25V11H24zM1,11H2V12H1zM2,11H3V12H2zM9,11H10V12H9zM11,11H12V12H11zM14,11H15V12H14zM17,11H18V12H17zM18,11H19V12H18zM19,11H20V12H19zM21,11H22V12H21zM0,12H1V13H0zM3,12H4V13H3zM6,12H7V13H6zM7,12H8V13H7zM9,12H10V13H9zM11,12H12V13H11zM15,12H16V13H15zM18,12H19V13H18zM24,12H25V13H24zM1,13H2V14H1zM3,13H4V14H3zM5,13H6V14H5zM7,13H8V14H7zM9,13H10V14H9zM15,13H16V14H15zM16,13H17V14H16zM18,13H19V14H18zM19,13H20V14H19zM23,13H24V14H23zM24,13H25V14H24zM0,14H1V15H0zM1,14H2V15H1zM2,14H3V15H2zM3,14H4V15H3zM5,14H6V15H5zM6,14H7V15H6zM10,14H11V15H10zM11,14H12V15H11zM13,14H14V15H13zM14,14H15V15H14zM15,14H16V15H15zM18,14H19V15H18zM21,14H22V15H21zM22,14H23V15H22zM24,14H25V15H24zM4,15H5V16H4zM7,15H8V16H7zM8,15H9V16H8zM9,15H10V16H9zM14,15H15V16H14zM15,15H16V16H15zM16,15H17V16H16zM19,15H20V16H19zM20,15H21V16H20zM21,15H22V16H21zM0,16H1V17H0zM1,16H2V17H1zM3,16H4V17H3zM5,16H6V17H5zM6,16H7V17H6zM8,16H9V17H8zM9,16H10V17H9zM11,16H12V17H11zM12,16H13V17H12zM16,16H17V17H16zM17,16H18V17H17zM18,16H19V17H18zM19,16H20V17H19zM20,16H21V17H20zM23,16H24V17H23zM8,17H9V18H8zM9,17H10V18H9zM12,17H13V18H12zM14,17H15V18H14zM16,17H17V18H16zM20,17H21V18H20zM24,17H25V18H24zM0,18H1V19H0zM1,18H2V19H1zM2,18H3V19H2zM3,18H4V19H3zM4,18H5V19H4zM5,18H6V19H5zM6,18H7V19H6zM8,18H9V19H8zM9,18H10V19H9zM10,18H11V19H10zM12,18H13V19H12zM13,18H14V19H13zM14,18H15V19H14zM16,18H17V19H16zM18,18H19V19H18zM20,18H21V19H20zM24,18H25V19H24zM0,19H1V20H0zM6,19H7V20H6zM11,19H12V20H11zM12,19H13V20H12zM15,19H16V20H15zM16,19H17V20H16zM20,19H21V20H20zM0,20H1V21H0zM2,20H3V21H2zM3,20H4V21H3zM4,20H5V21H4zM6,20H7V21H6zM9,20H10V21H9zM12,20H13V21H12zM15,20H16V21H15zM16,20H17V21H16zM17,20H18V21H17zM18,20H19V21H18zM19,20H20V21H19zM20,20H21V21H20zM23,20H24V21H23zM0,21H1V22H0zM2,21H3V22H2zM3,21H4V22H3zM4,21H5V22H4zM6,21H7V22H6zM9,21H10V22H9zM10,21H11V22H10zM14,21H15V22H14zM17,21H18V22H17zM20,21H21V22H20zM22,21H23V22H22zM23,21H24V22H23zM0,22H1V23H0zM2,22H3V23H2zM3,22H4V23H3zM4,22H5V23H4zM6,22H7V23H6zM8,22H9V23H8zM9,22H10V23H9zM11,22H12V23H11zM13,22H14V23H13zM14,22H15V23H14zM15,22H16V23H15zM16,22H17V23H16zM17,22H18V23H17zM19,22H20V23H19zM20,22H21V23H20zM21,22H22V23H21zM23,22H24V23H23zM24,22H25V23H24zM0,23H1V24H0zM6,23H7V24H6zM11,23H12V24H11zM12,23H13V24H12zM15,23H16V24H15zM16,23H17V24H16zM17,23H18V24H17zM18,23H19V24H18zM19,23H20V24H19zM20,23H21V24H20zM0,24H1V25H0zM1,24H2V25H1zM2,24H3V25H2zM3,24H4V25H3zM4,24H5V25H4zM5,24H6V25H5zM6,24H7V25H6zM8,24H9V25H8zM12,24H13V25H12zM14,24H15V25H14zM16,24H17V25H16zM21,24H22V25H21zM24,24H25V25H24z" id="qr-path" fill="#000000" fill-opacity="1" fill-rule="nonzero" stroke="none"/></svg>
+          <p>On your phone, scan this or go to<b>todopop.app/app</b></p>
         </div>
-        <div class="bar"><span>Pause</span><span>+</span><span>Popped</span></div>
+        <a class="btn on-phone" href="app/">Open the phone app</a>
       </div>
+      <figure class="device"><img src="phone-app.png" width="780" height="1688" alt="The TODOPOP phone app: your floating tasks in a list, with Pause, a big plus button and Popped along the bottom."></figure>
+    </div>
     </div>
   </section>
 
@@ -334,7 +337,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     <span class="logo" style="--s:18px">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</span>
     <nav aria-label="Footer">
       <a href="#download">Download</a>
-      <a href="app/">Phone app</a>
+      <a href="#phone">Phone app</a>
       <a href="https://github.com/nosugarlessice/todopop">GitHub</a>
     </nav>
     <span>© 2026 TODOPOP</span>
@@ -343,9 +346,10 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 
 <script>
 (() => {
-  // highlight the download for the computer you're on; on a phone, point to the phone app instead
+  // ---------- downloads: put the right one first ----------
   const ua = navigator.userAgent, mobile = /iPhone|iPad|iPod|Android/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
   const mac = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || ua);
+  if(mobile) document.documentElement.classList.add('mobile');
   if(!mobile && mac) document.querySelectorAll('.btns').forEach(g => {
     const w = g.querySelector('[data-os=win]'), m = g.querySelector('[data-os=mac]');
     if(w && m){ w.classList.remove('solid'); m.classList.add('solid'); g.prepend(m); }
@@ -357,96 +361,197 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     document.getElementById('hero-meta').textContent = 'The bubbles float on a Windows or Mac computer. Your phone is the remote.';
   }
 
-  // the hero: a few real bubbles that drift and slowly grow. Tap one to pop it; it comes back as something else.
-  const cv = document.getElementById('field'), ctx = cv.getContext('2d');
+  // ---------- the bubbles: drawn and behaving like the ones in the app ----------
+  // Same skin (a wobbling outline that presses flat against its neighbours), same fill and outline,
+  // same group ring and labels. Drag one anywhere; press and hold to squeeze it until it pops.
+  const cv = document.getElementById('field'), ctx = cv.getContext('2d'), root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const INK = '#A31521', NAMES = ['Problem set 4', 'Reply to Melody', 'Laundry', 'Book dentist', 'Figma critique', 'Water the pothos', 'Call mom', 'Taxes', 'Gym', 'Read ch. 7', 'Pay rent', 'Email the landlord', 'Groceries', 'Portfolio', 'Return library books'];
-  const GLOWS = [null, null, null, '#D8B9F5', '#F7A9C4', '#F6B783', '#62D8BC', '#5FD3F5'];
-  let W = 0, H = 0, dpr = 1, bubbles = [], drops = [], t = 0, ni = 0;
-  const N = 24, ANG = Array.from({length:N}, (_, i) => i/N*Math.PI*2);
+  const rgba = a => `rgba(163,21,33,${a})`, FONT = '"Unbounded", "Varela Round", system-ui, sans-serif';
+  const GROUP = {School:'#ADA3FF', Work:'#F288C8', Home:'#F29A39', Health:'#01CEAE'};
+  const SHORT = {1:'REMIND', 2:'SOON', 3:'TODAY', 4:'NOW!'};
+  const TASKS = [['Problem set 4', 4, 'School'], ['Reply to Melody', 3, null], ['Laundry', 2, 'Home'], ['Figma critique', 3, 'Work'], ['Water the pothos', 1, 'Home'],
+    ['Book dentist', 2, null], ['Portfolio review', 4, 'Work'], ['Call mom', 2, null], ['Read ch. 7', 3, 'School'], ['Drink water', 1, 'Health'], ['Pay rent', 3, 'Home'],
+    ['Gym', 2, 'Health'], ['Email the landlord', 2, 'Home'], ['Groceries', 2, null], ['Return library books', 1, 'School'], ['Taxes', 3, null]];
+  const N = 48, COS = [], SIN = []; for(let i = 0; i < N; i++){ COS.push(Math.cos(i/N*Math.PI*2)); SIN.push(Math.sin(i/N*Math.PI*2)); }
+  const HOLD_DELAY = .15, HOLD_TIME = .75;
+  let W = 0, H = 0, dpr = 1, DW = 0, DH = 0, S = 1, SWELL = 34, bubbles = [], particles = [], rings = [], zones = [], ti = 0, time = 0, last = performance.now();
+  const easeOut = x => 1 - Math.pow(1 - x, 3);
+  const effR = b => b.r*easeOut(Math.min(1, b.spawn)) + SWELL*Math.pow(b.holdP, 1.6);
+
   function size(){
-    const r = cv.getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio || 1);
-    W = r.width; H = r.height; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    dpr = Math.min(2, devicePixelRatio || 1); W = innerWidth; H = innerHeight;
+    cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    DW = root.clientWidth; DH = root.scrollHeight; S = W < 700 ? .74 : 1; SWELL = 34*S;
+    measureZones();
   }
-  // the words stay readable: bubbles live around the text block, never on it
-  let zone = {l:0, t:0, r:0, b:0};
-  function measureZone(){
-    const c = cv.getBoundingClientRect(), pad = 14; let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
-    for(const el of document.querySelectorAll('.hero .wrap > *')){ const q = el.getBoundingClientRect(); if(!q.width) continue; l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom); }
-    zone = {l:l - c.left - pad, t:t - c.top - pad, r:r - c.left + pad, b:b - c.top + pad};
+  // what the bubbles politely float around (until you drag one onto it): the words, the buttons, the cards
+  function measureZones(){
+    zones = [...document.querySelectorAll('.hero .wrap > *, .head > *, .steps li, .feat, .howto, .qr-box, .device, .phone .on-phone, .dl, .priv > div, footer .wrap')]
+      .map(el => { const q = el.getBoundingClientRect(); return {l:q.left + scrollX - 10, t:q.top + scrollY - 10, r:q.right + scrollX + 10, b:q.bottom + scrollY + 10}; })
+      .filter(z => z.r > z.l);
   }
-  // how far a circle pokes into the text block (0 when it's clear), and which way is out
-  function intrude(x, y, R){
-    const nx = Math.max(zone.l, Math.min(x, zone.r)), ny = Math.max(zone.t, Math.min(y, zone.b)), dx = x - nx, dy = y - ny, d = Math.hypot(dx, dy);
-    if(d >= R) return null;
-    if(d > 0) return {x:dx/d, y:dy/d, k:R - d};
-    const opts = [[-1, 0, x - zone.l + R], [1, 0, zone.r - x + R], [0, -1, y - zone.t + R], [0, 1, zone.b - y + R]].sort((a, b) => a[2] - b[2])[0];
-    return {x:opts[0], y:opts[1], k:opts[2]};
-  }
-  function spot(R){
-    for(let k = 0; k < 80; k++){
-      const x = R + Math.random()*(W - 2*R), y = R + 70 + Math.random()*(H - 2*R - 70);
-      if(!intrude(x, y, R*1.8) && bubbles.every(b => Math.hypot(b.x - x, b.y - y) > b.r + R + 18)) return {x, y};
+  function intrude(x, y, R){ // the deepest a circle pokes into any zone, and which way is out
+    let best = null;
+    for(const z of zones){
+      const nx = Math.max(z.l, Math.min(x, z.r)), ny = Math.max(z.t, Math.min(y, z.b)), dx = x - nx, dy = y - ny, d = Math.hypot(dx, dy);
+      if(d >= R) continue;
+      let q;
+      if(d > 0) q = {x:dx/d, y:dy/d, k:R - d};
+      else { const o = [[-1, 0, x - z.l + R], [1, 0, z.r - x + R], [0, -1, y - z.t + R], [0, 1, z.b - y + R]].sort((a, b) => a[2] - b[2])[0]; q = {x:o[0], y:o[1], k:o[2]}; }
+      if(!best || q.k > best.k) best = q;
     }
-    return null; // no room right now; try again later
+    return best;
   }
-  function make(){
-    const small = W < 700, R0 = (small ? 26 : 34) + Math.random()*(small ? 10 : 18), p = spot(R0 + 30);
-    if(!p) return null;
-    return {x:p.x, y:p.y, r:R0*.2, R:R0, max:R0*(1.7 + Math.random()*.8), vx:(Math.random() - .5)*.12, vy:(Math.random() - .5)*.12,
-      seed:Math.random()*100, name:NAMES[ni++ % NAMES.length], glow:GLOWS[Math.floor(Math.random()*GLOWS.length)], pop:0};
-  }
-  function fill(){ const want = W < 700 ? 5 : 9; for(let k = 0; k < 20 && bubbles.length < want; k++){ const b = make(); if(b) bubbles.push(b); } }
-  function shape(b, s = 1){
-    ctx.beginPath();
-    for(let i = 0; i <= N; i++){
-      const a = ANG[i % N], w = Math.sin(a*3 + t*.9 + b.seed)*.035 + Math.sin(a*2 - t*.6 + b.seed*2)*.03;
-      const rr = b.r*s*(1 + w), x = b.x + Math.cos(a)*rr, y = b.y + Math.sin(a)*rr*.94;
-      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  function spot(R, y0, y1){
+    for(let k = 0; k < 120; k++){
+      const x = R + 4 + Math.random()*(DW - 2*R - 8), y = Math.max(y0, R + 70) + Math.random()*Math.max(1, (y1 - y0) - R);
+      if(y > DH - R - 4) continue;
+      if(!intrude(x, y, R*1.06) && bubbles.every(b => Math.hypot(b.x - x, b.y - y) > effR(b) + R + 10)) return {x, y};
     }
-    ctx.closePath();
+    return null;
   }
-  function frame(){
-    t += 1/60; ctx.clearRect(0, 0, W, H);
+  function make(y0, y1){
+    const [name, level, group] = TASKS[ti++ % TASKS.length];
+    const R0 = (level === 1 ? 34 : 42)*S, max = (level === 1 ? 34 : level === 2 ? 64 : level === 3 ? 86 : 108)*S*(.85 + Math.random()*.3);
+    const start = level === 1 ? R0 : R0 + (max - R0)*(.25 + Math.random()*.5);
+    const p = spot(max*.9, y0, y1); if(!p) return null;
+    return {x:p.x, y:p.y, r:start, R:start, max, level, name, group, d:new Float32Array(N), spawn:0, holdP:0, seed:Math.random()*100,
+      vx:(Math.random() - .5)*8, vy:(Math.random() - .5)*8, free:false, wig:0};
+  }
+  function populate(){
+    const per = W < 700 ? 760 : 470, want = Math.max(W < 700 ? 5 : 8, Math.round(DH/per));
+    for(let k = 0; k < want; k++){ const b = make(k*DH/want, (k + 1)*DH/want); if(b) bubbles.push(b); }
+  }
+
+  // ---------- physics ----------
+  function step(dt){
+    time += dt;
     for(const b of bubbles){
-      if(b.pop){ b.pop += .07; continue; }
-      b.R = Math.min(b.max, b.R + .012); b.r += (b.R - b.r)*.06;
-      b.x += b.vx; b.y += b.vy;
-      if(b.x < b.r || b.x > W - b.r) b.vx *= -1; if(b.y < b.r + 50 || b.y > H - b.r) b.vy *= -1;
-      b.x = Math.max(b.r + 2, Math.min(W - b.r - 2, b.x)); b.y = Math.max(b.r + 50, Math.min(H - b.r - 4, b.y)); // growing never pushes it off the edge
-      { const q = intrude(b.x, b.y, b.r + 4); if(q){ b.x += q.x*Math.min(q.k, 2.5); b.y += q.y*Math.min(q.k, 2.5); if(q.x*b.vx < 0) b.vx *= -1; if(q.y*b.vy < 0) b.vy *= -1; } }
-      for(const o of bubbles) if(o !== b && !o.pop){ const d = Math.hypot(o.x - b.x, o.y - b.y), m = b.r + o.r + 6; if(d < m && d > 0){ const k = (m - d)/d*.02; b.x -= (o.x - b.x)*k; b.y -= (o.y - b.y)*k; } }
-      shape(b);
-      ctx.fillStyle = b.glow ? b.glow + '66' : 'rgba(250,250,248,.82)'; ctx.fill();
-      ctx.lineWidth = 1.6; ctx.strokeStyle = INK; ctx.stroke();
-      if(b.r > 30){
-        const fs = Math.max(10, Math.min(17, b.r*.16));
-        ctx.fillStyle = INK; ctx.font = `400 ${fs}px Unbounded, system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-        const words = b.name.split(' '), lines = []; let cur = '';
-        for(const w of words){ const tryL = cur ? cur + ' ' + w : w; if(ctx.measureText(tryL).width > b.r*1.5 && cur){ lines.push(cur); cur = w; } else cur = tryL; }
-        lines.push(cur); lines.slice(0, 3).forEach((l, i, a) => ctx.fillText(l, b.x, b.y + (i - (a.length - 1)/2)*fs*1.2));
+      b.spawn = Math.min(1, b.spawn + dt*1.6);
+      if(!reduced && b.level > 1 && b !== grab?.b) b.R = Math.min(b.max, b.R + (b.level === 4 ? 1.6 : b.level === 3 ? .8 : .35)*S*dt); // urgent ones grow faster
+      b.r += (b.R - b.r)*Math.min(1, dt*4);
+      if(b === grab?.b) continue;
+      if(!reduced){ b.vx += (Math.random() - .5)*6*dt; b.vy += (Math.random() - .5)*6*dt; const sp = Math.hypot(b.vx, b.vy), mx = 7; if(sp > mx){ b.vx *= mx/sp; b.vy *= mx/sp; } b.x += b.vx*dt; b.y += b.vy*dt; }
+      const r = effR(b);
+      if(!b.free){ const q = intrude(b.x, b.y, r + 2); if(q){ const m = Math.min(q.k, 60*dt); b.x += q.x*m; b.y += q.y*m; if(q.x*b.vx < 0) b.vx *= -.5; if(q.y*b.vy < 0) b.vy *= -.5; } }
+      b.x = Math.max(r + 2, Math.min(DW - r - 2, b.x)); b.y = Math.max(r + 2, Math.min(DH - r - 2, b.y));
+    }
+    // bubbles never overlap: they push apart (a dragged bubble pushes the others, never the other way round)
+    for(let i = 0; i < bubbles.length; i++) for(let j = i + 1; j < bubbles.length; j++){
+      const a = bubbles[i], c = bubbles[j], dx = c.x - a.x, dy = c.y - a.y, d = Math.hypot(dx, dy) || .01, m = effR(a) + effR(c) - 2;
+      if(d >= m) continue;
+      const push = (m - d)*.5, nx = dx/d, ny = dy/d;
+      if(grab?.b === a){ c.x += nx*push*2; c.y += ny*push*2; } else if(grab?.b === c){ a.x -= nx*push*2; a.y -= ny*push*2; }
+      else { a.x -= nx*push; a.y -= ny*push; c.x += nx*push; c.y += ny*push; }
+    }
+    // the skin: a soft wobble, flattened wherever it meets a neighbour (they share the line between them)
+    for(const b of bubbles){
+      const r = effR(b), lim = new Float32Array(N).fill(1e9);
+      for(const o of bubbles){ if(o === b) continue; const dx = o.x - b.x, dy = o.y - b.y, d = Math.hypot(dx, dy), ro = effR(o); if(d > r + ro + 4 || d < 1) continue;
+        const nx = dx/d, ny = dy/d, s = d*r/(r + ro); for(let i = 0; i < N; i++){ const c = COS[i]*nx + SIN[i]*ny; if(c > .02) lim[i] = Math.min(lim[i], s/c - r); } }
+      b.wig *= Math.pow(.02, dt);
+      const amp = reduced ? 0 : r*(.022 + b.wig*.1)*(1 - b.holdP*.7);
+      for(let i = 0; i < N; i++){
+        const a = i/N*Math.PI*2, w = amp*(Math.sin(a*3 + time*1.3 + b.seed) + .8*Math.sin(a*2 - time*.9 + b.seed*2) + b.wig*Math.sin(a*5 + time*18));
+        const target = Math.min(w, lim[i]); b.d[i] += (target - b.d[i])*Math.min(1, dt*10); if(b.d[i] > lim[i]) b.d[i] = lim[i]; if(b.d[i] < -r*.9) b.d[i] = -r*.9;
       }
     }
-    bubbles = bubbles.filter(b => b.pop < 1);
-    for(const d of drops){ d.x += d.vx; d.y += d.vy; d.vy += .12; d.life -= .025; ctx.globalAlpha = Math.max(0, d.life); ctx.beginPath(); ctx.arc(d.x, d.y, d.s, 0, 7); ctx.fillStyle = INK; ctx.fill(); }
-    ctx.globalAlpha = 1; drops = drops.filter(d => d.life > 0);
-    if(Math.random() < .01) fill();
-    if(!reduced || drops.length || bubbles.some(b => b.pop)) requestAnimationFrame(frame);
+    // squeezing: press and hold to pop
+    if(grab && !grab.moved){ const held = (performance.now() - grab.t0)/1000; grab.b.holdP = Math.max(0, Math.min(1, (held - HOLD_DELAY)/HOLD_TIME)); if(grab.b.holdP >= 1){ const b = grab.b; grab = null; root.classList.remove('grabbing'); pop(b); } }
+    for(const b of bubbles) if(b !== grab?.b && b.holdP){ b.holdP *= .82; if(b.holdP < .01) b.holdP = 0; }
+    for(const p of particles){ p.t += dt; p.vx *= .9; p.vy = p.vy*.9 + 40*dt; p.x += p.vx*dt; p.y += p.vy*dt; }
+    particles = particles.filter(p => p.t < p.life); for(const r of rings) r.t += dt; rings = rings.filter(r => r.t < .45);
   }
-  function popAt(x, y){
-    const b = bubbles.find(b => !b.pop && Math.hypot(b.x - x, b.y - y) < b.r); if(!b) return false;
-    b.pop = .01;
-    for(let k = 0; k < 16; k++){ const a = Math.random()*6.28, s = 2 + Math.random()*3.5; drops.push({x:b.x + Math.cos(a)*b.r*.8, y:b.y + Math.sin(a)*b.r*.8, vx:Math.cos(a)*s, vy:Math.sin(a)*s - 1, s:2 + Math.random()*3, life:1}); }
-    setTimeout(() => { const n = make(); if(!n) return; if(reduced){ n.R = n.r = n.max; n.vx = n.vy = 0; } bubbles.push(n); if(reduced) frame(); }, 900);
-    if(reduced) requestAnimationFrame(frame);
-    return true;
+
+  // ---------- drawing (the same recipe as the app) ----------
+  function shapePath(b, inset = 0, oy = 0){
+    const r = effR(b) - inset, P = [];
+    for(let i = 0; i < N; i++){ const rr = Math.max(2, r + b.d[i]*(1 - inset/Math.max(r, 1)*.3)); P.push([b.x + COS[i]*rr, b.y - oy + SIN[i]*rr]); }
+    ctx.beginPath(); ctx.moveTo((P[N-1][0] + P[0][0])/2, (P[N-1][1] + P[0][1])/2);
+    for(let i = 0; i < N; i++){ const p = P[i], q = P[(i + 1) % N]; ctx.quadraticCurveTo(p[0], p[1], (p[0] + q[0])/2, (p[1] + q[1])/2); }
+    ctx.closePath();
   }
-  cv.addEventListener('pointerdown', e => { const r = cv.getBoundingClientRect(); popAt(e.clientX - r.left, e.clientY - r.top); });
-  cv.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; cv.style.cursor = bubbles.some(b => !b.pop && Math.hypot(b.x - x, b.y - y) < b.r) ? 'pointer' : ''; });
-  addEventListener('resize', () => { size(); measureZone(); if(reduced) frame(); });
-  size(); measureZone(); document.fonts?.ready.then(measureZone); fill();
-  if(reduced){ bubbles.forEach(b => { b.R = b.max; b.r = b.max; b.vx = b.vy = 0; }); frame(); } // still bubbles, still poppable
-  else requestAnimationFrame(frame);
+  function wrap(text, maxW){ const words = text.split(/\s+/), lines = []; let cur = ''; for(const w of words){ const t = cur ? cur + ' ' + w : w; if(ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t; } if(cur) lines.push(cur); return lines; }
+  function draw(){
+    ctx.clearRect(0, 0, W, H);
+    const oy = scrollY, ox = scrollX;
+    ctx.save(); ctx.translate(-ox, 0);
+    for(const b of bubbles){
+      const r = effR(b); if(b.y - r > oy + H || b.y + r < oy) continue;
+      const gp = b.group && GROUP[b.group], block = b.level === 1 ? .55 : Math.min(.94, .62 + (b.R - 42)/420);
+      shapePath(b, 0, oy);
+      ctx.fillStyle = `rgba(250,250,248,${block})`; ctx.fill();
+      ctx.fillStyle = rgba(b.level === 4 ? .085 : b.level === 3 ? .06 : .04); ctx.fill();
+      ctx.lineWidth = (b.level === 4 ? 2.8 : 2.4)*(1 + b.holdP*1.1); ctx.strokeStyle = rgba(1); ctx.stroke(); // the skin tightens as you squeeze
+      if(gp && r > 10){ shapePath(b, 4.5, oy); ctx.lineWidth = 2; ctx.strokeStyle = gp + 'AB'; ctx.stroke(); }
+      if(b.level >= 3 && r > 24){ shapePath(b, gp ? 9.5 : 6, oy); ctx.lineWidth = .9; ctx.strokeStyle = rgba(.28); ctx.setLineDash(b.level === 4 ? [] : [2, 4]); ctx.stroke(); ctx.setLineDash([]); }
+      if(r > 22){
+        ctx.save(); shapePath(b, 0, oy); ctx.clip();
+        const fs = Math.max(9.5, Math.min(26, r*.16)), lx = b.x, ly = b.y - oy;
+        ctx.fillStyle = rgba(1); ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.font = `400 ${fs}px ${FONT}`;
+        let lines = wrap(b.name, r*1.45); const maxL = (r > 70 || r < 40) ? 3 : 2; if(lines.length > maxL) lines = lines.slice(0, maxL);
+        const ms = Math.max(7, Math.min(9.5, r*.065)) + 1, meta = r > 40, lh = fs*1.15, total = lines.length*lh + (meta ? ms*1.9 : 0) + (meta && gp ? ms*1.6 : 0);
+        let y = ly - total/2 + lh/2; for(const l of lines){ ctx.fillText(l, lx, y); y += lh; }
+        if(meta){
+          ctx.font = `400 ${ms}px ${FONT}`; ctx.fillStyle = rgba(.62); if('letterSpacing' in ctx) ctx.letterSpacing = (ms*.1) + 'px';
+          ctx.fillText(SHORT[b.level], lx, y + ms*.6); let ty = y + ms*2.1;
+          if(gp){ const tag = b.group.toUpperCase(), dr = ms*.45, gap = ms*.5; ctx.font = `400 ${ms*.95}px ${FONT}`; const tw = ctx.measureText(tag).width, x0 = lx - (dr*2 + gap + tw)/2;
+            ctx.beginPath(); ctx.arc(x0 + dr, ty, dr, 0, 6.283); ctx.fillStyle = gp; ctx.fill(); ctx.lineWidth = .8; ctx.strokeStyle = rgba(.35); ctx.stroke();
+            ctx.fillStyle = rgba(.82); ctx.textAlign = 'left'; ctx.fillText(tag, x0 + dr*2 + gap, ty); ctx.textAlign = 'center'; }
+          if('letterSpacing' in ctx) ctx.letterSpacing = '0px';
+        }
+        ctx.restore();
+      }
+    }
+    for(const r of rings){ const k = r.t/.45; ctx.beginPath(); ctx.arc(r.x, r.y - oy, r.r*(1 + k*.5), 0, 6.283); ctx.lineWidth = 2*(1 - k); ctx.strokeStyle = rgba(.6*(1 - k)); ctx.stroke(); }
+    for(const p of particles){ ctx.globalAlpha = Math.max(0, 1 - p.t/p.life); ctx.beginPath(); ctx.arc(p.x, p.y - oy, p.r, 0, 6.283); ctx.fillStyle = rgba(1); ctx.fill(); }
+    ctx.globalAlpha = 1; ctx.restore();
+  }
+  function pop(b){
+    const r = effR(b); rings.push({x:b.x, y:b.y, r, t:0});
+    for(let k = 0; k < 16; k++){ const a = Math.random()*6.283, sp = 120 + Math.random()*200; particles.push({x:b.x + Math.cos(a)*r*.9, y:b.y + Math.sin(a)*r*.9, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:1.5 + Math.random()*3.5, t:0, life:.5 + Math.random()*.45}); }
+    bubbles.splice(bubbles.indexOf(b), 1);
+    setTimeout(() => { const n = make(scrollY, scrollY + H); if(n) bubbles.push(n); }, 1400); // a new task floats in somewhere you can see
+  }
+
+  // ---------- touch and mouse: only a bubble catches the pointer; everything else passes straight through ----------
+  let grab = null, eatClick = false;
+  const hit = (cx, cy) => { const x = cx + scrollX, y = cy + scrollY; for(let i = bubbles.length - 1; i >= 0; i--){ const b = bubbles[i]; if(Math.hypot(b.x - x, b.y - y) < effR(b)) return b; } return null; };
+  addEventListener('pointerdown', e => {
+    if(e.pointerType === 'mouse' && e.button !== 0) return;
+    const b = hit(e.clientX, e.clientY); if(!b) return;
+    e.preventDefault(); eatClick = true;
+    bubbles.splice(bubbles.indexOf(b), 1); bubbles.push(b); // picked up: on top
+    grab = {b, id:e.pointerId, sx:e.clientX, sy:e.clientY, ox:b.x - (e.clientX + scrollX), oy:b.y - (e.clientY + scrollY), t0:performance.now(), moved:false};
+    root.classList.add('grabbing');
+  }, {capture:true});
+  addEventListener('touchstart', e => { const t = e.touches[0]; if(t && hit(t.clientX, t.clientY)) e.preventDefault(); }, {capture:true, passive:false}); // no scrolling while you hold a bubble
+  addEventListener('pointermove', e => {
+    if(grab && e.pointerId === grab.id){
+      if(!grab.moved && Math.hypot(e.clientX - grab.sx, e.clientY - grab.sy) > 6){ grab.moved = true; grab.b.holdP = 0; }
+      if(grab.moved){ const b = grab.b, r = effR(b); b.x = Math.max(r, Math.min(DW - r, e.clientX + scrollX + grab.ox)); b.y = Math.max(r, Math.min(DH - r, e.clientY + scrollY + grab.oy)); b.vx = b.vy = 0; }
+      return;
+    }
+    if(e.pointerType === 'mouse') root.classList.toggle('grab', !!hit(e.clientX, e.clientY));
+  }, {capture:true});
+  const release = e => {
+    if(!grab || e.pointerId !== grab.id) return;
+    const b = grab.b;
+    if(grab.moved) b.free = true;            // put down: it stays where you left it
+    else if(performance.now() - grab.t0 < 250) b.wig = 1; // a quick tap: it jiggles
+    grab = null; root.classList.remove('grabbing');
+    setTimeout(() => eatClick = false, 0);
+  };
+  addEventListener('pointerup', release, {capture:true}); addEventListener('pointercancel', release, {capture:true});
+  addEventListener('click', e => { if(eatClick){ e.preventDefault(); e.stopPropagation(); eatClick = false; } }, {capture:true}); // a bubble over a link doesn't click the link
+
+  // ---------- run ----------
+  let resizeT = 0;
+  addEventListener('resize', () => { clearTimeout(resizeT); resizeT = setTimeout(size, 120); });
+  document.querySelectorAll('details').forEach(d => d.addEventListener('toggle', () => setTimeout(size, 50)));
+  size(); populate();
+  document.fonts?.ready.then(() => { size(); });
+  (function frame(now){ const dt = Math.min(.05, (now - last)/1000); last = now; step(dt); draw(); requestAnimationFrame(frame); })(performance.now());
 })();
 </script>
 </body>
