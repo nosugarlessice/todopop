@@ -16,26 +16,32 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
 
+// Windows: stay above the taskbar instead of over it, so the taskbar, its icons and the tray menu stay reachable.
+const overlayBounds = () => { const d = screen.getPrimaryDisplay(); return isMac ? d.bounds : d.workArea; };
+let trayMenu = null;
+let selfFocus = 0; // when we bring the window forward ourselves
+let interactive = false; // true while the cursor is over a bubble or the panel
+
 function fitToDisplay() {
   if (!win) return;
-  const { bounds } = screen.getPrimaryDisplay();
-  win.setBounds(bounds);
+  win.setBounds(overlayBounds());
 }
 
 function createOverlay() {
-  const { bounds } = screen.getPrimaryDisplay();
   win = new BrowserWindow({
-    ...bounds,
+    ...overlayBounds(),
+    title: 'TODOPOP',
+    icon: path.join(__dirname, 'assets', 'icon.png'),
     transparent: true,
     backgroundColor: '#00000000',
     frame: false,
     hasShadow: false,
     resizable: false,
     movable: false,
-    minimizable: false,
+    minimizable: !isMac, // Windows: clicking the taskbar icon "minimizes"; we turn that into show/hide panel
     maximizable: false,
     fullscreenable: false,
-    skipTaskbar: true,
+    skipTaskbar: isMac, // Windows: a TODOPOP icon sits in the taskbar like any other app
     alwaysOnTop: true,
     show: false,
     // On macOS a "panel" window can sit above other apps' full-screen spaces.
@@ -57,6 +63,13 @@ function createOverlay() {
   // task links open in a new window of your normal browser
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^(https?|mailto|file):/i.test(url)) openInNewWindow(url, screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea); return { action: 'deny' }; });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
+  if (!isMac) {
+    // Clicking the taskbar icon never hides the bubbles: it brings up the control panel instead.
+    win.on('minimize', () => { win.restore(); selfFocus = Date.now(); win.focus(); win.webContents.send('show-panel'); });
+    // The overlay only takes the mouse over bubbles and the panel, so being brought to the front any other way
+    // (the taskbar icon, Alt+Tab) means you came looking for TODOPOP: open the panel.
+    win.on('focus', () => { if (!interactive && Date.now() - selfFocus > 400) win.webContents.send('show-panel'); });
+  }
   win.once('ready-to-show', () => {
     win.show();
     win.focus(); // so the centred control panel can be typed into right away
@@ -65,6 +78,7 @@ function createOverlay() {
 
 function showPanel() {
   if (!win) return;
+  selfFocus = Date.now();
   win.show();
   win.focus();
   win.webContents.send('show-panel');
@@ -72,6 +86,7 @@ function showPanel() {
 
 function togglePanel() {
   if (!win) return;
+  selfFocus = Date.now();
   win.show();
   win.focus();
   win.webContents.send('toggle-panel');
@@ -89,8 +104,7 @@ const sendPause = (mode) => win && win.webContents.send('pause', mode);
 
 function buildTrayMenu() {
   const shortcutLabel = isMac ? '⌘⇧Space' : 'Ctrl+Shift+Space';
-  tray.setContextMenu(
-    Menu.buildFromTemplate([
+  trayMenu = Menu.buildFromTemplate([
       { label: `Show / hide control panel (${shortcutLabel})`, click: togglePanel },
       { type: 'separator' },
       paused
@@ -113,15 +127,18 @@ function buildTrayMenu() {
       },
       { type: 'separator' },
       { label: 'Quit TODOPOP', role: 'quit' },
-    ])
-  );
+  ]);
+  if (isMac) tray.setContextMenu(trayMenu); // Windows opens it on right-click below
   tray.setToolTip(paused ? 'TODOPOP (paused)' : 'TODOPOP');
 }
 
 function createTray() {
   tray = new Tray(trayIcon());
   buildTrayMenu();
-  if (!isMac) tray.on('click', togglePanel);
+  if (!isMac) {
+    tray.on('click', togglePanel);
+    tray.on('right-click', () => tray.popUpContextMenu(trayMenu)); // open the menu ourselves, so it always shows on Windows
+  }
 }
 
 ipcMain.on('paused', (_event, on) => {
@@ -131,10 +148,13 @@ ipcMain.on('paused', (_event, on) => {
 
 ipcMain.on('set-interactive', (_event, on) => {
   if (!win) return;
+  interactive = !!on;
   win.setIgnoreMouseEvents(!on, { forward: true });
 });
 
 app.on('second-instance', showPanel);
+
+if (!isMac) app.setAppUserModelId('app.todopop.desktop'); // the taskbar shows TODOPOP's name and icon
 
 app.whenReady().then(() => {
   if (isMac && app.dock) app.dock.hide(); // a floating layer, not a regular windowed app
