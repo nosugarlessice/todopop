@@ -1,0 +1,453 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TODOPOP · Pop it before it fills your screen</title>
+<meta name="description" content="TODOPOP turns every task into a bubble that floats over your screen and slowly grows until you pop it. For Windows and Mac, with your phone as the remote.">
+<meta name="theme-color" content="#A31521">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta property="og:title" content="TODOPOP">
+<meta property="og:description" content="A to-do list that floats over your screen. Every task is a bubble that grows until you pop it.">
+<meta property="og:image" content="https://todopop.app/app/icons/icon-512.png">
+<meta property="og:url" content="https://todopop.app/">
+<style>
+@font-face{font-family:'Unbounded';font-weight:300;font-display:swap;src:url(fonts/unbounded-latin-300-normal.woff2) format('woff2')}
+@font-face{font-family:'Unbounded';font-weight:400;font-display:swap;src:url(fonts/unbounded-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(fonts/unbounded-latin-600-normal.woff2) format('woff2')}
+:root{
+  --bg:#F7F7F5; --paper:#FFFFFF; --ink:#A31521;
+  --ink-soft:color-mix(in srgb, var(--ink) 62%, #F7F7F5);
+  --rule:color-mix(in srgb, var(--ink) 22%, transparent);
+  --faint:color-mix(in srgb, var(--ink) 12%, transparent);
+  --wash:color-mix(in srgb, var(--ink) 5%, transparent);
+  --f:'Unbounded', 'Varela Round', system-ui, sans-serif;
+  --gut:max(16px, env(safe-area-inset-left, 0px));
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
+body{margin:0; background:var(--bg); color:var(--ink); font:300 16px/1.55 var(--f); overflow-x:hidden;
+  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:28px 28px}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--ink); outline-offset:3px; border-radius:6px}
+.wrap{width:min(1080px, 100% - 2*var(--gut)); margin-inline:auto}
+h1,h2,h3{font-weight:400; margin:0; letter-spacing:-.01em; line-height:1.12}
+p{margin:0}
+.cap{font-weight:400; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft)}
+
+/* the wordmark: the three O's are bubbles that never quite sit still */
+.logo{font-weight:600; font-size:var(--s, 28px); line-height:1; letter-spacing:.01em; display:inline-flex; align-items:center; text-decoration:none; color:var(--ink); margin:0}
+.logo .o{display:inline-block; width:.86em; height:.778em; margin:0 .045em; background:currentColor; border-radius:50%; animation:blob 5.5s ease-in-out infinite}
+.logo .o:nth-of-type(2){animation-delay:-1.8s; animation-duration:6.2s}
+.logo .o:nth-of-type(3){animation-delay:-3.4s; animation-duration:4.9s}
+@keyframes blob{0%,100%{border-radius:50%} 25%{border-radius:56% 44% 52% 48% / 46% 55% 45% 54%} 50%{border-radius:46% 54% 44% 56% / 54% 46% 56% 44%} 75%{border-radius:52% 48% 57% 43% / 49% 52% 48% 51%}}
+
+/* nav: a rod, like the app's header */
+.nav{position:sticky; top:12px; z-index:20; margin-top:12px}
+.nav .wrap{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 14px 12px 24px; background:color-mix(in srgb, var(--paper) 90%, transparent);
+  border-radius:999px; box-shadow:inset 0 0 0 2px var(--ink); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
+.nav ul{list-style:none; margin:0; padding:0; display:flex; align-items:center; gap:6px}
+.nav ul a{text-decoration:none; font-size:12px; font-weight:400; letter-spacing:.06em; text-transform:uppercase; padding:10px 12px; border-radius:999px}
+.nav ul a:hover{background:var(--wash)}
+.nav .get{background:var(--ink); color:var(--paper); padding:11px 18px}
+.nav .get:hover{background:color-mix(in srgb, var(--ink) 88%, #000)}
+@media (max-width:700px){ .nav .hide-s{display:none} .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} }
+
+/* hero: real bubbles you can pop */
+.hero{position:relative; min-height:min(820px, 100svh); display:grid; align-items:center; margin-top:-80px; padding:150px 0 90px; overflow:hidden}
+#field{position:absolute; inset:0; width:100%; height:100%; touch-action:pan-y}
+@media (max-width:700px){ .hero{padding-bottom:230px; align-items:start} } /* on a phone the bubbles float below the words */
+.hero .wrap{position:relative; pointer-events:none; display:grid; justify-items:center; text-align:center; gap:26px}
+.hero .wrap > *{pointer-events:auto}
+.hero h1{font-size:clamp(34px, 7vw, 76px); max-width:12ch}
+.hero .lede{max-width:34em; font-size:clamp(15px, 2vw, 18px); color:color-mix(in srgb, var(--ink) 80%, var(--bg))}
+.hero .hint{font-size:11px}
+.btns{display:flex; flex-wrap:wrap; justify-content:center; gap:12px}
+.btn{display:inline-flex; align-items:center; gap:10px; text-decoration:none; font:400 15px/1 var(--f); padding:17px 24px; border-radius:999px; border:2px solid var(--ink);
+  background:var(--paper); color:var(--ink); transition:transform .25s cubic-bezier(.3,1.6,.5,1), background .2s}
+.btn:hover{transform:translateY(-2px)} .btn:active{transform:scale(.96)}
+.btn.solid{background:var(--ink); color:var(--paper)}
+.btn svg{width:18px; height:18px; fill:currentColor; flex:none}
+.btn small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; opacity:.75}
+.meta{font-size:12px; color:var(--ink-soft)}
+
+section{padding:96px 0}
+.head{display:grid; gap:14px; margin-bottom:44px; max-width:40em}
+.head h2{font-size:clamp(28px, 4.4vw, 46px)}
+.head p{color:color-mix(in srgb, var(--ink) 78%, var(--bg))}
+
+/* how it works: three bubbles, each a little bigger */
+.steps{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3, 1fr); gap:20px}
+.steps li{background:var(--paper); border:1px solid var(--rule); border-radius:32px; padding:28px 26px 30px; display:grid; gap:12px; align-content:start}
+.steps .pic{height:150px; display:grid; place-items:center}
+.steps h3{font-size:20px}
+.steps p{font-size:14.5px; color:color-mix(in srgb, var(--ink) 78%, var(--bg))}
+.bub{fill:color-mix(in srgb, var(--ink) 6%, #FAFAF8); stroke:var(--ink); stroke-width:22}
+.bub-t{font:300 300px var(--f); fill:var(--ink)}
+.grow{transform-origin:512px 512px; animation:grow 6s ease-in-out infinite}
+@keyframes grow{0%,8%{transform:scale(.55)} 80%,100%{transform:scale(1)}}
+.popping{transform-origin:512px 512px; animation:popb 3.2s ease-in infinite}
+@keyframes popb{0%,55%{transform:scale(1); opacity:1} 62%{transform:scale(1.12); opacity:1} 66%,100%{transform:scale(1.35); opacity:0}}
+.drop{fill:var(--ink); opacity:0; animation:drop 3.2s ease-out infinite}
+@keyframes drop{0%,62%{opacity:0; transform:translate(0,0)} 66%{opacity:1} 100%{opacity:0; transform:translate(var(--dx), var(--dy))}}
+@media (max-width:820px){ .steps{grid-template-columns:1fr} .steps .pic{height:120px} }
+
+/* features */
+.feats{display:grid; grid-template-columns:repeat(2, 1fr); gap:20px}
+.feat{border-radius:32px; padding:30px 28px; background:var(--paper); border:1px solid var(--rule); display:grid; gap:10px; align-content:start}
+.feat h3{font-size:19px}
+.feat p{font-size:14.5px; color:color-mix(in srgb, var(--ink) 78%, var(--bg))}
+.feat.big{background:var(--ink); color:var(--paper); border-color:var(--ink)}
+.feat.big p{color:color-mix(in srgb, var(--paper) 82%, var(--ink))}
+.feat .ico{width:40px; height:40px; border-radius:50%; display:grid; place-items:center; border:2px solid currentColor; margin-bottom:6px}
+.feat .ico svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
+.dots{display:flex; gap:6px; margin-top:4px} .dots i{width:16px; height:16px; border-radius:50%; border:1.5px solid var(--ink)}
+@media (max-width:820px){ .feats{grid-template-columns:1fr} }
+
+/* phone */
+.phone{display:grid; grid-template-columns:1.1fr .9fr; gap:48px; align-items:center}
+.howto{list-style:none; counter-reset:n; margin:0 0 30px; padding:0; display:grid; gap:16px}
+.howto li{counter-increment:n; display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:start; font-size:15px}
+.howto li::before{content:counter(n); width:36px; height:36px; border-radius:50%; background:var(--ink); color:var(--paper); display:grid; place-items:center; font:400 14px var(--f)}
+.howto b{font-weight:400}
+.mock{justify-self:center; width:min(300px, 100%); aspect-ratio:9/18.5; border-radius:44px; background:var(--bg); border:2px solid var(--ink); padding:18px 14px; display:grid; grid-template-rows:auto 1fr auto; gap:10px;
+  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:20px 20px; box-shadow:0 30px 60px -36px rgba(80,10,16,.45)}
+.mock .rod{justify-self:center; padding:9px 18px 8px; border-radius:999px; background:var(--paper); box-shadow:inset 0 0 0 1.6px var(--ink); --s:17px}
+.mock .card{background:var(--paper); border:1px solid var(--rule); border-radius:22px; margin-top:-20px; padding:24px 14px 8px; display:grid; align-content:start}
+.mock .card b{font-weight:600; font-size:13px; margin-bottom:6px}
+.mock .row{display:grid; grid-template-columns:20px 1fr 22px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px dashed var(--rule); font-size:10.5px; font-weight:400}
+.mock .row:last-child{border:0}
+.mock .row i{justify-self:center; border:1.3px solid var(--ink); border-radius:50%}
+.mock .row s{text-decoration:none; width:20px; height:20px; border-radius:50%; border:1px solid var(--rule); display:grid; place-items:center; font-size:9px; color:var(--ink-soft)}
+.mock .row small{display:block; font-size:7px; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase}
+.mock .bar{display:grid; grid-template-columns:1fr 46px 1fr; align-items:center; background:var(--paper); border-radius:999px; height:40px; box-shadow:inset 0 0 0 1px var(--rule); font-size:9px; font-weight:600; text-align:center}
+.mock .bar span:nth-child(2){width:46px; height:46px; margin-top:-18px; border-radius:50%; background:var(--ink); color:var(--paper); display:grid; place-items:center; font-size:22px; font-weight:300; box-shadow:0 0 0 4px var(--bg)}
+@media (max-width:820px){ .phone{grid-template-columns:1fr} .mock{order:-1; width:min(260px, 100%)} }
+
+/* download */
+.dl{background:var(--ink); color:var(--paper); border-radius:44px; padding:clamp(34px, 6vw, 64px); display:grid; gap:26px; justify-items:center; text-align:center}
+.dl h2{font-size:clamp(28px, 4.4vw, 46px)}
+.dl .btn{border-color:var(--paper); background:transparent; color:var(--paper)}
+.dl .btn.solid{background:var(--paper); color:var(--ink)}
+.dl .meta{color:color-mix(in srgb, var(--paper) 72%, var(--ink))}
+.first{width:100%; max-width:720px; text-align:left; display:grid; gap:10px}
+.first details{background:color-mix(in srgb, var(--paper) 10%, transparent); border-radius:22px; padding:0 22px}
+.first summary{cursor:pointer; list-style:none; padding:18px 0; font-size:14px; font-weight:400; display:flex; justify-content:space-between; align-items:center; gap:12px}
+.first summary::-webkit-details-marker{display:none}
+.first summary::after{content:"+"; font-size:22px; font-weight:300; transition:transform .25s}
+.first details[open] summary::after{transform:rotate(45deg)}
+.first ol{margin:0; padding:0 0 20px 20px; display:grid; gap:8px; font-size:14px; color:color-mix(in srgb, var(--paper) 88%, var(--ink))}
+.first b{font-weight:400; color:var(--paper)}
+
+/* privacy + footer */
+.priv{display:grid; grid-template-columns:repeat(3, 1fr); gap:20px}
+.priv div{border-top:2px solid var(--ink); padding-top:16px; display:grid; gap:8px}
+.priv h3{font-size:16px}
+.priv p{font-size:14px; color:color-mix(in srgb, var(--ink) 78%, var(--bg))}
+@media (max-width:820px){ .priv{grid-template-columns:1fr} }
+footer{padding:48px 0 calc(40px + env(safe-area-inset-bottom, 0px)); border-top:1px dashed var(--rule)}
+footer .wrap{display:flex; flex-wrap:wrap; gap:16px 28px; align-items:center; justify-content:space-between; font-size:12px; color:var(--ink-soft)}
+footer nav{display:flex; gap:20px; flex-wrap:wrap}
+footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-underline-offset:4px}
+
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none !important; transition:none !important} html{scroll-behavior:auto} }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs><path id="bub" d="M861.493 505.384C859.761 535.528 852.482 566.375 842.518 594.411C832.528 622.447 817.921 649.353 801.631 673.599C785.342 697.845 765.79 720.208 744.782 739.886C723.774 759.589 700.356 777.309 675.583 791.716C650.835 806.148 623.854 818.346 596.295 826.403C568.736 834.46 539.119 839.455 510.28 840.057C481.441 840.634 451.347 837.196 423.311 829.967C395.275 822.714 367.315 811.042 342.14 796.635C316.941 782.203 293.071 763.781 272.164 743.5C251.281 723.195 232.381 699.702 216.82 674.804C201.284 649.931 188.006 622.422 178.92 594.16C169.834 565.924 163.585 535.328 162.305 505.384C161.024 475.441 163.735 443.69 171.29 414.55C178.82 385.41 191.47 355.893 207.533 330.594C223.572 305.268 244.931 281.725 267.571 262.675C290.21 243.625 316.916 228.164 343.345 216.242C369.749 204.319 398.262 196.539 426.072 191.142C453.907 185.746 482.244 183.738 510.28 183.889C538.316 184.014 566.502 186.499 594.237 192.021C621.996 197.518 650.283 205.223 676.813 216.944C703.318 228.666 730.299 243.575 753.341 262.324C776.407 281.048 798.544 304.164 815.135 329.389C831.7 354.588 845.128 384.256 852.834 413.597C860.564 442.938 863.225 475.24 861.493 505.384Z"/></defs>
+</svg>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="logo navlogo" href="#top" aria-label="TODOPOP, back to top">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</a>
+    <ul>
+      <li class="hide-s"><a href="#how">How it works</a></li>
+      <li class="hide-s"><a href="#phone">Phone</a></li>
+      <li><a class="get" href="#download">Download</a></li>
+    </ul>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero" aria-labelledby="hero-title">
+    <canvas id="field" aria-hidden="true"></canvas>
+    <div class="wrap">
+      <span class="cap">A to-do list that won't be ignored</span>
+      <h1 id="hero-title">Pop it before it fills your screen.</h1>
+      <p class="lede">TODOPOP turns every task into a bubble that floats over whatever you're doing and slowly grows. Finish the task, pop the bubble. Leave it, and it takes over.</p>
+      <div class="btns" id="hero-btns">
+        <a class="btn solid" data-os="win" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-windows-setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.1 10.4 4v7.1H3V5.1Zm0 13.8 7.4 1.1v-7H3v5.9ZM11.3 3.9 21 2.5v8.6h-9.7V3.9Zm0 16.2 9.7 1.4V13h-9.7v7.1Z"/></svg>Download for Windows</a>
+        <a class="btn" data-os="mac" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.5-1-2.5-3.9ZM14 5.4c.7-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.9-1 2.9 1.1.1 2.1-.5 2.8-1.3Z"/></svg>Download for Mac</a>
+      </div>
+      <p class="meta" id="hero-meta">Windows 10 and 11 · macOS · No account, no email</p>
+      <p class="cap hint">Go on, pop a bubble.</p>
+    </div>
+  </section>
+
+  <section id="how" aria-labelledby="how-title">
+    <div class="wrap">
+      <div class="head">
+        <span class="cap">How it works</span>
+        <h2 id="how-title">Three steps. One of them is satisfying.</h2>
+      </div>
+      <ol class="steps">
+        <li>
+          <div class="pic"><svg viewBox="0 0 1024 1024" width="120" height="120" aria-hidden="true"><use href="#bub" class="bub" transform="translate(512 512) scale(.7) translate(-512 -512)"/><text class="bub-t" x="512" y="512" text-anchor="middle" dominant-baseline="central">+</text></svg></div>
+          <h3>Blow a bubble</h3>
+          <p>Give it a name and choose how urgent it is. Add a link or a deadline if the task has one.</p>
+        </li>
+        <li>
+          <div class="pic"><svg viewBox="0 0 1024 1024" width="150" height="150" aria-hidden="true"><g class="grow"><use href="#bub" class="bub"/></g></svg></div>
+          <h3>Watch it grow</h3>
+          <p>Urgent bubbles grow faster. In the last day before a deadline, a bubble moves up a level all by itself.</p>
+        </li>
+        <li>
+          <div class="pic"><svg viewBox="0 0 1024 1024" width="150" height="150" aria-hidden="true">
+            <g class="popping"><use href="#bub" class="bub" transform="translate(512 512) scale(.8) translate(-512 -512)"/></g>
+            <circle class="drop" cx="512" cy="512" r="26" style="--dx:-300px;--dy:-220px"/><circle class="drop" cx="512" cy="512" r="20" style="--dx:320px;--dy:-180px"/>
+            <circle class="drop" cx="512" cy="512" r="30" style="--dx:-260px;--dy:280px"/><circle class="drop" cx="512" cy="512" r="18" style="--dx:280px;--dy:300px"/>
+            <circle class="drop" cx="512" cy="512" r="22" style="--dx:20px;--dy:-380px"/><circle class="drop" cx="512" cy="512" r="16" style="--dx:-400px;--dy:40px"/>
+          </svg></div>
+          <h3>Pop it</h3>
+          <p>Done? Pop it and watch it burst. Popped keeps a record of everything you finished this week and this month.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section aria-labelledby="feat-title" style="padding-top:0">
+    <div class="wrap">
+      <div class="head">
+        <span class="cap">Made for focus</span>
+        <h2 id="feat-title">Gentle when you're working. Hard to ignore when you're not.</h2>
+      </div>
+      <div class="feats">
+        <div class="feat big">
+          <span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg></span>
+          <h3>Get in the bubble</h3>
+          <p>Click a bubble to step inside. The edges of your screen take on your color, a timer counts your focus, and you can break the task into smaller steps that float around you.</p>
+        </div>
+        <div class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg></span>
+          <h3>Over everything</h3>
+          <p>Bubbles float above your other apps and let your clicks pass straight through to whatever is underneath. The control panel is one shortcut away: Ctrl/⌘ + Shift + Space.</p>
+        </div>
+        <div class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3.5"/><circle cx="16" cy="9" r="3.5"/><circle cx="12" cy="16" r="3.5"/></svg></span>
+          <h3>Groups in color</h3>
+          <p>Sort bubbles into up to six groups, each with its own soft color. Send a group to one edge of the screen so school stays on the left and work on the right.</p>
+          <div class="dots" aria-hidden="true"><i style="background:#D8B9F5"></i><i style="background:#F7A9C4"></i><i style="background:#F6B783"></i><i style="background:#C9CF73"></i><i style="background:#62D8BC"></i><i style="background:#5FD3F5"></i></div>
+        </div>
+        <div class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></span>
+          <h3>Pause growing</h3>
+          <p>Need a break? Pause for 30 minutes, an hour, until tomorrow morning, or until you say so. Paused bubbles wear a dashed outline.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section id="phone" aria-labelledby="phone-title" style="padding-top:0">
+    <div class="wrap phone">
+      <div>
+        <div class="head" style="margin-bottom:30px">
+          <span class="cap">Phone app</span>
+          <h2 id="phone-title">Your phone is the remote.</h2>
+          <p>Add a task on the bus and it's floating on your computer before you get home. Pop it from your phone or your computer: they always show the same list. No email, no password.</p>
+        </div>
+        <ol class="howto">
+          <li><span>On your computer, open TODOPOP, click the <b>third O</b>, then <b>Get the phone app</b>.</span></li>
+          <li><span>Scan the code with your phone's camera.</span></li>
+          <li><span>Keep it on your home screen: <b>Share → Add to Home Screen</b> on iPhone, or <b>⋮ → Install app</b> on Android. Open it from there and tap <b>Scan code</b> once more.</span></li>
+        </ol>
+        <a class="btn" href="app/">Open the phone app</a>
+      </div>
+      <div class="mock" aria-hidden="true">
+        <span class="rod"><span class="logo" style="--s:17px">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</span></span>
+        <div class="card">
+          <b>Floating</b>
+          <div class="row"><i style="width:17px;height:17px"></i><span>Problem set 4<small>Now!</small></span><s>✓</s></div>
+          <div class="row"><i style="width:13px;height:13px"></i><span>Reply to Melody<small>Today</small></span><s>✓</s></div>
+          <div class="row"><i style="width:13px;height:13px;background:#D8B9F5"></i><span>Figma critique<small>Today · Design</small></span><s>✓</s></div>
+          <div class="row"><i style="width:9px;height:9px"></i><span>Book dentist<small>Soon</small></span><s>✓</s></div>
+          <div class="row"><i style="width:7px;height:7px"></i><span>Water the pothos<small>Remind</small></span><s>✓</s></div>
+        </div>
+        <div class="bar"><span>Pause</span><span>+</span><span>Popped</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="download" aria-labelledby="dl-title" style="padding-top:0">
+    <div class="wrap">
+      <div class="dl">
+        <h2 id="dl-title">Get TODOPOP</h2>
+        <div class="btns">
+          <a class="btn solid" data-os="win" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-windows-setup.exe">Download for Windows <small>.exe</small></a>
+          <a class="btn" data-os="mac" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg">Download for Mac <small>.dmg</small></a>
+        </div>
+        <p class="meta">Windows 10 and 11 (64-bit) · macOS on Apple silicon and Intel · <a href="https://github.com/nosugarlessice/todopop/releases">All versions</a></p>
+        <div class="first">
+          <p class="cap" style="color:color-mix(in srgb, var(--paper) 72%, var(--ink))">Opening it the first time</p>
+          <details>
+            <summary>Windows says "Windows protected your PC"</summary>
+            <ol>
+              <li>That's because TODOPOP is new and isn't signed by Microsoft yet. Nothing is wrong with your download.</li>
+              <li>Click <b>More info</b>, then <b>Run anyway</b>. TODOPOP installs and opens.</li>
+              <li>You'll only see this once.</li>
+            </ol>
+          </details>
+          <details>
+            <summary>Mac says TODOPOP "can't be opened" or "Apple could not verify" it</summary>
+            <ol>
+              <li>Open the downloaded <b>TODOPOP-mac.dmg</b> and drag <b>TODOPOP</b> into <b>Applications</b>.</li>
+              <li>Open TODOPOP from Applications. If macOS blocks it, click <b>Done</b>.</li>
+              <li>Open <b>System Settings → Privacy &amp; Security</b>, scroll down, and click <b>Open Anyway</b> next to TODOPOP. Confirm with your password.</li>
+              <li>TODOPOP lives in the menu bar at the top of your screen, not the Dock. You'll only need to do this once.</li>
+            </ol>
+          </details>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section aria-labelledby="priv-title" style="padding-top:0">
+    <div class="wrap">
+      <div class="head" style="margin-bottom:30px">
+        <span class="cap">Privacy</span>
+        <h2 id="priv-title">Your list is yours.</h2>
+      </div>
+      <div class="priv">
+        <div><h3>No account</h3><p>No sign-up, no email, no password. Open the app and start blowing bubbles.</p></div>
+        <div><h3>Stays on your computer</h3><p>Without a phone, your tasks never leave your computer.</p></div>
+        <div><h3>Private sync</h3><p>Connect a phone and your list syncs through Supabase, locked to a private code that only your own devices know. This site has no ads and no tracking.</p></div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <span class="logo" style="--s:18px">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</span>
+    <nav aria-label="Footer">
+      <a href="#download">Download</a>
+      <a href="app/">Phone app</a>
+      <a href="https://github.com/nosugarlessice/todopop">GitHub</a>
+    </nav>
+    <span>© 2026 TODOPOP</span>
+  </div>
+</footer>
+
+<script>
+(() => {
+  // highlight the download for the computer you're on; on a phone, point to the phone app instead
+  const ua = navigator.userAgent, mobile = /iPhone|iPad|iPod|Android/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
+  const mac = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || ua);
+  if(!mobile && mac) document.querySelectorAll('.btns').forEach(g => {
+    const w = g.querySelector('[data-os=win]'), m = g.querySelector('[data-os=mac]');
+    if(w && m){ w.classList.remove('solid'); m.classList.add('solid'); g.prepend(m); }
+  });
+  if(mobile){
+    const g = document.getElementById('hero-btns');
+    const a = document.createElement('a'); a.className = 'btn solid'; a.href = 'app/'; a.textContent = 'Open the phone app';
+    g.querySelectorAll('[data-os]').forEach(b => b.classList.remove('solid')); g.prepend(a);
+    document.getElementById('hero-meta').textContent = 'The bubbles float on a Windows or Mac computer. Your phone is the remote.';
+  }
+
+  // the hero: a few real bubbles that drift and slowly grow. Tap one to pop it; it comes back as something else.
+  const cv = document.getElementById('field'), ctx = cv.getContext('2d');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const INK = '#A31521', NAMES = ['Problem set 4', 'Reply to Melody', 'Laundry', 'Book dentist', 'Figma critique', 'Water the pothos', 'Call mom', 'Taxes', 'Gym', 'Read ch. 7', 'Pay rent', 'Email the landlord', 'Groceries', 'Portfolio', 'Return library books'];
+  const GLOWS = [null, null, null, '#D8B9F5', '#F7A9C4', '#F6B783', '#62D8BC', '#5FD3F5'];
+  let W = 0, H = 0, dpr = 1, bubbles = [], drops = [], t = 0, ni = 0;
+  const N = 24, ANG = Array.from({length:N}, (_, i) => i/N*Math.PI*2);
+  function size(){
+    const r = cv.getBoundingClientRect(); dpr = Math.min(2, devicePixelRatio || 1);
+    W = r.width; H = r.height; cv.width = W*dpr; cv.height = H*dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  // the words stay readable: bubbles live around the text block, never on it
+  let zone = {l:0, t:0, r:0, b:0};
+  function measureZone(){
+    const c = cv.getBoundingClientRect(), pad = 14; let l = Infinity, t = Infinity, r = -Infinity, b = -Infinity;
+    for(const el of document.querySelectorAll('.hero .wrap > *')){ const q = el.getBoundingClientRect(); if(!q.width) continue; l = Math.min(l, q.left); t = Math.min(t, q.top); r = Math.max(r, q.right); b = Math.max(b, q.bottom); }
+    zone = {l:l - c.left - pad, t:t - c.top - pad, r:r - c.left + pad, b:b - c.top + pad};
+  }
+  // how far a circle pokes into the text block (0 when it's clear), and which way is out
+  function intrude(x, y, R){
+    const nx = Math.max(zone.l, Math.min(x, zone.r)), ny = Math.max(zone.t, Math.min(y, zone.b)), dx = x - nx, dy = y - ny, d = Math.hypot(dx, dy);
+    if(d >= R) return null;
+    if(d > 0) return {x:dx/d, y:dy/d, k:R - d};
+    const opts = [[-1, 0, x - zone.l + R], [1, 0, zone.r - x + R], [0, -1, y - zone.t + R], [0, 1, zone.b - y + R]].sort((a, b) => a[2] - b[2])[0];
+    return {x:opts[0], y:opts[1], k:opts[2]};
+  }
+  function spot(R){
+    for(let k = 0; k < 80; k++){
+      const x = R + Math.random()*(W - 2*R), y = R + 70 + Math.random()*(H - 2*R - 70);
+      if(!intrude(x, y, R*1.8) && bubbles.every(b => Math.hypot(b.x - x, b.y - y) > b.r + R + 18)) return {x, y};
+    }
+    return null; // no room right now; try again later
+  }
+  function make(){
+    const small = W < 700, R0 = (small ? 26 : 34) + Math.random()*(small ? 10 : 18), p = spot(R0 + 30);
+    if(!p) return null;
+    return {x:p.x, y:p.y, r:R0*.2, R:R0, max:R0*(1.7 + Math.random()*.8), vx:(Math.random() - .5)*.12, vy:(Math.random() - .5)*.12,
+      seed:Math.random()*100, name:NAMES[ni++ % NAMES.length], glow:GLOWS[Math.floor(Math.random()*GLOWS.length)], pop:0};
+  }
+  function fill(){ const want = W < 700 ? 5 : 9; for(let k = 0; k < 20 && bubbles.length < want; k++){ const b = make(); if(b) bubbles.push(b); } }
+  function shape(b, s = 1){
+    ctx.beginPath();
+    for(let i = 0; i <= N; i++){
+      const a = ANG[i % N], w = Math.sin(a*3 + t*.9 + b.seed)*.035 + Math.sin(a*2 - t*.6 + b.seed*2)*.03;
+      const rr = b.r*s*(1 + w), x = b.x + Math.cos(a)*rr, y = b.y + Math.sin(a)*rr*.94;
+      i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+    }
+    ctx.closePath();
+  }
+  function frame(){
+    t += 1/60; ctx.clearRect(0, 0, W, H);
+    for(const b of bubbles){
+      if(b.pop){ b.pop += .07; continue; }
+      b.R = Math.min(b.max, b.R + .012); b.r += (b.R - b.r)*.06;
+      b.x += b.vx; b.y += b.vy;
+      if(b.x < b.r || b.x > W - b.r) b.vx *= -1; if(b.y < b.r + 50 || b.y > H - b.r) b.vy *= -1;
+      b.x = Math.max(b.r + 2, Math.min(W - b.r - 2, b.x)); b.y = Math.max(b.r + 50, Math.min(H - b.r - 4, b.y)); // growing never pushes it off the edge
+      { const q = intrude(b.x, b.y, b.r + 4); if(q){ b.x += q.x*Math.min(q.k, 2.5); b.y += q.y*Math.min(q.k, 2.5); if(q.x*b.vx < 0) b.vx *= -1; if(q.y*b.vy < 0) b.vy *= -1; } }
+      for(const o of bubbles) if(o !== b && !o.pop){ const d = Math.hypot(o.x - b.x, o.y - b.y), m = b.r + o.r + 6; if(d < m && d > 0){ const k = (m - d)/d*.02; b.x -= (o.x - b.x)*k; b.y -= (o.y - b.y)*k; } }
+      shape(b);
+      ctx.fillStyle = b.glow ? b.glow + '66' : 'rgba(250,250,248,.82)'; ctx.fill();
+      ctx.lineWidth = 1.6; ctx.strokeStyle = INK; ctx.stroke();
+      if(b.r > 30){
+        const fs = Math.max(10, Math.min(17, b.r*.16));
+        ctx.fillStyle = INK; ctx.font = `400 ${fs}px Unbounded, system-ui, sans-serif`; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        const words = b.name.split(' '), lines = []; let cur = '';
+        for(const w of words){ const tryL = cur ? cur + ' ' + w : w; if(ctx.measureText(tryL).width > b.r*1.5 && cur){ lines.push(cur); cur = w; } else cur = tryL; }
+        lines.push(cur); lines.slice(0, 3).forEach((l, i, a) => ctx.fillText(l, b.x, b.y + (i - (a.length - 1)/2)*fs*1.2));
+      }
+    }
+    bubbles = bubbles.filter(b => b.pop < 1);
+    for(const d of drops){ d.x += d.vx; d.y += d.vy; d.vy += .12; d.life -= .025; ctx.globalAlpha = Math.max(0, d.life); ctx.beginPath(); ctx.arc(d.x, d.y, d.s, 0, 7); ctx.fillStyle = INK; ctx.fill(); }
+    ctx.globalAlpha = 1; drops = drops.filter(d => d.life > 0);
+    if(Math.random() < .01) fill();
+    if(!reduced || drops.length || bubbles.some(b => b.pop)) requestAnimationFrame(frame);
+  }
+  function popAt(x, y){
+    const b = bubbles.find(b => !b.pop && Math.hypot(b.x - x, b.y - y) < b.r); if(!b) return false;
+    b.pop = .01;
+    for(let k = 0; k < 16; k++){ const a = Math.random()*6.28, s = 2 + Math.random()*3.5; drops.push({x:b.x + Math.cos(a)*b.r*.8, y:b.y + Math.sin(a)*b.r*.8, vx:Math.cos(a)*s, vy:Math.sin(a)*s - 1, s:2 + Math.random()*3, life:1}); }
+    setTimeout(() => { const n = make(); if(!n) return; if(reduced){ n.R = n.r = n.max; n.vx = n.vy = 0; } bubbles.push(n); if(reduced) frame(); }, 900);
+    if(reduced) requestAnimationFrame(frame);
+    return true;
+  }
+  cv.addEventListener('pointerdown', e => { const r = cv.getBoundingClientRect(); popAt(e.clientX - r.left, e.clientY - r.top); });
+  cv.addEventListener('pointermove', e => { const r = cv.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top; cv.style.cursor = bubbles.some(b => !b.pop && Math.hypot(b.x - x, b.y - y) < b.r) ? 'pointer' : ''; });
+  addEventListener('resize', () => { size(); measureZone(); if(reduced) frame(); });
+  size(); measureZone(); document.fonts?.ready.then(measureZone); fill();
+  if(reduced){ bubbles.forEach(b => { b.R = b.max; b.r = b.max; b.vx = b.vy = 0; }); frame(); } // still bubbles, still poppable
+  else requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
