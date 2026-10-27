@@ -1,0 +1,8 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "app.todopop.phone",
+    "sha256_cert_fingerprints": ["64:CD:03:26:E1:59:72:88:92:79:25:26:16:CB:35:7A:69:E6:6C:B8:88:51:01:0D:A5:85:80:7E:F7:4D:15:DA"]
+  }
+}]

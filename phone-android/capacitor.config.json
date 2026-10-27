@@ -1,0 +1,6 @@
+{
+  "appId": "app.todopop.phone",
+  "appName": "TODOPOP",
+  "webDir": "www",
+  "android": { "allowMixedContent": false, "backgroundColor": "#F7F7F5" }
+}

@@ -564,6 +564,8 @@ html.remote .gedit .gx{width:32px; height:32px}
 html.remote .gedit input{font-size:16px; padding:8px 0}
 html.remote .info-pop{text-align:left; justify-self:stretch}
 #gcolor-note:empty{display:none}
+.get-android{display:none}
+html.remote.landing .get-android{display:block; text-align:center; margin-top:10px; font-family:var(--f-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); text-underline-offset:4px}
 /* phone header, like the computer's: the logo and slogan sit in a rod, the list in a wider card under it */
 html.remote:not(.landing) .panel{background:transparent !important; border:0; border-radius:0; box-shadow:none}
 html.remote:not(.landing) .brand{flex:none; align-self:center; width:max-content; max-width:calc(100% - 12px); box-sizing:border-box; padding:15px 30px 13px; gap:2px;
@@ -3396,7 +3398,31 @@ async function syncInit(){
   addEventListener('online', () => { if(sync.on){ syncPull(false).then(syncPush).catch(() => {}); } });
   document.addEventListener('visibilitychange', () => { if(!document.hidden && sync.on) syncPull(false).then(syncPush).catch(() => {}); });
 }
-syncInit();
+const syncBoot = syncInit();
+/* ---------- the Android app (the same page, wrapped with Capacitor) ---------- */
+const NATIVE = !!window.Capacitor?.isNativePlatform?.();
+if(NATIVE){
+  document.documentElement.classList.add('native');
+  const P = window.Capacitor.Plugins || {}, App = P.App, Bar = P.StatusBar;
+  // the pairing code on the computer is a todopop.app/app link: Android opens it in the app
+  const openLink = async url => { if(url && /[#&]pair=/.test(url)){ await syncBoot; if(sync.sb) await joinWithCode(url); } };
+  App?.addListener?.('appUrlOpen', e => openLink(e?.url));
+  App?.getLaunchUrl?.().then(r => openLink(r?.url)).catch(() => {});
+  // the back button closes what's open, one thing at a time, before leaving the app
+  App?.addListener?.('backButton', () => {
+    if(!$('#pair').hidden) closePair(); else if(!$('#gcolor').hidden) setGColor(null); else if(!gnew.hidden) closeNewGroup(false);
+    else if(!ed.hidden) closeEdit(); else if(!infoPop.hidden) setInfo(false); else if(sheet) closeSheet(); else if(focus) endFocus(false); else App.exitApp?.();
+  });
+  // the status bar matches the page: off-white normally, your color while you're inside a bubble
+  const bars = () => { try{ const f = document.documentElement.classList.contains('focusing');
+    Bar?.setBackgroundColor?.({color: f ? INK : '#F7F7F5'}); Bar?.setStyle?.({style: f ? 'DARK' : 'LIGHT'}); }catch(e){} };
+  bars(); new MutationObserver(bars).observe(document.documentElement, {attributes:true, attributeFilter:['class', 'style']});
+}
+// the phone web app on an Android phone: point to the real app
+if(REMOTE && !NATIVE && /Android/i.test(navigator.userAgent) && !DESKTOP){
+  const a = document.createElement('a'); a.className = 'get-android'; a.href = 'https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk';
+  a.textContent = 'Get the Android app'; $('#sync')?.appendChild(a);
+}
 
 })();
 </script>
