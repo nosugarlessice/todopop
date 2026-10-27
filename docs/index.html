@@ -3,22 +3,26 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TODOPOP · Pop it before it fills your screen</title>
+<title>TODOPOP · A todo list that just can't be ignored</title>
 <meta name="description" content="TODOPOP turns every task into a bubble that floats over your screen and slowly grows until you pop it. For Windows and Mac, with your phone as the remote.">
 <meta name="theme-color" content="#1A419E">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta property="og:title" content="TODOPOP">
-<meta property="og:description" content="A to-do list that floats over your screen. Every task is a bubble that grows until you pop it.">
+<meta property="og:description" content="A todo list that just can't be ignored. Every task is a bubble that floats over your screen and grows until you pop it.">
 <meta property="og:image" content="https://todopop.app/app/icons/icon-512.png">
 <meta property="og:url" content="https://todopop.app/">
 <style>
 @font-face{font-family:'Unbounded';font-weight:300;font-display:swap;src:url(fonts/unbounded-latin-300-normal.woff2) format('woff2')}
 @font-face{font-family:'Unbounded';font-weight:400;font-display:swap;src:url(fonts/unbounded-latin-400-normal.woff2) format('woff2')}
+@font-face{font-family:'Unbounded';font-weight:500;font-display:swap;src:url(fonts/unbounded-latin-500-normal.woff2) format('woff2')}
 @font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(fonts/unbounded-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Unbounded';font-weight:900;font-display:swap;src:url(fonts/unbounded-latin-900-normal.woff2) format('woff2')}
 :root{
   --bg:#F7F7F5; --paper:#FFFFFF; --ink:#1A419E;
   --ink-soft:color-mix(in srgb, var(--ink) 62%, #F7F7F5);
+  --ink-mid:color-mix(in srgb, var(--ink) 80%, var(--bg));
+  --tint25:color-mix(in srgb, var(--ink) 25%, var(--bg));
   --rule:color-mix(in srgb, var(--ink) 22%, transparent);
   --faint:color-mix(in srgb, var(--ink) 12%, transparent);
   --wash:color-mix(in srgb, var(--ink) 5%, transparent);
@@ -27,24 +31,27 @@
   color-scheme:light;
 }
 *,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none !important}
 html{scroll-behavior:smooth; -webkit-text-size-adjust:100%}
 body{margin:0; background:var(--bg); color:var(--ink); font:300 16px/1.55 var(--f); overflow-x:hidden;
-  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:28px 28px}
+  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:28px 28px; transition:color .4s}
 a{color:inherit}
 :focus-visible{outline:2px solid var(--ink); outline-offset:3px; border-radius:6px}
-.wrap{width:min(1080px, 100% - 2*var(--gut)); margin-inline:auto}
-h1,h2,h3{font-weight:400; margin:0; letter-spacing:-.01em; line-height:1.12}
-p{margin:0}
+.wrap{width:min(1120px, 100% - 2*var(--gut)); margin-inline:auto}
+h1,h2,h3,p{margin:0}
+h1,h2,h3{font-weight:400; letter-spacing:-.01em; line-height:1.15}
+b, strong{font-weight:600}
 .cap{font-weight:400; font-size:11px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft)}
+.sr{position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0)}
 
-/* the wordmark: the three O's are bubbles that never quite sit still */
-.logo{font-weight:600; font-size:var(--s, 28px); line-height:1; letter-spacing:.01em; display:inline-flex; align-items:center; text-decoration:none; color:var(--ink); margin:0}
+/* the wordmark: three filled O's that never quite sit still */
+.logo{font-weight:600; font-size:var(--s, 28px); line-height:1; letter-spacing:.01em; display:inline-flex; align-items:center; text-decoration:none; color:var(--ink); margin:0; white-space:nowrap}
 .logo .o{display:inline-block; width:.86em; height:.778em; margin:0 .045em; background:currentColor; border-radius:50%; animation:blob 5.5s ease-in-out infinite}
 .logo .o:nth-of-type(2){animation-delay:-1.8s; animation-duration:6.2s}
 .logo .o:nth-of-type(3){animation-delay:-3.4s; animation-duration:4.9s}
 @keyframes blob{0%,100%{border-radius:50%} 25%{border-radius:56% 44% 52% 48% / 46% 55% 45% 54%} 50%{border-radius:46% 54% 44% 56% / 54% 46% 56% 44%} 75%{border-radius:52% 48% 57% 43% / 49% 52% 48% 51%}}
 
-/* nav: a rod, like the app's header */
+/* nav: a rod, like the app's header (unchanged) */
 .nav{position:sticky; top:12px; z-index:20; margin-top:12px}
 .nav .wrap{display:flex; align-items:center; justify-content:space-between; gap:16px; padding:12px 14px 12px 24px; background:color-mix(in srgb, var(--paper) 90%, transparent);
   border-radius:999px; box-shadow:inset 0 0 0 2px var(--ink); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px)}
@@ -52,91 +59,219 @@ p{margin:0}
 .nav ul a{text-decoration:none; font-size:12px; font-weight:400; letter-spacing:.06em; text-transform:uppercase; padding:10px 12px; border-radius:999px}
 .nav ul a:hover{background:var(--wash)}
 .nav .get{background:var(--ink); color:var(--paper); padding:11px 18px}
-.nav .get:hover{background:color-mix(in srgb, var(--ink) 88%, #000)}
 @media (max-width:700px){ .nav .hide-s{display:none} .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} }
 
-/* hero: real bubbles you can pop */
-.hero{position:relative; min-height:min(820px, 100svh); display:grid; align-items:center; margin-top:-80px; padding:150px 0 90px}
-/* the bubbles sit on top of the screen like they do in the app: the page scrolls underneath, clicks pass through everywhere but a bubble */
+/* bubbles sit on top of the screen like in the app: the page scrolls underneath, clicks pass through everywhere but a bubble */
 #field{position:fixed; inset:0; width:100vw; height:100vh; z-index:15; pointer-events:none}
 html.grab, html.grab *{cursor:grab !important} html.grabbing, html.grabbing *{cursor:grabbing !important; user-select:none !important}
-.hero .wrap{position:relative; pointer-events:none; display:grid; justify-items:center; text-align:center; gap:26px}
-.hero .wrap > *{pointer-events:auto}
-.hero h1{font-size:clamp(34px, 7vw, 76px); max-width:12ch}
-.hero .lede{max-width:34em; font-size:clamp(15px, 2vw, 18px); color:color-mix(in srgb, var(--ink) 80%, var(--bg))}
-.hero .hint{font-size:11px}
-.btns{display:flex; flex-wrap:wrap; justify-content:center; gap:12px}
-.btn{display:inline-flex; align-items:center; gap:10px; text-decoration:none; font:400 15px/1 var(--f); padding:17px 24px; border-radius:999px; border:2px solid var(--ink);
-  background:var(--paper); color:var(--ink); transition:transform .25s cubic-bezier(.3,1.6,.5,1), background .2s}
+
+/* shared pieces from the outline */
+.pill{display:inline-block; padding:.28em .8em .32em; border:3px solid var(--ink); border-radius:999px; background:var(--tint25);
+  font-size:clamp(20px, 3vw, 34px); line-height:1.2; font-weight:400}
+.pill .md{font-weight:500} .pill .bk{font-weight:900}
+.badge{flex:none; width:clamp(48px, 5vw, 64px); aspect-ratio:1; border-radius:50%; border:3px solid var(--ink); background:var(--tint25); display:grid; place-items:center;
+  font-size:clamp(17px, 1.9vw, 23px); font-weight:400; color:var(--ink)}
+.card{background:var(--paper); border-radius:clamp(28px, 4vw, 50px); padding:clamp(24px, 3vw, 36px)}
+.btn{display:inline-flex; align-items:center; gap:10px; text-decoration:none; font:400 15px/1 var(--f); padding:16px 24px; border-radius:999px; border:2px solid var(--ink);
+  background:var(--paper); color:var(--ink); cursor:pointer; transition:transform .25s cubic-bezier(.3,1.6,.5,1), background .2s, color .2s}
 .btn:hover{transform:translateY(-2px)} .btn:active{transform:scale(.96)}
 .btn.solid{background:var(--ink); color:var(--paper)}
 .btn svg{width:18px; height:18px; fill:currentColor; flex:none}
 .btn small{font-size:10px; letter-spacing:.08em; text-transform:uppercase; opacity:.75}
+.btns{display:flex; flex-wrap:wrap; justify-content:center; gap:12px}
 .meta{font-size:12px; color:var(--ink-soft)}
+section{padding:clamp(70px, 9vw, 120px) 0}
+.sep{border:0; border-top:2px dashed var(--rule); margin:0 auto; width:min(1120px, 100% - 2*var(--gut))}
 
-section{padding:96px 0}
-.head{display:grid; gap:14px; margin-bottom:44px; max-width:40em}
-.head h2{font-size:clamp(28px, 4.4vw, 46px)}
-.head p{color:color-mix(in srgb, var(--ink) 78%, var(--bg))}
+/* scroll reveals */
+.rv{opacity:0; transform:translateY(26px); transition:opacity .7s ease, transform .8s cubic-bezier(.2,.9,.25,1.05); transition-delay:calc(var(--i, 0)*90ms)}
+.rv.in{opacity:1; transform:none}
+.pop-in{opacity:0; transform:scale(.6)}
+.pop-in.in{opacity:1; transform:none; transition:opacity .4s ease, transform .6s cubic-bezier(.3,1.6,.5,1); transition-delay:calc(var(--i, 0)*90ms + 120ms)}
 
-/* how it works: three bubbles, each a little bigger */
-.steps{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3, 1fr); gap:20px}
-.steps li{background:var(--paper); border:1px solid var(--rule); border-radius:32px; padding:28px 26px 30px; display:grid; gap:12px; align-content:start}
-.steps .pic{height:150px; display:grid; place-items:center}
-.steps h3{font-size:20px}
-.steps p{font-size:14.5px; color:color-mix(in srgb, var(--ink) 78%, var(--bg))}
+/* ---------- 1. the landing ---------- */
+.hero{position:relative; min-height:min(900px, 100svh); display:grid; align-content:center; margin-top:-80px; padding:150px 0 110px}
+.hero .wrap{position:relative; display:grid; justify-items:center; text-align:center; gap:22px}
+.o-notes{position:relative; width:100%; height:92px; margin-bottom:-6px; pointer-events:none}
+.o-notes .hint{position:absolute; left:0; top:4px; width:15em; text-align:left; font-size:13px; line-height:1.4; color:var(--ink-mid)}
+.o-note{position:absolute; bottom:0; transform:translateX(-50%); display:grid; justify-items:center; gap:2px; font-size:13px; line-height:1.25; color:var(--ink-mid); white-space:nowrap}
+.o-note svg{width:30px; height:44px; fill:none; stroke:var(--ink); stroke-width:1.6; stroke-dasharray:4 4}
+.o-note svg path{stroke-dashoffset:0}
+.big{position:relative; display:inline-block; padding:clamp(14px, 1.8vw, 24px) clamp(28px, 3.6vw, 52px); border-radius:999px; background:var(--paper); box-shadow:inset 0 0 0 clamp(3px, .4vw, 5px) var(--ink), 0 26px 60px -36px rgba(16,24,60,.35)}
+.big .logo{--s:clamp(46px, 9.4vw, 132px)}
+.big .o{cursor:pointer; position:relative; border:0; padding:0; font:inherit; color:inherit; transition:scale .3s cubic-bezier(.3,1.6,.5,1)}
+.big .o::after{content:""; position:absolute; inset:0; opacity:0; transition:opacity .22s; background:center/56% no-repeat var(--sym)}
+.big .o:hover, .big .o:focus-visible, .big .o.on{scale:1.1} .big .o:hover::after, .big .o:focus-visible::after, .big .o.on::after, .big.hint .o::after{opacity:1}
+.big .o:nth-of-type(1){--sym:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M8 3.2v9.6M3.2 8h9.6' stroke='white' stroke-width='2' stroke-linecap='round'/%3E%3C/svg%3E")}
+.big .o:nth-of-type(2){--sym:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3.6 8.4l3 3 5.8-6.8' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")}
+.big .o:nth-of-type(3){--sym:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Ccircle cx='8' cy='8' r='4.6' fill='none' stroke='white' stroke-width='1.7'/%3E%3Cpath d='M8 3.4a4.6 4.6 0 0 0 0 9.2z' fill='white'/%3E%3C/svg%3E")}
+.tagline{font-size:clamp(17px, 2vw, 24px); font-weight:400}
+.hero .meta{font-size:13px}
+.bubble-hint{position:absolute; right:0; bottom:-70px; text-align:left; font-size:13px; line-height:1.5; color:var(--ink-mid)}
+.bubble-hint b{font-weight:400; color:var(--ink)}
+.bubble-hint ul{list-style:none; margin:8px 0 0; padding:0; display:grid; gap:3px}
+.bubble-hint li{display:flex; align-items:center; gap:10px}
+.bubble-hint li::before{content:""; width:9px; height:9px; border-radius:50%; background:var(--ink); flex:none}
+@media (max-width:860px){
+  .o-notes .hint{position:static; width:auto; text-align:center; margin-bottom:6px}
+  .o-notes{height:auto; display:grid; justify-items:center; padding-bottom:58px}
+  .o-note{font-size:10.5px; white-space:normal; width:5.6em; text-align:center} .o-note svg{height:30px}
+  .bubble-hint{position:static; margin-top:22px; justify-self:center}
+}
+/* the logo's popups: they grow out of the O you pressed, like the app's sticker panel */
+.tp-pop{position:relative; width:min(440px, 100%); margin-top:-6px; text-align:left; background:var(--paper); border-radius:32px; padding:24px 26px 22px;
+  box-shadow:inset 0 0 0 1px var(--rule), 0 30px 60px -34px rgba(16,24,60,.4); transform-origin:var(--ox, 50%) 0; animation:grow-out .4s cubic-bezier(.3,1.5,.5,1); display:grid; gap:14px; z-index:2}
+@keyframes grow-out{from{opacity:0; transform:scale(.6, .4)}}
+.tp-pop h3{font-size:19px} .tp-pop .row{display:flex; justify-content:space-between; align-items:baseline; gap:10px}
+.tp-pop .x{all:unset; cursor:pointer; width:30px; height:30px; border-radius:50%; display:grid; place-items:center; color:var(--ink-soft); font-size:18px}
+.tp-pop .x:hover{background:var(--wash); color:var(--ink)}
+.lbl{font-size:10.5px; font-weight:400; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft)}
+.tin{all:unset; box-sizing:border-box; width:100%; font:300 16px/1.3 var(--f); color:var(--ink); padding:8px 0 9px; border-bottom:1px solid var(--rule)}
+.tin:focus{border-color:var(--ink)} .tin::placeholder{color:var(--ink-soft)}
+.stops{display:grid; grid-template-columns:repeat(4, 1fr); gap:6px}
+.stops button, .chips button{all:unset; cursor:pointer; text-align:center; font-size:10px; font-weight:400; letter-spacing:.08em; text-transform:uppercase; padding:9px 4px; border-radius:999px; border:1px solid var(--rule); color:var(--ink-soft)}
+.stops button[aria-pressed="true"], .chips button[aria-pressed="true"]{border:1.5px solid var(--ink); color:var(--ink); background:var(--wash)}
+.chips{display:flex; flex-wrap:wrap; gap:6px} .chips button{padding:8px 12px; display:inline-flex; align-items:center; gap:6px}
+.chips i{width:10px; height:10px; border-radius:50%; border:1px solid var(--rule)}
+.swatches{display:flex; flex-wrap:wrap; gap:10px}
+.swatches button{all:unset; cursor:pointer; width:34px; height:34px; border-radius:50%; box-shadow:0 0 0 2px var(--paper), 0 0 0 3px transparent; transition:transform .25s cubic-bezier(.3,1.6,.5,1)}
+.swatches button:hover{transform:scale(1.1)} .swatches button[aria-pressed="true"]{box-shadow:0 0 0 2px var(--paper), 0 0 0 4px var(--ink)}
+.popped-list{list-style:none; margin:0; padding:0; display:grid; gap:6px; max-height:180px; overflow:auto}
+.popped-list li{display:flex; justify-content:space-between; gap:12px; font-size:14px} .popped-list small{font-size:10px; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase; white-space:nowrap}
+.note{font-size:12px; color:var(--ink-soft); line-height:1.5}
+
+/* right-click edit, as in the app */
+.edit-pop{position:fixed; z-index:30; width:min(320px, calc(100vw - 24px)); margin:0; animation:pop-in .3s cubic-bezier(.3,1.6,.5,1)}
+@keyframes pop-in{from{opacity:0; transform:scale(.9)}}
+.edit-pop .acts{display:flex; gap:8px; align-items:center} .edit-pop .acts .link{margin-right:auto}
+.link{all:unset; cursor:pointer; font-size:12px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:4px}
+.btn.small{padding:10px 16px; font-size:13px}
+.shrink{all:unset; cursor:pointer; text-align:center; padding-top:10px; border-top:1px dashed var(--rule); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft)}
+.shrink:hover{color:var(--ink)}
+
+/* focus mode on the page itself: the edge of the screen takes your colour, the others leave, a bar keeps time */
+.focus-frame{position:fixed; inset:0; z-index:16; pointer-events:none; border:clamp(8px, 1vw, 12px) solid var(--ink); border-radius:0; opacity:0; transition:opacity .5s}
+html.focusing .focus-frame{opacity:1}
+.focus-bar{position:fixed; z-index:31; left:50%; bottom:calc(26px + env(safe-area-inset-bottom, 0px)); transform:translate(-50%, 140%); display:flex; align-items:center; gap:12px; max-width:calc(100% - 32px);
+  background:var(--paper); border:1px solid var(--rule); border-radius:999px; padding:7px 7px 7px 18px; box-shadow:0 18px 50px -22px rgba(16,24,48,.4); transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+html.focusing .focus-bar{transform:translate(-50%, 0)}
+.focus-bar .nm{font-style:italic; font-size:16px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:30vw}
+.focus-bar .tm{font-size:16px; color:var(--ink-soft); font-variant-numeric:tabular-nums}
+.focus-bar .ring{width:10px; height:10px; border-radius:50%; border:1.5px solid var(--ink); flex:none}
+.focus-bar .x{all:unset; cursor:pointer; width:34px; height:34px; border-radius:50%; border:1px solid var(--rule); display:grid; place-items:center; flex:none}
+@media (max-width:600px){ .focus-bar .nm{max-width:22vw} .focus-bar .btn{padding:10px 12px; font-size:12px} }
+
+/* ---------- 2. the creation story ---------- */
+.story{position:relative}
+.story-head{display:flex; flex-wrap:wrap; align-items:flex-end; gap:6px 18px}
+.who{display:flex; align-items:center; gap:10px; font-size:clamp(20px, 2.6vw, 30px); padding-left:clamp(20px, 6vw, 110px)}
+.who svg{width:34px; height:36px; fill:none; stroke:var(--ink); stroke-width:3; stroke-linecap:round; stroke-linejoin:round}
+.trio{display:grid; grid-template-columns:repeat(3, 1fr); gap:clamp(14px, 2vw, 22px); margin-top:clamp(30px, 4vw, 46px); position:relative; z-index:1}
+.trio > div{position:relative}
+.trio .badge{position:absolute; left:-6px; top:-24px; z-index:2}
+.trio .card{height:100%}
+.why .card{display:grid; place-items:center; text-align:center; min-height:132px; font-size:clamp(17px, 1.9vw, 23px); line-height:1.3; font-weight:400}
+.solves{margin:clamp(70px, 9vw, 110px) 0 0; position:relative; z-index:1}
+.solves .pill{font-size:clamp(20px, 3vw, 34px); border-radius:clamp(30px, 4vw, 50px); padding:.4em 1em .45em}
+.feat .card{display:grid; grid-template-rows:auto auto 1fr; gap:12px; text-align:center; justify-items:center; padding-top:40px}
+.feat h3{font-size:clamp(19px, 2vw, 24px)}
+.feat p{font-size:14.5px; line-height:1.5; color:var(--ink-mid); max-width:22em}
+.demo{width:100%; align-self:end; aspect-ratio:10/7; border-radius:22px; background:var(--bg); position:relative; overflow:hidden; margin-top:10px;
+  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:16px 16px; box-shadow:inset 0 0 0 1px var(--rule)}
+.arrows{position:absolute; inset:0; width:100%; height:100%; pointer-events:none; z-index:0; overflow:visible}
+.arrows path{fill:none; stroke:var(--ink); stroke-width:3; stroke-dasharray:7 7; stroke-linecap:round}
+.arrows .head{stroke-dasharray:none}
+.arrows g{opacity:0; transition:opacity .8s ease .2s} .arrows.in g{opacity:1}
+@media (max-width:860px){ .trio{grid-template-columns:1fr; gap:42px} .arrows{display:none} .who{padding-left:12px} }
+
+/* mini demo 1: a desktop with notes open, task bubbles floating over it and slowly growing */
+.desk{position:absolute; inset:10% 8% 12%; border-radius:10px; background:var(--paper); box-shadow:0 10px 24px -14px rgba(16,24,60,.35); overflow:hidden; text-align:left}
+.desk .bar{height:14%; background:color-mix(in srgb, var(--ink) 8%, #fff); display:flex; align-items:center; gap:5px; padding:0 8px}
+.desk .bar i{width:6px; height:6px; border-radius:50%; background:var(--rule)}
+.desk .ln{height:5%; margin:7% 10% 0; border-radius:3px; background:color-mix(in srgb, var(--ink) 10%, #fff)}
+.desk .ln:nth-child(3){width:55%} .desk .ln:nth-child(4){width:70%; background:color-mix(in srgb, #F89547 30%, #fff)} .desk .ln:nth-child(5){width:40%} .desk .ln:nth-child(6){width:62%}
+.fb{position:absolute; border-radius:50%; background:rgba(250,250,248,.85); border:2px solid var(--ink); display:grid; place-items:center; text-align:center; font-size:clamp(7px, .75vw, 9.5px); line-height:1.15; font-weight:400;
+  animation:fb-grow 9s ease-in-out infinite, blob 5.5s ease-in-out infinite; transform-origin:center}
+.fb small{display:block; font-size:.75em; letter-spacing:.08em; color:var(--ink-soft)}
+.fb.g{box-shadow:inset 0 0 0 2.5px var(--gc)}
+@keyframes fb-grow{0%{transform:scale(.55) translate(0,0)} 50%{transform:scale(1) translate(3%,-4%)} 85%{transform:scale(1.22) translate(-2%,2%)} 100%{transform:scale(.55) translate(0,0)}}
+
+/* mini demos 2 and 3 */
+.demo svg.sv{position:absolute; inset:0; margin:auto; width:62%; height:62%}
 .bub{fill:color-mix(in srgb, var(--ink) 6%, #FAFAF8); stroke:var(--ink); stroke-width:22}
-.bub-t{font:300 300px var(--f); fill:var(--ink)}
 .grow{transform-origin:512px 512px; animation:grow 6s ease-in-out infinite}
-@keyframes grow{0%,8%{transform:scale(.55)} 80%,100%{transform:scale(1)}}
+@keyframes grow{0%,8%{transform:scale(.45)} 80%,100%{transform:scale(1)}}
 .popping{transform-origin:512px 512px; animation:popb 3.2s ease-in infinite}
 @keyframes popb{0%,55%{transform:scale(1); opacity:1} 62%{transform:scale(1.12); opacity:1} 66%,100%{transform:scale(1.35); opacity:0}}
 .drop{fill:var(--ink); opacity:0; animation:drop 3.2s ease-out infinite}
 @keyframes drop{0%,62%{opacity:0; transform:translate(0,0)} 66%{opacity:1} 100%{opacity:0; transform:translate(var(--dx), var(--dy))}}
-@media (max-width:820px){ .steps{grid-template-columns:1fr} .steps .pic{height:120px} }
+.clock{position:absolute; left:0; right:0; bottom:9%; text-align:center; font-size:11px; letter-spacing:.1em; color:var(--ink-soft)}
 
-/* features */
-.feats{display:grid; grid-template-columns:repeat(2, 1fr); gap:20px}
-.feat{border-radius:32px; padding:30px 28px; background:var(--paper); border:1px solid var(--rule); display:grid; gap:10px; align-content:start}
-.feat h3{font-size:19px}
-.feat p{font-size:14.5px; color:color-mix(in srgb, var(--ink) 78%, var(--bg))}
-.feat.big{background:var(--ink); color:var(--paper); border-color:var(--ink)}
-.feat.big p{color:color-mix(in srgb, var(--paper) 82%, var(--ink))}
-.feat .ico{width:40px; height:40px; border-radius:50%; display:grid; place-items:center; border:2px solid currentColor; margin-bottom:6px}
-.feat .ico svg{width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round}
-.dots{display:flex; gap:6px; margin-top:4px} .dots i{width:16px; height:16px; border-radius:50%; border:1.5px solid var(--ink)}
-@media (max-width:820px){ .feats{grid-template-columns:1fr} }
+/* ---------- 3. focus mode ---------- */
+.qa{display:grid; grid-template-columns:auto 1fr; gap:18px 22px; align-items:start}
+.qa .q{font-size:clamp(22px, 3.2vw, 36px); line-height:1.3; padding-top:6px}
+.qa .a{display:flex; flex-wrap:wrap; align-items:center; gap:14px; font-size:clamp(20px, 2.4vw, 28px); padding-top:8px}
+.btn.bubble-btn{font-size:clamp(17px, 2vw, 22px); padding:14px 26px; border-width:3px}
+.screen{grid-column:2; margin-top:16px; position:relative; aspect-ratio:16/9; border-radius:clamp(14px, 2vw, 24px); overflow:hidden; background:var(--bg);
+  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:22px 22px; box-shadow:inset 0 0 0 1px var(--rule), 0 40px 80px -50px rgba(16,24,60,.45)}
+.qa .body{grid-column:2; display:grid; gap:14px; font-size:15px; line-height:1.65; color:var(--ink-mid); max-width:62em}
+.qa .body b{color:var(--ink)}
+@media (max-width:700px){ .qa{grid-template-columns:1fr} .screen, .qa .body{grid-column:1} }
+/* the demo screen */
+.scr-win{position:absolute; left:16%; top:12%; width:68%; height:70%; border-radius:12px; background:var(--paper); box-shadow:0 18px 40px -24px rgba(16,24,60,.4); overflow:hidden; transition:opacity .5s, transform .6s}
+.scr-win .bar{height:9%; background:color-mix(in srgb, var(--ink) 7%, #fff); display:flex; align-items:center; gap:6px; padding:0 2.2%; font-size:clamp(7px, .8vw, 11px); color:var(--ink-soft)}
+.scr-win .bar i{width:clamp(5px, .6vw, 8px); aspect-ratio:1; border-radius:50%; background:var(--rule)}
+.scr-win .ln{height:3.2%; margin:4.4% 8% 0; border-radius:4px; background:color-mix(in srgb, var(--ink) 9%, #fff)}
+.scr-win .ln.t{height:5%; width:42%; background:color-mix(in srgb, var(--ink) 20%, #fff)}
+.scr-win .ln:nth-child(4){width:70%} .scr-win .ln:nth-child(6){width:50%}
+.sb{position:absolute; border-radius:50%; background:rgba(250,250,248,.88); border:2px solid var(--ink); display:grid; place-items:center; text-align:center; padding:6%; transform:translate(-50%,-50%);
+  font-size:clamp(7px, .85vw, 12px); line-height:1.2; font-weight:400; animation:blob 5.5s ease-in-out infinite; transition:transform .7s cubic-bezier(.5,0,.2,1), opacity .5s, width .7s, height .7s}
+.sb small{display:block; font-size:.72em; letter-spacing:.08em; color:var(--ink-soft)}
+.sb.step{background:rgba(250,250,248,.95); animation:blob 5.5s ease-in-out infinite, sb-in .5s cubic-bezier(.3,1.6,.5,1)}
+@keyframes sb-in{from{transform:translate(-50%,-50%) scale(0)}}
+.sb.squeeze{transform:translate(-50%,-50%) scale(1.25); border-width:4px; transition:transform .75s ease-in, border-width .75s}
+.sb.gone{opacity:0; transform:translate(-50%,-50%) scale(1.5); transition:transform .15s, opacity .15s}
+.scr-frame{position:absolute; inset:0; border:clamp(5px, .7vw, 9px) solid var(--ink); border-radius:inherit; opacity:0; transition:opacity .5s; pointer-events:none}
+.screen.in-focus .scr-frame{opacity:1}
+.scr-bar{position:absolute; left:50%; bottom:5%; transform:translate(-50%, 160%); display:flex; align-items:center; gap:clamp(5px, .8vw, 10px); padding:1% 1% 1% 2.2%; border-radius:999px;
+  background:var(--paper); border:1px solid var(--rule); box-shadow:0 12px 28px -16px rgba(16,24,48,.4); font-size:clamp(7px, .9vw, 12px); white-space:nowrap; transition:transform .5s cubic-bezier(.3,1.4,.5,1)}
+.screen.in-focus .scr-bar{transform:translate(-50%, 0)}
+.scr-bar em{font-style:italic} .scr-bar .t{color:var(--ink-soft); font-variant-numeric:tabular-nums}
+.scr-bar span.b{border:1px solid var(--ink); border-radius:999px; padding:.55em 1em} .scr-bar span.b.s{background:var(--ink); color:var(--paper)}
+.scr-bar span.x{width:2.2em; aspect-ratio:1; border-radius:50%; border:1px solid var(--rule); display:grid; place-items:center}
+.cursor{position:absolute; left:90%; top:90%; width:clamp(14px, 1.6vw, 22px); z-index:5; transition:left .9s cubic-bezier(.45,0,.2,1), top .9s cubic-bezier(.45,0,.2,1), transform .15s; filter:drop-shadow(0 2px 3px rgba(0,0,0,.25))}
+.cursor.down{transform:scale(.85)}
+.ripple{position:absolute; width:30px; height:30px; margin:-15px; border-radius:50%; border:2px solid var(--ink); animation:ripple .5s ease-out forwards; z-index:4; pointer-events:none}
+@keyframes ripple{from{transform:scale(.3); opacity:1} to{transform:scale(1.6); opacity:0}}
+.drip{position:absolute; width:6px; height:6px; border-radius:50%; background:var(--ink); z-index:4; pointer-events:none}
 
-/* phone: a real screenshot of the phone app, in a simple frame */
-.device{justify-self:center; margin:0; width:min(300px, 100%); padding:10px; border-radius:48px; background:#1d1a1b; box-shadow:0 30px 60px -30px rgba(16,24,60,.5)}
-.device img{display:block; width:100%; height:auto; border-radius:38px}
-.qr-box{display:flex; align-items:center; gap:20px; padding:18px; border:1px solid var(--rule); border-radius:28px; background:var(--paper); max-width:460px}
-.qr-box svg{width:112px; height:112px; flex:none; color:var(--ink)}
-.qr-box p{font-size:14px} .qr-box b{font-weight:400; display:block; font-size:17px; margin-top:4px}
-.on-phone{display:none} html.mobile .on-phone{display:inline-flex} html.mobile .qr-box{display:none}
-/* phone */
-.phone{display:grid; grid-template-columns:1.1fr .9fr; gap:48px; align-items:center}
-.howto{list-style:none; counter-reset:n; margin:0 0 30px; padding:0; display:grid; gap:16px}
-.howto li{counter-increment:n; display:grid; grid-template-columns:40px 1fr; gap:14px; align-items:start; font-size:15px}
-.howto li::before{content:counter(n); width:36px; height:36px; border-radius:50%; background:var(--ink); color:var(--paper); display:grid; place-items:center; font:400 14px var(--f)}
-.howto b{font-weight:400}
-.mock{justify-self:center; width:min(300px, 100%); aspect-ratio:9/18.5; border-radius:44px; background:var(--bg); border:2px solid var(--ink); padding:18px 14px; display:grid; grid-template-rows:auto 1fr auto; gap:10px;
-  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:20px 20px; box-shadow:0 30px 60px -36px rgba(16,24,60,.45)}
-.mock .rod{justify-self:center; padding:9px 18px 8px; border-radius:999px; background:var(--paper); box-shadow:inset 0 0 0 1.6px var(--ink); --s:17px}
-.mock .card{background:var(--paper); border:1px solid var(--rule); border-radius:22px; margin-top:-20px; padding:24px 14px 8px; display:grid; align-content:start}
-.mock .card b{font-weight:600; font-size:13px; margin-bottom:6px}
-.mock .row{display:grid; grid-template-columns:20px 1fr 22px; gap:8px; align-items:center; padding:8px 0; border-bottom:1px dashed var(--rule); font-size:10.5px; font-weight:400}
-.mock .row:last-child{border:0}
-.mock .row i{justify-self:center; border:1.3px solid var(--ink); border-radius:50%}
-.mock .row s{text-decoration:none; width:20px; height:20px; border-radius:50%; border:1px solid var(--rule); display:grid; place-items:center; font-size:9px; color:var(--ink-soft)}
-.mock .row small{display:block; font-size:7px; letter-spacing:.08em; color:var(--ink-soft); text-transform:uppercase}
-.mock .bar{display:grid; grid-template-columns:1fr 46px 1fr; align-items:center; background:var(--paper); border-radius:999px; height:40px; box-shadow:inset 0 0 0 1px var(--rule); font-size:9px; font-weight:600; text-align:center}
-.mock .bar span:nth-child(2){width:46px; height:46px; margin-top:-18px; border-radius:50%; background:var(--ink); color:var(--paper); display:grid; place-items:center; font-size:22px; font-weight:300; box-shadow:0 0 0 4px var(--bg)}
-@media (max-width:820px){ .phone{grid-template-columns:1fr} .device{order:-1; width:min(260px, 100%)} }
+/* ---------- 4. more, and the phone ---------- */
+.more{display:grid; grid-template-columns:1.15fr .85fr; gap:clamp(30px, 5vw, 70px); align-items:start}
+.more-left{display:grid; gap:clamp(22px, 3vw, 34px); align-content:start}
+.feats{list-style:none; margin:0; padding:0 0 0 clamp(16px, 3vw, 40px); display:grid; gap:12px; font-size:clamp(16px, 1.8vw, 20px)}
+.feats li{display:flex; align-items:center; gap:16px}
+.feats li::before{content:""; width:12px; height:12px; border-radius:50%; background:var(--ink); flex:none; animation:blob 5s ease-in-out infinite}
+.feats li span{border-bottom:1px solid transparent} .feats li:hover span{border-color:var(--rule)}
+.remote p{font-size:15px; line-height:1.6; color:var(--ink-mid)} .remote p.lead{font-size:clamp(18px, 2vw, 22px); color:var(--ink); line-height:1.4; margin-bottom:14px; font-weight:400}
+.tut h3{font-size:clamp(18px, 2vw, 22px); margin-bottom:20px}
+.tut ol{list-style:none; margin:0; padding:0; display:grid; gap:20px}
+.tut li{display:grid; grid-template-columns:auto 1fr; gap:18px; align-items:center; font-size:15px; line-height:1.55}
+.tut .btns{justify-content:flex-start}
+.tut .btns .btn{font-size:13px; padding:12px 18px}
+.tut .fine{font-size:11.5px; color:var(--ink-soft); margin-top:18px; line-height:1.55}
+.phone-col{position:sticky; top:100px; display:grid; justify-items:center; perspective:1200px}
+.device{margin:0; width:min(320px, 100%); padding:11px; border-radius:50px; background:#1d1a1b; transform-style:preserve-3d;
+  transform:rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition:transform .25s ease-out, box-shadow .25s ease-out;
+  box-shadow:var(--sx, 0px) var(--sy, 30px) 60px -18px rgba(16,24,60,var(--sa, .38)), calc(var(--sx, 0px)*.4) calc(var(--sy, 30px)*.4) 18px -10px rgba(16,24,60,.22)}
+.device .scr{position:relative; border-radius:40px; overflow:hidden}
+.device img{display:block; width:100%; height:auto}
+.device .glare{position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at var(--gx, 30%) var(--gy, 10%), rgba(255,255,255,.35), transparent 45%); mix-blend-mode:soft-light; transition:background .2s}
+@media (max-width:860px){ .more{grid-template-columns:1fr} .phone-col{position:static; order:-1} .device{width:min(260px, 100%)} }
 
-/* download */
-.dl{background:var(--ink); color:var(--paper); border-radius:44px; padding:clamp(34px, 6vw, 64px); display:grid; gap:26px; justify-items:center; text-align:center}
-.dl h2{font-size:clamp(28px, 4.4vw, 46px)}
+/* ---------- 5. download + privacy ---------- */
+.dl{background:var(--ink); color:var(--paper); border-radius:clamp(32px, 4vw, 50px); padding:clamp(34px, 6vw, 64px); display:grid; gap:26px; justify-items:center; text-align:center}
+.dl h2{font-size:clamp(28px, 4.4vw, 48px); display:flex; align-items:center; gap:.4em; flex-wrap:wrap; justify-content:center}
+.dl h2 .logo{--s:1em; color:var(--paper)}
 .dl .btn{border-color:var(--paper); background:transparent; color:var(--paper)}
 .dl .btn.solid{background:var(--paper); color:var(--ink)}
 .dl .meta{color:color-mix(in srgb, var(--paper) 72%, var(--ink))}
@@ -148,19 +283,18 @@ section{padding:96px 0}
 .first details[open] summary::after{transform:rotate(45deg)}
 .first ol{margin:0; padding:0 0 20px 20px; display:grid; gap:8px; font-size:14px; color:color-mix(in srgb, var(--paper) 88%, var(--ink))}
 .first b{font-weight:400; color:var(--paper)}
-
-/* privacy + footer */
-.priv{display:grid; grid-template-columns:repeat(3, 1fr); gap:20px}
-.priv div{border-top:2px solid var(--ink); padding-top:16px; display:grid; gap:8px}
-.priv h3{font-size:16px}
-.priv p{font-size:14px; color:color-mix(in srgb, var(--ink) 78%, var(--bg))}
+.priv-head{display:flex; flex-wrap:wrap; align-items:center; gap:10px 20px; margin-bottom:-12px; position:relative; z-index:1}
+.priv-head span{font-size:clamp(17px, 2vw, 22px); font-weight:400}
+.priv{display:grid; grid-template-columns:repeat(3, 1fr); gap:clamp(20px, 3vw, 40px); padding-top:clamp(40px, 5vw, 56px)}
+.priv h3{font-size:16px; font-weight:400; margin-bottom:8px}
+.priv p{font-size:13.5px; line-height:1.6; color:var(--ink-mid)}
 @media (max-width:820px){ .priv{grid-template-columns:1fr} }
 footer{padding:48px 0 calc(40px + env(safe-area-inset-bottom, 0px)); border-top:1px dashed var(--rule)}
 footer .wrap{display:flex; flex-wrap:wrap; gap:16px 28px; align-items:center; justify-content:space-between; font-size:12px; color:var(--ink-soft)}
 footer nav{display:flex; gap:20px; flex-wrap:wrap}
 footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-underline-offset:4px}
 
-@media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none !important; transition:none !important} html{scroll-behavior:auto} }
+@media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none !important; transition:none !important} html{scroll-behavior:auto} .rv, .pop-in{opacity:1; transform:none} }
 </style>
 </head>
 <body>
@@ -181,121 +315,159 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 </header>
 
 <canvas id="field" aria-hidden="true"></canvas>
+<div class="focus-frame" aria-hidden="true"></div>
+<div class="focus-bar" id="focus-bar" role="status" aria-live="polite" hidden>
+  <span class="ring" aria-hidden="true"></span><span class="nm" id="fb-name"></span><span class="tm" id="fb-time">0:00</span>
+  <button type="button" class="btn small solid" id="fb-done">Done, pop it!</button>
+  <button type="button" class="x" id="fb-exit" aria-label="Leave the bubble (Esc)" title="Leave the bubble (Esc)">×</button>
+</div>
+
 <main id="top">
+  <!-- 1. the landing -->
   <section class="hero" aria-labelledby="hero-title">
     <div class="wrap">
-      <span class="cap">A to-do list that won't be ignored</span>
-      <h1 id="hero-title">Pop it before it fills your screen.</h1>
-      <p class="lede">TODOPOP turns every task into a bubble that floats over whatever you're doing and slowly grows. Finish the task, pop the bubble. Leave it, and it takes over.</p>
-      <div class="btns" id="hero-btns">
-        <a class="btn solid" data-os="win" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-windows-setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.1 10.4 4v7.1H3V5.1Zm0 13.8 7.4 1.1v-7H3v5.9ZM11.3 3.9 21 2.5v8.6h-9.7V3.9Zm0 16.2 9.7 1.4V13h-9.7v7.1Z"/></svg>Download for Windows</a>
-        <a class="btn" data-os="mac" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.5-1-2.5-3.9ZM14 5.4c.7-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.9-1 2.9 1.1.1 2.1-.5 2.8-1.3Z"/></svg>Download for Mac</a>
+      <h1 id="hero-title" class="sr">TODOPOP: a todo list that just can't be ignored</h1>
+      <div class="o-notes" id="o-notes" aria-hidden="true">
+        <p class="hint">*Interact with the three O’s on this logo!</p>
+        <span class="o-note" data-o="0">Create task<svg viewBox="0 0 30 44"><path d="M15 2 C 6 14, 24 24, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
+        <span class="o-note" data-o="1">See your progress<svg viewBox="0 0 30 44"><path d="M15 2 C 24 14, 6 24, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
+        <span class="o-note" data-o="2">Customize<svg viewBox="0 0 30 44"><path d="M15 2 C 4 10, 26 26, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
       </div>
-      <p class="meta" id="hero-meta">Windows 10 and 11 · macOS · No account, no email</p>
-      <p class="cap hint">Drag a bubble anywhere. Press and hold one to pop it.</p>
+      <div class="big" id="big" data-solid>
+        <span class="logo" aria-label="TODOPOP">T<button type="button" class="o" data-o="0" aria-label="Create task" aria-expanded="false"></button>D<button type="button" class="o" data-o="1" aria-label="See your progress" aria-expanded="false"></button>P<button type="button" class="o" data-o="2" aria-label="Customize" aria-expanded="false"></button>P</span>
+      </div>
+      <div class="tp-pop" id="tp-pop" data-solid hidden></div>
+      <p class="tagline">A todo list that just can’t be ignored</p>
+      <div class="btns" id="hero-btns">
+        <a class="btn" data-os="mac" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.5-1-2.5-3.9ZM14 5.4c.7-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.9-1 2.9 1.1.1 2.1-.5 2.8-1.3Z"/></svg>Download for Mac</a>
+        <a class="btn solid" data-os="win" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-windows-setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.1 10.4 4v7.1H3V5.1Zm0 13.8 7.4 1.1v-7H3v5.9ZM11.3 3.9 21 2.5v8.6h-9.7V3.9Zm0 16.2 9.7 1.4V13h-9.7v7.1Z"/></svg>Download for Windows</a>
+      </div>
+      <p class="meta" id="hero-meta">Free · No Sign-up · No ads</p>
+      <div class="bubble-hint">
+        <b>*Interact with these task bubbles!</b>
+        <ul><li>drag to reposition</li><li>right click to edit</li><li>click once to get into focus mode</li><li>hold to pop and mark done</li></ul>
+      </div>
     </div>
   </section>
 
-  <section id="how" aria-labelledby="how-title">
-    <div class="wrap">
-      <div class="head">
-        <span class="cap">How it works</span>
-        <h2 id="how-title">Three steps. One of them is satisfying.</h2>
+  <hr class="sep">
+
+  <!-- 2. the creation story, and the three things the bubbles do -->
+  <section id="how" class="story" aria-labelledby="story-title">
+    <div class="wrap" style="position:relative">
+      <svg class="arrows" id="arrows" aria-hidden="true"></svg>
+      <div class="story-head rv">
+        <h2 class="pill" id="story-title">A <span class="bk">(</span><span class="md">Cindy Zhao</span><span class="bk">)</span> creation</h2>
       </div>
-      <ol class="steps">
-        <li>
-          <div class="pic"><svg viewBox="0 0 1024 1024" width="120" height="120" aria-hidden="true"><use href="#bub" class="bub" transform="translate(512 512) scale(.7) translate(-512 -512)"/><text class="bub-t" x="512" y="512" text-anchor="middle" dominant-baseline="central">+</text></svg></div>
-          <h3>Blow a bubble</h3>
-          <p>Give it a name and choose how urgent it is. Add a link or a deadline if the task has one.</p>
-        </li>
-        <li>
-          <div class="pic"><svg viewBox="0 0 1024 1024" width="150" height="150" aria-hidden="true"><g class="grow"><use href="#bub" class="bub"/></g></svg></div>
-          <h3>Watch it grow</h3>
-          <p>Urgent bubbles grow faster. In the last day before a deadline, a bubble moves up a level all by itself.</p>
-        </li>
-        <li>
-          <div class="pic"><svg viewBox="0 0 1024 1024" width="150" height="150" aria-hidden="true">
+      <p class="who rv" style="--i:1"><svg viewBox="0 0 34 36" aria-hidden="true"><path d="M5 2 C 4 18, 10 26, 30 27"/><path d="M23 20 L30 27 L23 33"/></svg>who:</p>
+      <div class="trio why">
+        <div class="rv" style="--i:1"><span class="badge pop-in" style="--i:1">1.</span><div class="card" id="why1">If she can’t see it,<br>she won’t do it</div></div>
+        <div class="rv" style="--i:2"><span class="badge pop-in" style="--i:2">2.</span><div class="card" id="why2">way too comfortable ignoring deadlines</div></div>
+        <div class="rv" style="--i:3"><span class="badge pop-in" style="--i:3">3.</span><div class="card" id="why3">let unfinished tasks slide</div></div>
+      </div>
+      <div class="solves rv"><h2 class="pill" id="solves"><span class="md">TODOPOP</span> solves my problem<br>because its task bubbles:</h2></div>
+      <div class="trio feat" style="margin-top:clamp(40px, 5vw, 56px)">
+        <div class="rv" style="--i:1"><span class="badge pop-in" style="--i:1">1.</span><div class="card" id="feat1">
+          <h3>Floats on top</h3>
+          <p>Stays visible over your active workspace— never hidden in a closed app.</p>
+          <div class="demo" aria-label="A desktop with notes open, while colorful task bubbles float on top and slowly grow" role="img">
+            <div class="desk"><div class="bar"><i></i><i></i><i></i></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
+            <span class="fb g" style="--gc:#C697FE; left:6%; top:12%; width:30%; aspect-ratio:1; animation-delay:0s, -1s">Problem set 4<small>NOW!</small></span>
+            <span class="fb" style="right:6%; top:22%; width:24%; aspect-ratio:1; animation-delay:-3s, -2s">Reply to emails<small>TODAY</small></span>
+            <span class="fb g" style="--gc:#F89547; left:38%; bottom:6%; width:20%; aspect-ratio:1; animation-delay:-6s, -3s">Laundry<small>SOON</small></span>
+          </div>
+        </div></div>
+        <div class="rv" style="--i:2"><span class="badge pop-in" style="--i:2">2.</span><div class="card" id="feat2">
+          <h3>Grows with time</h3>
+          <p>Bubbles expand as deadlines approach, creating gentle visual urgency.</p>
+          <div class="demo" role="img" aria-label="A bubble slowly growing"><svg class="sv" viewBox="0 0 1024 1024"><g class="grow"><use href="#bub" class="bub"/></g></svg></div>
+        </div></div>
+        <div class="rv" style="--i:3"><span class="badge pop-in" style="--i:3">3.</span><div class="card" id="feat3">
+          <h3>Never wipes tasks</h3>
+          <p>Unfinished bubbles stay on screen until you pop them— no midnight resets as excuses.</p>
+          <div class="demo" role="img" aria-label="A bubble bursting when it's popped"><svg class="sv" viewBox="0 0 1024 1024">
             <g class="popping"><use href="#bub" class="bub" transform="translate(512 512) scale(.8) translate(-512 -512)"/></g>
             <circle class="drop" cx="512" cy="512" r="26" style="--dx:-300px;--dy:-220px"/><circle class="drop" cx="512" cy="512" r="20" style="--dx:320px;--dy:-180px"/>
             <circle class="drop" cx="512" cy="512" r="30" style="--dx:-260px;--dy:280px"/><circle class="drop" cx="512" cy="512" r="18" style="--dx:280px;--dy:300px"/>
             <circle class="drop" cx="512" cy="512" r="22" style="--dx:20px;--dy:-380px"/><circle class="drop" cx="512" cy="512" r="16" style="--dx:-400px;--dy:40px"/>
           </svg></div>
-          <h3>Pop it</h3>
-          <p>Done? Pop it and watch it burst. Popped keeps a record of everything you finished this week and this month.</p>
-        </li>
-      </ol>
+        </div></div>
+      </div>
     </div>
   </section>
 
-  <section aria-labelledby="feat-title" style="padding-top:0">
+  <hr class="sep">
+
+  <!-- 3. focus mode -->
+  <section id="focus" aria-labelledby="q-title">
+    <div class="wrap qa">
+      <span class="badge pop-in">Q:</span>
+      <h2 class="q rv" id="q-title">Cindy, Cindy,<br>What if I need to lock-in<br>But my task bubbles took over my screen?</h2>
+      <span class="badge pop-in" style="--i:2">A:</span>
+      <p class="a rv" style="--i:2">Click to <button type="button" class="btn bubble-btn" id="get-in">Get in the bubble</button></p>
+      <div class="screen rv" id="screen" style="--i:3" role="img" aria-label="Focus mode, shown on a computer screen: clicking a bubble opens it, a focus timer starts at the bottom, steps float in and pop, and the task is popped when it's done.">
+        <div class="scr-win"><div class="bar"><i></i><i></i><i></i>&nbsp;Essay draft — Docs</div><div class="ln t"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
+        <div id="scr-bubbles"></div>
+        <div class="scr-frame"></div>
+        <div class="scr-bar"><span class="ring" style="width:.8em;height:.8em;border-radius:50%;border:1.5px solid var(--ink)"></span><em>Essay draft</em><span class="t" id="scr-t">0:00</span><span class="b" id="scr-step">+ Step</span><span class="b s" id="scr-done">Done, pop it!</span><span class="x">×</span></div>
+        <svg class="cursor" id="cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2 L4 19 L8.6 14.8 L11.8 21.6 L14.9 20.2 L11.8 13.6 L18 13.4 Z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="body rv" style="--i:2">
+        <p>Click a task to enter its bubble. Once inside a bubble, you enter <b>focus mode</b> where all bubbles disappear and a focus timer starts at the bottom of your screen. You can also choose to break complex/multi-part assignments into smaller bite-sized steps.</p>
+        <p>Yes, it is meant to bring inconvenience. The idea is that you can’t continue to dilly dally through the beautiful internet on your device but to start your assignment. LOCK TF IN GAL.</p>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- 4. more features, and the phone -->
+  <section id="phone" aria-labelledby="more-title">
+    <div class="wrap more">
+      <div class="more-left">
+        <h2 class="pill rv" id="more-title" style="justify-self:start">Additional Features</h2>
+        <ul class="feats">
+          <li class="rv" style="--i:1"><span>Color Grouping</span></li>
+          <li class="rv" style="--i:2"><span>Send to Edge</span></li>
+          <li class="rv" style="--i:3"><span>Pause Growth</span></li>
+          <li class="rv" style="--i:4"><span>Reset Size</span></li>
+        </ul>
+        <h2 class="pill rv" style="justify-self:start; margin-top:10px">Phone as Remote!</h2>
+        <div class="card remote rv">
+          <p class="lead">Thought of a task on the bus away from your keyboard?</p>
+          <p>Carry the task list with you 24/7 and add a task through your phone. Your new task now floats on your laptop before you walk into your room.</p>
+        </div>
+        <div class="card tut rv">
+          <h3>Installation+Pairing Tutorial:</h3>
+          <ol>
+            <li><span class="badge pop-in">1.</span><div class="btns">
+              <a class="btn solid" href="app/">Get on iPhone</a>
+              <a class="btn solid" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk">Download for Android <small>.apk</small></a>
+            </div></li>
+            <li><span class="badge pop-in" style="--i:1">2.</span><span>On your computer, open TODOPOP, click on the third O, then [Get the phone app], a QR code shows up on your screen</span></li>
+            <li><span class="badge pop-in" style="--i:2">3.</span><span>Open TODOPOP on your phone, tap [Scan code], and point it at your computer's screen.</span></li>
+          </ol>
+          <p class="fine">*No need to create an account providing your email/phone for this pairing process, refer to <a href="#privacy">[Privacy]</a> section at bottom of this site to understand how this works</p>
+        </div>
+      </div>
+      <div class="phone-col">
+        <figure class="device rv" id="device"><div class="scr"><img src="phone-app.png" width="780" height="1688" alt="The TODOPOP phone app: your floating tasks in a list, with Pause, a big plus button and Popped along the bottom."><span class="glare"></span></div></figure>
+      </div>
+    </div>
+  </section>
+
+  <hr class="sep">
+
+  <!-- 5. download, and privacy -->
+  <section id="download" aria-labelledby="dl-title">
     <div class="wrap">
-      <div class="head">
-        <span class="cap">Made for focus</span>
-        <h2 id="feat-title">Gentle when you're working. Hard to ignore when you're not.</h2>
-      </div>
-      <div class="feats">
-        <div class="feat big">
-          <span class="ico"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><circle cx="12" cy="12" r="2.5"/></svg></span>
-          <h3>Get in the bubble</h3>
-          <p>Click a bubble to step inside. The edges of your screen take on your color, a timer counts your focus, and you can break the task into smaller steps that float around you.</p>
-        </div>
-        <div class="feat">
-          <span class="ico"><svg viewBox="0 0 24 24"><path d="M4 12h16M12 4v16"/></svg></span>
-          <h3>Over everything</h3>
-          <p>Bubbles float above your other apps and let your clicks pass straight through to whatever is underneath. The control panel is one shortcut away: Ctrl/⌘ + Shift + Space.</p>
-        </div>
-        <div class="feat">
-          <span class="ico"><svg viewBox="0 0 24 24"><circle cx="8" cy="9" r="3.5"/><circle cx="16" cy="9" r="3.5"/><circle cx="12" cy="16" r="3.5"/></svg></span>
-          <h3>Groups in color</h3>
-          <p>Sort bubbles into up to six groups, each with its own soft color. Send a group to one edge of the screen so school stays on the left and work on the right.</p>
-          <div class="dots" aria-hidden="true"><i style="background:#C697FE"></i><i style="background:#FC85AD"></i><i style="background:#F89547"></i><i style="background:#B4BA35"></i><i style="background:#1ACF9F"></i><i style="background:#07C3F3"></i></div>
-        </div>
-        <div class="feat">
-          <span class="ico"><svg viewBox="0 0 24 24"><path d="M9 6v12M15 6v12"/></svg></span>
-          <h3>Pause growing</h3>
-          <p>Need a break? Pause for 30 minutes, an hour, until tomorrow morning, or until you say so. Paused bubbles wear a dashed outline.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <section id="phone" aria-labelledby="phone-title" style="padding-top:0">
-    <div class="wrap phone">
-      <div>
-        <div class="head" style="margin-bottom:30px">
-          <span class="cap">Phone app</span>
-          <h2 id="phone-title">Your phone is the remote.</h2>
-          <p>Add a task on the bus and it's floating on your computer before you get home. Pop it from your phone or your computer: they always show the same list. No email, no password.</p>
-        </div>
-        <ol class="howto">
-          <li><span>Get it on your phone. <b>Android:</b> download the TODOPOP app below. <b>iPhone:</b> open <b>todopop.app/app</b> in Safari, then <b>Share → Add to Home Screen</b>.</span></li>
-          <li><span>On your computer, open TODOPOP, click the <b>third O</b>, then <b>Get the phone app</b>.</span></li>
-          <li><span>Open TODOPOP on your phone, tap <b>Scan code</b>, and point it at your computer's screen.</span></li>
-        </ol>
-        <div class="qr-box">
-          <svg viewBox="0 0 25 25" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="QR code for todopop.app/app"><path fill="currentColor" d="M0,0H1V1H0zM1,0H2V1H1zM2,0H3V1H2zM3,0H4V1H3zM4,0H5V1H4zM5,0H6V1H5zM6,0H7V1H6zM8,0H9V1H8zM10,0H11V1H10zM11,0H12V1H11zM12,0H13V1H12zM13,0H14V1H13zM18,0H19V1H18zM19,0H20V1H19zM20,0H21V1H20zM21,0H22V1H21zM22,0H23V1H22zM23,0H24V1H23zM24,0H25V1H24zM0,1H1V2H0zM6,1H7V2H6zM9,1H10V2H9zM16,1H17V2H16zM18,1H19V2H18zM24,1H25V2H24zM0,2H1V3H0zM2,2H3V3H2zM3,2H4V3H3zM4,2H5V3H4zM6,2H7V3H6zM8,2H9V3H8zM10,2H11V3H10zM11,2H12V3H11zM13,2H14V3H13zM14,2H15V3H14zM15,2H16V3H15zM16,2H17V3H16zM18,2H19V3H18zM20,2H21V3H20zM21,2H22V3H21zM22,2H23V3H22zM24,2H25V3H24zM0,3H1V4H0zM2,3H3V4H2zM3,3H4V4H3zM4,3H5V4H4zM6,3H7V4H6zM9,3H10V4H9zM10,3H11V4H10zM13,3H14V4H13zM14,3H15V4H14zM18,3H19V4H18zM20,3H21V4H20zM21,3H22V4H21zM22,3H23V4H22zM24,3H25V4H24zM0,4H1V5H0zM2,4H3V5H2zM3,4H4V5H3zM4,4H5V5H4zM6,4H7V5H6zM10,4H11V5H10zM12,4H13V5H12zM13,4H14V5H13zM18,4H19V5H18zM20,4H21V5H20zM21,4H22V5H21zM22,4H23V5H22zM24,4H25V5H24zM0,5H1V6H0zM6,5H7V6H6zM8,5H9V6H8zM9,5H10V6H9zM11,5H12V6H11zM18,5H19V6H18zM24,5H25V6H24zM0,6H1V7H0zM1,6H2V7H1zM2,6H3V7H2zM3,6H4V7H3zM4,6H5V7H4zM5,6H6V7H5zM6,6H7V7H6zM8,6H9V7H8zM10,6H11V7H10zM12,6H13V7H12zM14,6H15V7H14zM16,6H17V7H16zM18,6H19V7H18zM19,6H20V7H19zM20,6H21V7H20zM21,6H22V7H21zM22,6H23V7H22zM23,6H24V7H23zM24,6H25V7H24zM9,7H10V8H9zM11,7H12V8H11zM12,7H13V8H12zM15,7H16V8H15zM16,7H17V8H16zM0,8H1V9H0zM2,8H3V9H2zM6,8H7V9H6zM7,8H8V9H7zM9,8H10V9H9zM10,8H11V9H10zM11,8H12V9H11zM12,8H13V9H12zM14,8H15V9H14zM16,8H17V9H16zM19,8H20V9H19zM22,8H23V9H22zM24,8H25V9H24zM3,9H4V10H3zM7,9H8V10H7zM8,9H9V10H8zM11,9H12V10H11zM12,9H13V10H12zM13,9H14V10H13zM15,9H16V10H15zM18,9H19V10H18zM19,9H20V10H19zM21,9H22V10H21zM23,9H24V10H23zM24,9H25V10H24zM0,10H1V11H0zM1,10H2V11H1zM2,10H3V11H2zM3,10H4V11H3zM5,10H6V11H5zM6,10H7V11H6zM8,10H9V11H8zM9,10H10V11H9zM10,10H11V11H10zM15,10H16V11H15zM16,10H17V11H16zM19,10H20V11H19zM20,10H21V11H20zM21,10H22V11H21zM22,10H23V11H22zM24,10H25V11H24zM1,11H2V12H1zM2,11H3V12H2zM9,11H10V12H9zM11,11H12V12H11zM14,11H15V12H14zM17,11H18V12H17zM18,11H19V12H18zM19,11H20V12H19zM21,11H22V12H21zM0,12H1V13H0zM3,12H4V13H3zM6,12H7V13H6zM7,12H8V13H7zM9,12H10V13H9zM11,12H12V13H11zM15,12H16V13H15zM18,12H19V13H18zM24,12H25V13H24zM1,13H2V14H1zM3,13H4V14H3zM5,13H6V14H5zM7,13H8V14H7zM9,13H10V14H9zM15,13H16V14H15zM16,13H17V14H16zM18,13H19V14H18zM19,13H20V14H19zM23,13H24V14H23zM24,13H25V14H24zM0,14H1V15H0zM1,14H2V15H1zM2,14H3V15H2zM3,14H4V15H3zM5,14H6V15H5zM6,14H7V15H6zM10,14H11V15H10zM11,14H12V15H11zM13,14H14V15H13zM14,14H15V15H14zM15,14H16V15H15zM18,14H19V15H18zM21,14H22V15H21zM22,14H23V15H22zM24,14H25V15H24zM4,15H5V16H4zM7,15H8V16H7zM8,15H9V16H8zM9,15H10V16H9zM14,15H15V16H14zM15,15H16V16H15zM16,15H17V16H16zM19,15H20V16H19zM20,15H21V16H20zM21,15H22V16H21zM0,16H1V17H0zM1,16H2V17H1zM3,16H4V17H3zM5,16H6V17H5zM6,16H7V17H6zM8,16H9V17H8zM9,16H10V17H9zM11,16H12V17H11zM12,16H13V17H12zM16,16H17V17H16zM17,16H18V17H17zM18,16H19V17H18zM19,16H20V17H19zM20,16H21V17H20zM23,16H24V17H23zM8,17H9V18H8zM9,17H10V18H9zM12,17H13V18H12zM14,17H15V18H14zM16,17H17V18H16zM20,17H21V18H20zM24,17H25V18H24zM0,18H1V19H0zM1,18H2V19H1zM2,18H3V19H2zM3,18H4V19H3zM4,18H5V19H4zM5,18H6V19H5zM6,18H7V19H6zM8,18H9V19H8zM9,18H10V19H9zM10,18H11V19H10zM12,18H13V19H12zM13,18H14V19H13zM14,18H15V19H14zM16,18H17V19H16zM18,18H19V19H18zM20,18H21V19H20zM24,18H25V19H24zM0,19H1V20H0zM6,19H7V20H6zM11,19H12V20H11zM12,19H13V20H12zM15,19H16V20H15zM16,19H17V20H16zM20,19H21V20H20zM0,20H1V21H0zM2,20H3V21H2zM3,20H4V21H3zM4,20H5V21H4zM6,20H7V21H6zM9,20H10V21H9zM12,20H13V21H12zM15,20H16V21H15zM16,20H17V21H16zM17,20H18V21H17zM18,20H19V21H18zM19,20H20V21H19zM20,20H21V21H20zM23,20H24V21H23zM0,21H1V22H0zM2,21H3V22H2zM3,21H4V22H3zM4,21H5V22H4zM6,21H7V22H6zM9,21H10V22H9zM10,21H11V22H10zM14,21H15V22H14zM17,21H18V22H17zM20,21H21V22H20zM22,21H23V22H22zM23,21H24V22H23zM0,22H1V23H0zM2,22H3V23H2zM3,22H4V23H3zM4,22H5V23H4zM6,22H7V23H6zM8,22H9V23H8zM9,22H10V23H9zM11,22H12V23H11zM13,22H14V23H13zM14,22H15V23H14zM15,22H16V23H15zM16,22H17V23H16zM17,22H18V23H17zM19,22H20V23H19zM20,22H21V23H20zM21,22H22V23H21zM23,22H24V23H23zM24,22H25V23H24zM0,23H1V24H0zM6,23H7V24H6zM11,23H12V24H11zM12,23H13V24H12zM15,23H16V24H15zM16,23H17V24H16zM17,23H18V24H17zM18,23H19V24H18zM19,23H20V24H19zM20,23H21V24H20zM0,24H1V25H0zM1,24H2V25H1zM2,24H3V25H2zM3,24H4V25H3zM4,24H5V25H4zM5,24H6V25H5zM6,24H7V25H6zM8,24H9V25H8zM12,24H13V25H12zM14,24H15V25H14zM16,24H17V25H16zM21,24H22V25H21zM24,24H25V25H24z" id="qr-path" fill="#000000" fill-opacity="1" fill-rule="nonzero" stroke="none"/></svg>
-          <p>On your phone, scan this or go to<b>todopop.app/app</b></p>
-        </div>
-        <div class="btns" style="justify-content:flex-start">
-          <a class="btn solid" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk">Download for Android <small>.apk</small></a>
-          <a class="btn on-phone" href="app/">iPhone: open the phone app</a>
-        </div>
-      </div>
-      <figure class="device"><img src="phone-app.png" width="780" height="1688" alt="The TODOPOP phone app: your floating tasks in a list, with Pause, a big plus button and Popped along the bottom."></figure>
-    </div>
-    </div>
-  </section>
-
-  <section id="download" aria-labelledby="dl-title" style="padding-top:0">
-    <div class="wrap">
-      <div class="dl">
-        <h2 id="dl-title">Get TODOPOP</h2>
+      <div class="dl rv">
+        <h2 id="dl-title">Get <span class="logo" aria-label="TODOPOP">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</span></h2>
         <div class="btns">
           <a class="btn solid" data-os="win" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-windows-setup.exe">Download for Windows <small>.exe</small></a>
           <a class="btn" data-os="mac" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg">Download for Mac <small>.dmg</small></a>
-          <a class="btn" data-os="android" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk">Phone app for Android <small>.apk</small></a>
         </div>
-        <p class="meta">Windows 10 and 11 (64-bit) · macOS on Apple silicon and Intel · Android 5.1 and up · <a href="https://github.com/nosugarlessice/todopop/releases">All versions</a></p>
+        <p class="meta">Windows 10 and 11 (64-bit) · macOS · <a href="https://github.com/nosugarlessice/todopop/releases">All versions</a></p>
         <div class="first">
           <p class="cap" style="color:color-mix(in srgb, var(--paper) 72%, var(--ink))">Opening it the first time</p>
           <details>
@@ -328,16 +500,13 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     </div>
   </section>
 
-  <section aria-labelledby="priv-title" style="padding-top:0">
+  <section id="privacy" aria-labelledby="priv-title" style="padding-top:0">
     <div class="wrap">
-      <div class="head" style="margin-bottom:30px">
-        <span class="cap">Privacy</span>
-        <h2 id="priv-title">Your list is yours.</h2>
-      </div>
-      <div class="priv">
-        <div><h3>No account</h3><p>No sign-up, no email, no password. Open the app and start blowing bubbles.</p></div>
+      <div class="priv-head rv"><h2 class="pill" id="priv-title">Privacy</h2><span>Your list is yours.</span></div>
+      <div class="card priv rv">
+        <div><h3>No account</h3><p>No sign-up, no email, no password.<br>Open the app and start blowing bubbles.</p></div>
         <div><h3>Stays on your computer</h3><p>Without a phone, your tasks never leave your computer.</p></div>
-        <div><h3>Private sync</h3><p>Connect a phone and your list syncs through Supabase, locked to a private code that only your own devices know. This site has no ads and no tracking.</p></div>
+        <div><h3>Private Sync</h3><p>Connect a phone and your list syncs through Supabase, locked to a private code that only your own devices know. This product and site have no ads and no tracking.</p></div>
       </div>
     </div>
   </section>
@@ -355,368 +524,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
   </div>
 </footer>
 
-<script>
-(() => {
-  // ---------- downloads: put the right one first ----------
-  const ua = navigator.userAgent, mobile = /iPhone|iPad|iPod|Android/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua));
-  const mac = /Mac/i.test(navigator.userAgentData?.platform || navigator.platform || ua);
-  if(mobile) document.documentElement.classList.add('mobile');
-  if(!mobile && mac) document.querySelectorAll('.btns').forEach(g => {
-    const w = g.querySelector('[data-os=win]'), m = g.querySelector('[data-os=mac]');
-    if(w && m){ w.classList.remove('solid'); m.classList.add('solid'); g.prepend(m); }
-  });
-  if(mobile){
-    const g = document.getElementById('hero-btns'), android = /Android/i.test(ua);
-    const a = document.createElement('a'); a.className = 'btn solid';
-    if(android){ a.href = 'https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk'; a.innerHTML = 'Get the Android app <small>.apk</small>'; } else { a.href = 'app/'; a.textContent = 'Open the phone app'; }
-    g.querySelectorAll('[data-os]').forEach(b => b.classList.remove('solid')); g.prepend(a);
-    document.getElementById('hero-meta').textContent = 'The bubbles float on a Windows or Mac computer. Your phone is the remote.';
-  }
-})();
-
-/* ---------- the bubbles ----------
-   This is TODOPOP's own bubble engine, carried over from the app: the same jelly skin, the same rule that two
-   bubbles never overlap (their outlines press flat against each other instead), the same spring when you drag,
-   the same squeeze-and-pop when you press and hold, and the same look. Like in the app, the bubbles sit on top
-   of your screen and stay put while the page scrolls underneath; clicks pass straight through anywhere that
-   isn't a bubble, and the TODOPOP bar at the top is solid, like the app's sticker. */
-(() => {
-  const cv = document.getElementById('field'), ctx = cv.getContext('2d'), root = document.documentElement;
-  const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const INK_RGB = [26, 65, 158], rgba = a => `rgba(${INK_RGB[0]},${INK_RGB[1]},${INK_RGB[2]},${a})`;
-  const FONT = '"Unbounded", "Varela Round", system-ui, sans-serif';
-  const GROUP = {School:'#C697FE', Work:'#FC85AD', Home:'#F89547', Health:'#1ACF9F'}; // the app's group colors with the navy tint
-  const SHORT = {1:'REMIND', 2:'SOON', 3:'TODAY', 4:'NOW!'};
-  const TASKS = [['Problem set 4', 4, 'School'], ['Reply to emails', 3, null], ['Laundry', 2, 'Home'], ['Figma critique', 3, 'Work'], ['Water the pothos', 1, 'Home'],
-    ['Book dentist', 2, null], ['Portfolio review', 4, 'Work'], ['Call mom', 2, null], ['Read ch. 7', 3, 'School'], ['Drink water', 1, 'Health'], ['Pay rent', 3, 'Home'],
-    ['Gym', 2, 'Health'], ['Email the landlord', 2, 'Home'], ['Groceries', 2, null], ['Return library books', 1, 'School'], ['Taxes', 3, null]];
-  const W = () => innerWidth, H = () => innerHeight;
-  const SMALL = () => W() < 700;
-
-  // ---- the app's constants ----
-  const N = 40;
-  const COS = new Float32Array(N), SIN = new Float32Array(N);
-  for(let i=0;i<N;i++){ COS[i]=Math.cos(i/N*Math.PI*2); SIN[i]=Math.sin(i/N*Math.PI*2); }
-  const HC = new Float32Array(N), HS = new Float32Array(N), HCOS = Math.cos(Math.PI/N);
-  for(let i=0;i<N;i++){ HC[i]=Math.cos((i+.5)/N*Math.PI*2); HS[i]=Math.sin((i+.5)/N*Math.PI*2); }
-  const RATE = [0, 0, 0.45, 1.1, 2.5]; // the app's demo growth speeds, radius px / s
-  const OUT = .08, GAP = 2.5, SQUISH = 9, JELLY = 0.55, SWELL = 34, HOLD_DELAY = .15, HOLD_TIME = .75;
-  const bubbles = [], particles = [], rings = [];
-  let time = 0, drawOrder = [], wall = null, ti = 0, dpr = 1;
-  const easeOut = t => { const c = 1.7; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); };
-  const effR = b => b.R * easeOut(Math.min(1, b.spawn)) + SWELL*Math.pow(b.holdP || 0, 1.6);
-  // on a website they stop growing before they cover what you're reading (the app lets them fill the screen)
-  const maxFor = level => (SMALL() ? .62 : 1)*[0, 34, 62, 84, 108][level];
-
-  function makeBubble(o){
-    return {name:o.name, level:o.level, group:o.group, R:o.R, hx:o.hx, hy:o.hy, x:o.hx, y:o.hy, vx:0, vy:0, ax:0, ay:0,
-      spawn:0, phase:Math.random()*6.283, holdP:0, pulse:0, fx:o.hx/W(), fy:o.hy/H(),
-      d:new Float32Array(N), v:new Float32Array(N), t:new Float32Array(N), lim:new Float32Array(N)};
-  }
-  function navWall(){
-    const n = document.querySelector('.nav .wrap'); if(!n) return null;
-    const r = n.getBoundingClientRect(), g = 9; return {x0:r.left-g, y0:r.top-g, x1:r.right+g, y1:r.bottom+g};
-  }
-  function freeSpot(R){ // the app's: the roomiest spot, away from the edges, the bar and the other bubbles
-    const w = navWall(), x0 = 30, x1 = W()-30, y0 = (w ? w.y1 : 0) + 20, y1 = H()-30; let best = null, bestScore = -Infinity;
-    const words = [...document.querySelectorAll('main h1, main h2, main h3, main p, main .btn, main .cap, main li')].map(e => e.getBoundingClientRect()).filter(q => q.bottom > 0 && q.top < H() && q.width);
-    for(let k=0;k<160;k++){
-      const x = x0 + Math.random()*Math.max(10,x1-x0), y = y0 + Math.random()*Math.max(10,y1-y0);
-      let s = Math.min(x-x0, x1-x, y-y0, y1-y)*0.6;
-      for(const q of words) if(x + R > q.left && x - R < q.right && y + R > q.top && y - R < q.bottom) s -= 300; // appear beside the words, not on them
-      for(const b of bubbles) s = Math.min(s, Math.hypot(b.hx-x,b.hy-y) - b.R - R);
-      if(s>bestScore){ bestScore=s; best={x,y}; }
-    }
-    return best;
-  }
-  function add(){
-    const [name, level, group] = TASKS[ti++ % TASKS.length], max = maxFor(level);
-    const R = level === 1 ? max : (SMALL() ? .62 : 1)*42 + (max - (SMALL() ? .62 : 1)*42)*Math.random()*.6;
-    const p = freeSpot(R); if(!p) return; bubbles.push(makeBubble({name, level, group, R, hx:p.x, hy:p.y}));
-  }
-
-  // ---- size ----
-  let lastW = W(), lastH = H();
-  function resize(){
-    if(lastW >= 200 && lastH >= 200) for(const b of bubbles){ b.fx = b.hx/lastW; b.fy = b.hy/lastH; }
-    for(const b of bubbles){ const nx = b.fx*W(), ny = b.fy*H(); b.x += nx - b.hx; b.y += ny - b.hy; b.hx = nx; b.hy = ny; }
-    lastW = W(); lastH = H(); dpr = Math.min(2, devicePixelRatio || 1); cv.width = W()*dpr; cv.height = H()*dpr;
-  }
-
-  // ---- pointer: the app's handlers ----
-  const mouse = {x:-999, y:-999, vx:0, vy:0, lastT:0};
-  let hover = null, drag = null, suppressClick = false;
-  function hit(x,y){
-    for(let k=drawOrder.length-1;k>=0;k--){
-      const b = drawOrder[k]; if(!b) continue;
-      const dx=x-b.x, dy=y-b.y, D=Math.hypot(dx,dy), r = effR(b);
-      if(D > r*1.6+10) continue;
-      let a = Math.atan2(dy,dx); if(a<0) a+=6.283; const i = Math.round(a/6.283*N)%N;
-      if(D < r + b.d[i]) return b;
-    }
-    return null;
-  }
-  const onBar = e => !!e.target?.closest?.('.nav');
-  addEventListener('pointermove', e => {
-    const t = performance.now(), dt = Math.max(8, t - mouse.lastT);
-    mouse.vx = (e.clientX-mouse.x)/dt*1000; mouse.vy = (e.clientY-mouse.y)/dt*1000;
-    if(Math.abs(mouse.vx)>6000) mouse.vx=0; if(Math.abs(mouse.vy)>6000) mouse.vy=0;
-    mouse.x=e.clientX; mouse.y=e.clientY; mouse.lastT=t;
-    if(drag){
-      if(Math.hypot(e.clientX-drag.sx, e.clientY-drag.sy) > 6) drag.moved = true;
-      drag.b.hx = e.clientX - drag.ox; drag.b.hy = e.clientY - drag.oy;
-      keepApart(drag.b, 'home');
-      return;
-    }
-    const h = onBar(e) ? null : hit(e.clientX, e.clientY);
-    if(h !== hover){ if(h){ for(let i=0;i<N;i++) h.v[i] += (COS[i]*mouse.vx + SIN[i]*mouse.vy)*-0.03; } hover = h; }
-    root.classList.toggle('grab', !!h);
-  }, {passive:true});
-  addEventListener('pointerdown', e => {
-    if(e.button!==0 || onBar(e)) return;
-    const b = hit(e.clientX, e.clientY); if(!b) return;
-    e.preventDefault(); e.stopPropagation(); suppressClick = true;
-    drag = {b, id:e.pointerId, ox:e.clientX-b.hx, oy:e.clientY-b.hy, sx:e.clientX, sy:e.clientY, t:performance.now(), moved:false};
-    root.classList.add('grabbing');
-    mouse.x = e.clientX; mouse.y = e.clientY; mouse.vx = mouse.vy = 0;
-    // press dent
-    const dx=e.clientX-b.x, dy=e.clientY-b.y, D=Math.hypot(dx,dy)||1;
-    for(let i=0;i<N;i++){ const al = (COS[i]*dx+SIN[i]*dy)/D; if(al>.3) b.v[i] -= al*90*JELLY; }
-  }, {capture:true});
-  // on a phone, a finger on a bubble holds the bubble, not the page
-  addEventListener('touchstart', e => { const t = e.touches[0]; if(t && !e.target?.closest?.('.nav') && hit(t.clientX, t.clientY)) e.preventDefault(); }, {capture:true, passive:false});
-  const release = e => {
-    if(!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
-    const {b, moved, t} = drag; drag = null;
-    root.classList.remove('grabbing'); b.holding = false;
-    if(!moved && performance.now()-t < 300) b.pulse = 1; // a quick tap: it jiggles (in the app, this gets you into the bubble)
-    else if(moved){ b.fx = b.hx/W(); b.fy = b.hy/H(); }
-    if(e.pointerType !== 'mouse'){ mouse.x = mouse.y = -999; } // a lifted finger stops pressing on the skin
-    setTimeout(()=> suppressClick=false, 0);
-  };
-  addEventListener('pointerup', release, {capture:true}); addEventListener('pointercancel', release, {capture:true});
-  addEventListener('click', e => { if(suppressClick){ e.preventDefault(); e.stopPropagation(); suppressClick=false; } }, {capture:true});
-  document.addEventListener('pointerleave', () => { mouse.x = mouse.y = -999; });
-
-  // ---- physics: the app's ----
-  function keepApart(b, which){
-    const ra = effR(b);
-    for(let it=0; it<4; it++){
-      let moved = false;
-      for(const o of bubbles){ if(o===b) continue;
-        const need = (ra + effR(o))*(1+OUT) + GAP*2 - SQUISH*2;
-        const now = Math.hypot(b.x-o.x, b.y-o.y);
-        const minD = Math.min(need, now);
-        const px = which==='home' ? b.hx : b.x, py = which==='home' ? b.hy : b.y;
-        let dx = px-o.x, dy = py-o.y, D = Math.hypot(dx,dy);
-        if(D >= minD - .5) continue;
-        if(D < .01){ dx = b.x-o.x || 1; dy = b.y-o.y; D = Math.hypot(dx,dy); }
-        const nx = o.x + dx/D*minD, ny = o.y + dy/D*minD;
-        if(which==='home'){ b.hx = nx; b.hy = ny; } else { b.x = nx; b.y = ny; const vn = (b.vx*dx + b.vy*dy)/D; if(vn < 0){ b.vx -= vn*dx/D; b.vy -= vn*dy/D; } }
-        moved = true;
-      }
-      if(!moved) break;
-    }
-  }
-  function rayBox(cx, cy, dx, dy, B){
-    let tmin = -Infinity, tmax = Infinity;
-    for(const [c,d,lo,hi] of [[cx,dx,B.x0,B.x1],[cy,dy,B.y0,B.y1]]){
-      if(Math.abs(d) < 1e-6){ if(c < lo || c > hi) return Infinity; continue; }
-      let t1 = (lo-c)/d, t2 = (hi-c)/d; if(t1 > t2){ const q=t1; t1=t2; t2=q; }
-      tmin = Math.max(tmin, t1); tmax = Math.min(tmax, t2);
-    }
-    if(tmax < 0 || tmin > tmax) return Infinity;
-    return Math.max(0, tmin);
-  }
-  function outsideWall(b, x, y){
-    if(!wall) return [x, y];
-    const m = Math.min(effR(b)*.8, 90);
-    const x0 = wall.x0-m, x1 = wall.x1+m, y0 = wall.y0-m, y1 = wall.y1+m;
-    if(x <= x0 || x >= x1 || y <= y0 || y >= y1) return [x, y];
-    const dl = x-x0, dr = x1-x, du = y-y0, dd = y1-y, k = Math.min(dl, dr, du, dd);
-    return k===dl ? [x0, y] : k===dr ? [x1, y] : k===du ? [x, y0] : [x, y1];
-  }
-  function step(dt){
-    time += dt;
-    if(drag && !drag.moved){
-      const b = drag.b, held = (performance.now() - drag.t)/1000;
-      b.holding = held > HOLD_DELAY; b.holdP = Math.max(0, Math.min(1, (held - HOLD_DELAY)/HOLD_TIME));
-      if(b.holding) for(let i=0;i<N;i++) b.v[i] += (Math.random()-.5)*90*b.holdP; // a little tremble under the pressure
-      if(b.holdP >= 1){ drag = null; root.classList.remove('grabbing'); b.holding = false; b.holdP = 0; pop(b); }
-    }
-    for(const b of bubbles) if(!b.holding && b.holdP){ b.holdP *= .82; if(b.holdP < .01) b.holdP = 0; }
-    wall = navWall();
-    const drift = REDUCED ? 1.5 : 7;
-    for(const b of bubbles){
-      b.spawn = Math.min(1, b.spawn + dt*1.6);
-      if(b.level>1 && !(drag && drag.b===b)) b.R = Math.min(maxFor(b.level), b.R + RATE[b.level]*dt);
-      b.pulse = Math.max(0, b.pulse - dt*1.5);
-    }
-    // keep homes on screen (a resize or a drag to the edge)
-    for(const b of bubbles){ const r = effR(b)*.5; b.hx = Math.max(r, Math.min(W()-r, b.hx)); b.hy = Math.max(r, Math.min(H()-r, b.hy)); }
-    for(const b of bubbles){
-      const dragging = drag && drag.b===b;
-      const [hx, hy] = outsideWall(b, b.hx, b.hy);
-      const tx = hx + (dragging?0:Math.sin(time*.23+b.phase)*drift + Math.sin(time*.51+b.phase*2)*drift*.4);
-      const ty = hy + (dragging?0:Math.cos(time*.19+b.phase)*drift + Math.cos(time*.43+b.phase*1.7)*drift*.4);
-      const K = dragging ? 60 : 9, C = dragging ? 11 : 5.2;
-      let ax = (tx-b.x)*K - b.vx*C, ay = (ty-b.y)*K - b.vy*C;
-      const ra = effR(b);
-      for(const o of bubbles){ if(o===b) continue;
-        const dx=b.x-o.x, dy=b.y-o.y, D=Math.hypot(dx,dy)||.01, ov = ra+effR(o)-D;
-        if(ov>0){ const f = Math.min(ov, 34)*3.2*(dragging?.4:1); ax += dx/D*f; ay += dy/D*f; }
-      }
-      b.ax = ax; b.ay = ay;
-    }
-    for(const b of bubbles){ b.vx += b.ax*dt; b.vy += b.ay*dt; b.x += b.vx*dt; b.y += b.vy*dt; }
-    if(drag){ keepApart(drag.b, 'home'); keepApart(drag.b, 'pos'); }
-    // membranes
-    for(const b of bubbles){
-      const ra = effR(b), t = b.t, wob = REDUCED ? .004 : .016;
-      for(let i=0;i<N;i++){
-        const th = i/N*6.283;
-        t[i] = ra*(wob*Math.sin(2*th + time*1.1 + b.phase) + wob*.7*Math.sin(3*th - time*.8 + b.phase*1.3) + wob*.4*Math.sin(5*th + time*1.7));
-        if(b.pulse) t[i] += ra*.06*b.pulse*Math.sin(time*14);
-      }
-      const lim = b.lim; for(let i=0;i<N;i++) lim[i] = ra*OUT;
-      for(const o of bubbles){ if(o===b) continue;
-        const rb = effR(o), D = Math.hypot(o.x-b.x, o.y-b.y), eB = rb*(1+OUT) + GAP;
-        if(D > ra*(1+OUT) + eB || D < .01) continue;
-        const nx=(o.x-b.x)/D, ny=(o.y-b.y)/D;
-        const lo = Math.min(ra*.8, D*.5), hi = D - Math.min(rb*.8, D*.5);
-        let sp = (D*D + ra*ra - rb*rb)/(2*D);
-        sp = lo<=hi ? Math.max(lo, Math.min(hi, sp)) : D*ra/(ra+rb);
-        const limAt = (c, sn) => {
-          const un = c*nx + sn*ny; if(un <= .001) return Infinity;
-          const proj = D*un, perp2 = D*D - proj*proj; if(perp2 >= eB*eB) return Infinity;
-          const root2 = Math.sqrt(eB*eB - perp2), tLine = sp/un;
-          if(tLine >= proj + root2) return Infinity;
-          return Math.max(proj - root2, tLine) - GAP + SQUISH - ra;
-        };
-        for(let i=0;i<N;i++){
-          let l = limAt(COS[i], SIN[i]);
-          const hm = Math.min(limAt(HC[i], HS[i]), limAt(HC[(i+N-1)%N], HS[(i+N-1)%N]));
-          if(hm < Infinity) l = Math.min(l, (hm + ra)/HCOS - ra);
-          if(l < lim[i]) lim[i] = Math.max(l, -ra*.94);
-        }
-      }
-      if(wall){
-        for(let i=0;i<N;i++){
-          let l = rayBox(b.x, b.y, COS[i], SIN[i], wall);
-          const hm = Math.min(rayBox(b.x, b.y, HC[i], HS[i], wall), rayBox(b.x, b.y, HC[(i+N-1)%N], HS[(i+N-1)%N], wall));
-          if(hm < Infinity) l = Math.min(l, hm/HCOS);
-          if(l < Infinity){ l -= ra; if(l < lim[i]) lim[i] = Math.max(l, -ra*.94); }
-        }
-      }
-      for(let i=0;i<N;i++) if(t[i] > lim[i]) t[i] = lim[i];
-      // the cursor presses into the skin and drags it along
-      if(!REDUCED && mouse.x>-900){
-        const mdx = mouse.x-b.x, mdy = mouse.y-b.y, MD = Math.hypot(mdx,mdy);
-        if(MD < ra+90){
-          for(let i=0;i<N;i++){
-            const px = b.x + COS[i]*(ra+b.d[i]), py = b.y + SIN[i]*(ra+b.d[i]);
-            const q = (px-mouse.x)**2 + (py-mouse.y)**2; const w = Math.exp(-q/(2*55*55));
-            b.v[i] += (COS[i]*mouse.vx + SIN[i]*mouse.vy)*w*0.045*JELLY;
-            if(q < 26*26){ b.v[i] += -(1 - Math.sqrt(q)/26)*40*JELLY; }
-          }
-        }
-      }
-      const inert = (REDUCED ? .0004 : .0016)*JELLY;
-      for(let i=0;i<N;i++) b.v[i] -= (COS[i]*b.ax + SIN[i]*b.ay)*inert*ra*dt*60*.25;
-    }
-    mouse.vx *= .82; mouse.vy *= .82;
-    const sub = 3, h = dt/sub, k = 420, L = 300, c = 9 + (1 - JELLY)*30;
-    for(const b of bubbles){
-      const d=b.d, v=b.v, t=b.t;
-      for(let s=0;s<sub;s++){
-        for(let i=0;i<N;i++){ const a = k*(t[i]-d[i]) + L*(d[(i+N-1)%N] + d[(i+1)%N] - 2*d[i]) - c*v[i]; v[i] += a*h; }
-        const lim = b.lim, r = effR(b);
-        for(let i=0;i<N;i++){ d[i] += v[i]*h; if(d[i] > lim[i]){ d[i] = lim[i]; if(v[i] > 0) v[i] = 0; } if(d[i] < -r*.94){ d[i] = -r*.94; v[i] = 0; } }
-      }
-    }
-    for(const p of particles){ p.t += dt; p.vx *= .9; p.vy = p.vy*.9 + 40*dt; p.x += p.vx*dt; p.y += p.vy*dt; }
-    for(let i=particles.length-1;i>=0;i--) if(particles[i].t > particles[i].life) particles.splice(i,1);
-    for(const r of rings) r.t += dt;
-    for(let i=rings.length-1;i>=0;i--) if(rings[i].t > .45) rings.splice(i,1);
-  }
-  function pop(b){
-    const i = bubbles.indexOf(b); if(i<0) return; bubbles.splice(i,1);
-    const r = b.R*Math.min(1,b.spawn);
-    rings.push({x:b.x, y:b.y, r, t:0});
-    const n = 12 + Math.min(24, Math.round(r/6));
-    for(let k=0;k<n;k++){ const a = Math.random()*6.283, sp = 120 + Math.random()*260 + r*.8; particles.push({x:b.x+Math.cos(a)*r*.9, y:b.y+Math.sin(a)*r*.9, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:1.5+Math.random()*3.5, t:0, life:.5+Math.random()*.45}); }
-    for(const o of bubbles){ // neighbors feel the burst
-      const dx=o.x-b.x, dy=o.y-b.y, D=Math.hypot(dx,dy)||1; const f = Math.max(0, 1 - (D-o.R)/(r+180));
-      if(f>0){ o.vx += dx/D*f*140; o.vy += dy/D*f*140; for(let j=0;j<N;j++) o.v[j] += (COS[j]*dx+SIN[j]*dy)/D*-f*220*JELLY; }
-    }
-    setTimeout(add, 1600); // another task floats in
-  }
-
-  // ---- drawing: the app's ----
-  function shapePath(b, inset=0){
-    const r = effR(b) - inset; const P = [];
-    for(let i=0;i<N;i++){ const rr = Math.max(2, r + b.d[i]*(1 - inset/Math.max(r,1)*.3)); P.push([b.x+COS[i]*rr, b.y+SIN[i]*rr]); }
-    ctx.beginPath();
-    let mx=(P[N-1][0]+P[0][0])/2, my=(P[N-1][1]+P[0][1])/2; ctx.moveTo(mx,my);
-    for(let i=0;i<N;i++){ const p=P[i], q=P[(i+1)%N]; ctx.quadraticCurveTo(p[0],p[1],(p[0]+q[0])/2,(p[1]+q[1])/2); }
-    ctx.closePath();
-  }
-  function wrap(text, maxW){ const words = text.split(/\s+/), lines=[]; let cur=''; for(const w of words){ const t = cur ? cur+' '+w : w; if(ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t; } if(cur) lines.push(cur); return lines; }
-  const hexRGB = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
-  function draw(){
-    ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W(),H());
-    drawOrder = [...bubbles].sort((a,b)=> b.R-a.R);
-    for(const b of drawOrder){
-      const r = effR(b); if(r < 2) continue;
-      const block = b.level===1 ? .55 : Math.min(.94, .62 + (b.R-42)/420);
-      const gp = b.group && GROUP[b.group], fill = gp ? hexRGB(gp) : null;
-      shapePath(b);
-      ctx.fillStyle = `rgba(250,250,248,${block})`; ctx.fill();
-      ctx.fillStyle = rgba(b.level===4 ? .085 : b.level===3 ? .06 : .04); ctx.fill();
-      ctx.lineWidth = (b.level===4 ? 2.8 : 2.4) * (1 + (b.holdP || 0)*1.1); ctx.strokeStyle = rgba(1); ctx.stroke();
-      if(gp && r > 10){ shapePath(b, 4.5); ctx.lineWidth = 2; ctx.strokeStyle = `rgba(${fill[0]},${fill[1]},${fill[2]},.67)`; ctx.stroke(); }
-      if(b.level>=3 && r>24){ shapePath(b, gp ? 9.5 : 6); ctx.lineWidth = .9; ctx.strokeStyle = rgba(.28); ctx.setLineDash(b.level===4?[]:[2,4]); ctx.stroke(); ctx.setLineDash([]); }
-      ctx.save(); shapePath(b); ctx.clip();
-      if(r>22){
-        let cx=0, cy=0; for(let i=0;i<N;i++){ const rr=r+b.d[i]; cx += Math.min(W()-8, Math.max(8, b.x+COS[i]*rr*.8)); cy += Math.min(H()-8, Math.max(8, b.y+SIN[i]*rr*.8)); }
-        const lx = cx/N, ly = cy/N, fs = Math.max(9.5, Math.min(26, r*.16));
-        ctx.fillStyle = rgba(1); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font = `400 ${fs}px ${FONT}`;
-        let lines = wrap(b.name, r*1.45); const maxL = (r>70 || r<40) ? 3 : 2;
-        if(lines.length>maxL){ lines = lines.slice(0,maxL); let l = lines[maxL-1]; while(l.length>1 && ctx.measureText(l+'…').width > r*1.45) l=l.slice(0,-1); lines[maxL-1] = l.replace(/[\s…]+$/,'')+'…'; }
-        const ms = Math.max(7, Math.min(9.5, r*.065)) + 1, showMeta = r>40;
-        const lh = fs*1.15, total = lines.length*lh + (showMeta ? ms*1.9 : 0) + (showMeta && gp ? ms*1.6 : 0);
-        let y = ly - total/2 + lh/2;
-        for(const l of lines){ ctx.fillText(l, lx, y); y += lh; }
-        if(showMeta){
-          ctx.font = `400 ${ms}px ${FONT}`; ctx.fillStyle = rgba(.62);
-          if('letterSpacing' in ctx) ctx.letterSpacing = (ms*.1)+'px';
-          const meta = SHORT[b.level];
-          if(ctx.measureText(meta).width <= r*1.5) ctx.fillText(meta, lx, y + ms*.6);
-          const ty = y + ms*.6 + ms*1.5;
-          if(gp){
-            const tag = b.group.toUpperCase(), dr = ms*.45, gap = ms*.5;
-            ctx.font = `400 ${ms*.95}px ${FONT}`;
-            const tw = ctx.measureText(tag).width, x0 = lx - (dr*2 + gap + tw)/2;
-            ctx.beginPath(); ctx.arc(x0 + dr, ty, dr, 0, 6.283); ctx.fillStyle = gp; ctx.fill();
-            ctx.lineWidth = .8; ctx.strokeStyle = rgba(.35); ctx.stroke();
-            ctx.fillStyle = rgba(.82); ctx.textAlign = 'left'; ctx.fillText(tag, x0 + dr*2 + gap, ty); ctx.textAlign = 'center';
-          }
-          if('letterSpacing' in ctx) ctx.letterSpacing = '0px';
-        }
-      }
-      ctx.restore();
-    }
-    for(const g of rings){ const p = g.t/.45; ctx.beginPath(); ctx.arc(g.x,g.y,g.r*(1+p*.35),0,6.283); ctx.lineWidth = 1.4*(1-p); ctx.strokeStyle = rgba(1-p); ctx.stroke(); }
-    for(const p of particles){ const a = 1 - p.t/p.life; ctx.beginPath(); ctx.arc(p.x,p.y,p.r*(.6+.4*a),0,6.283); ctx.lineWidth=1.2; ctx.strokeStyle = rgba(a); ctx.stroke(); }
-  }
-
-  // ---- run ----
-  addEventListener('resize', resize); resize();
-  const count = () => SMALL() ? 4 : (W() > 1200 ? 8 : 6);
-  for(let k=0;k<count();k++) add();
-  let last = performance.now();
-  (function frame(now){ const dt = Math.min(1/30, (now-last)/1000); last = now; step(dt); draw(); requestAnimationFrame(frame); })(last);
-})();
-</script>
+<script src="engine.js"></script>
+<script src="site.js"></script>
 </body>
 </html>

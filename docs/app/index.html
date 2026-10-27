@@ -581,6 +581,13 @@ html.remote .info-pop{text-align:left; justify-self:stretch}
 html.remote .update-note{left:12px; right:12px; bottom:calc(92px + env(safe-area-inset-bottom,0px)); justify-content:space-between; max-width:none}
 html.remote.landing .update-note{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 .get-android{display:none}
+.get-ios{display:none}
+html.remote.landing .get-ios{display:block; margin:14px auto 0; max-width:300px; text-align:left; color:var(--ink)}
+.get-ios summary{list-style:none; cursor:pointer; text-align:center; font-family:var(--f-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; text-decoration:underline; text-underline-offset:4px}
+.get-ios summary::-webkit-details-marker{display:none}
+.get-ios ol{margin:12px 0 0; padding:12px 14px 12px 32px; border:1.5px solid var(--ink-line, rgba(26,65,158,.25)); border-radius:14px; font-size:13px; line-height:1.5}
+.get-ios li+li{margin-top:6px}
+.get-ios svg{width:14px; height:14px; vertical-align:-2px; fill:none; stroke:currentColor; stroke-width:2; stroke-linecap:round; stroke-linejoin:round}
 html.remote.landing .get-android{display:block; text-align:center; margin-top:10px; font-family:var(--f-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); text-underline-offset:4px}
 /* phone header, like the computer's: the logo and slogan sit in a rod, the list in a wider card under it */
 html.remote:not(.landing) .panel{background:transparent !important; border:0; border-radius:0; box-shadow:none}
@@ -3465,6 +3472,17 @@ if(NATIVE){
 if(REMOTE && !NATIVE && /Android/i.test(navigator.userAgent) && !DESKTOP){
   const a = document.createElement('a'); a.className = 'get-android'; a.href = 'https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk';
   a.textContent = 'Get the Android app'; $('#sync')?.appendChild(a);
+}
+// the phone web app in iPhone Safari: show how to keep it on the home screen like an app
+if(REMOTE && !NATIVE && !DESKTOP && /iPhone|iPad|iPod/i.test(navigator.userAgent) && !navigator.standalone && !matchMedia('(display-mode: standalone)').matches){
+  const share = '<svg viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4M6 11H5v10h14V11h-1"/></svg>';
+  const d = document.createElement('details'); d.className = 'get-ios';
+  d.innerHTML = `<summary>Put TODOPOP on your home screen</summary><ol>
+    <li>Open this page in <b>Safari</b>.</li>
+    <li>Tap the Share button ${share} in the toolbar (on newer iPhones it may be behind the <b>•••</b> button).</li>
+    <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>
+    <li>Open TODOPOP from its new icon and pair it there. It runs full screen like an app (and keeps its own pairing, separate from Safari's).</li></ol>`;
+  $('#sync')?.appendChild(d);
 }
 
 })();
