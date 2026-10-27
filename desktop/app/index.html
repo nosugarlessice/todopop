@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data: blob:; connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.github.com">
 <link rel="stylesheet" href="fonts.css">
 <title>TODOPOP</title>
 <style>
@@ -564,6 +564,15 @@ html.remote .gedit .gx{width:32px; height:32px}
 html.remote .gedit input{font-size:16px; padding:8px 0}
 html.remote .info-pop{text-align:left; justify-self:stretch}
 #gcolor-note:empty{display:none}
+/* a new version is out: a small note in the corner (Windows: ready to restart; Mac and Android: download it) */
+.update-note{position:fixed; z-index:8; left:max(20px, env(safe-area-inset-left,0px)); bottom:calc(20px + env(safe-area-inset-bottom,0px)); display:flex; align-items:center; gap:12px;
+  padding:8px 8px 8px 18px; background:var(--paper); border:1px solid var(--rule); border-radius:999px; box-shadow:0 14px 40px -18px rgba(16,24,48,.35);
+  font-size:13px; color:var(--ink); animation:pop-in .4s cubic-bezier(.3,1.6,.5,1); max-width:calc(100% - 40px)}
+.update-note .btn{white-space:nowrap}
+.update-x{all:unset; cursor:pointer; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; color:var(--ink-soft); font-size:17px; flex:none}
+.update-x:hover{background:var(--ink-wash); color:var(--ink)} .update-x:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+html.remote .update-note{left:12px; right:12px; bottom:calc(92px + env(safe-area-inset-bottom,0px)); justify-content:space-between; max-width:none}
+html.remote.landing .update-note{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
 .get-android{display:none}
 html.remote.landing .get-android{display:block; text-align:center; margin-top:10px; font-family:var(--f-mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink); text-underline-offset:4px}
 /* phone header, like the computer's: the logo and slogan sit in a rod, the list in a wider card under it */
@@ -1025,6 +1034,7 @@ input.has-cjk{line-height:1.5}
   <button class="close" type="button" id="focus-exit" aria-label="Leave focus mode without popping" title="Leave focus mode"><svg viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8"/></svg></button>
 </div>
 
+<div class="update-note" id="update-note" role="status" hidden><span id="update-msg"></span><button type="button" class="btn small solid" id="update-go"></button><button type="button" class="update-x" id="update-x" aria-label="Not now">×</button></div>
 <button class="launcher" type="button" id="launcher" aria-label="Open TODOPOP" hidden><span class="kbd-hint" id="kbd-hint" aria-hidden="true"></span><span class="logo" aria-hidden="true">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</span></button>
 
 <div class="pop-edit" id="edit" role="dialog" aria-labelledby="edit-title" hidden>
@@ -2135,7 +2145,7 @@ addEventListener('pointermove', e => {
   if(h !== hover){ if(h){ for(let i=0;i<N;i++) h.v[i] += (COS[i]*mouse.vx + SIN[i]*mouse.vy)*-0.03; } hover = h; }
   document.documentElement.classList.toggle('over-bubble', !!h);
 }, {passive:true});
-const UI = '.panel, .launcher, .pop-edit, .focus-bar, .toast, .tint-pop, .gcolor, .ask, .focus-note, .gnew-pop, .pair-pop, .rbar';
+const UI = '.panel, .launcher, .update-note, .pop-edit, .focus-bar, .toast, .tint-pop, .gcolor, .ask, .focus-note, .gnew-pop, .pair-pop, .rbar';
 const onUI = e => !!(e.target && e.target.closest && e.target.closest(UI));
 addEventListener('pointerdown', e => {
   if(!ed.hidden && !ed.contains(e.target) && !e.target.closest?.('.gcolor, .gnew-pop')) closeEdit();
@@ -3031,7 +3041,7 @@ function inRect(el, x, y){ if(!el || el.hidden) return false; const r = el.getBo
 function updateInteractive(){
   if(!DESKTOP) return;
   const x = mouse.x, y = mouse.y;
-  const on = !!drag || !!pdrag || !ed.hidden || !gnew.hidden || !$('#pair').hidden || !$('#ask').hidden || inRect($('#ask'),x,y) || !tintPop.hidden || !$('#gcolor').hidden || !!hit(x,y) || inRect($('#focus'),x,y) || inRect(panel,x,y) || inRect($('#launcher'),x,y) || ($('#toast').classList.contains('show') && inRect($('#toast'),x,y));
+  const on = !!drag || !!pdrag || !ed.hidden || !gnew.hidden || !$('#pair').hidden || !$('#ask').hidden || inRect($('#ask'),x,y) || !tintPop.hidden || !$('#gcolor').hidden || !!hit(x,y) || inRect($('#focus'),x,y) || inRect(panel,x,y) || inRect($('#launcher'),x,y) || inRect($('#update-note'),x,y) || ($('#toast').classList.contains('show') && inRect($('#toast'),x,y));
   if(on !== interactive){ interactive = on; window.todopop.setInteractive(on); }
 }
 addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; updateInteractive(); }, {passive:true});
@@ -3417,6 +3427,33 @@ if(NATIVE){
   const bars = () => { try{ const f = document.documentElement.classList.contains('focusing');
     Bar?.setBackgroundColor?.({color: f ? INK : '#F7F7F5'}); Bar?.setStyle?.({style: f ? 'DARK' : 'LIGHT'}); }catch(e){} };
   bars(); new MutationObserver(bars).observe(document.documentElement, {attributes:true, attributeFilter:['class', 'style']});
+}
+/* ---------- updates ----------
+   Windows downloads new versions by itself and offers a restart. A Mac and the Android app check GitHub for the
+   newest release and offer the download (an unsigned Mac app can't replace itself; Android always asks you to install). */
+const RELEASES = 'https://github.com/nosugarlessice/todopop/releases/latest/download/';
+const newerThan = (a, b) => { const x = String(a).split('.').map(n => parseInt(n, 10) || 0), y = String(b).split('.').map(n => parseInt(n, 10) || 0);
+  for(let i = 0; i < 3; i++){ if((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+function showUpdate(version, label, go){
+  if(store.get('updateLater') === version) return; // you said "not now" to this one
+  $('#update-msg').textContent = `TODOPOP ${version} is out.`; $('#update-go').textContent = label;
+  $('#update-go').onclick = go; $('#update-note').hidden = false; updateInteractive();
+}
+$('#update-x').addEventListener('click', () => { const v = ($('#update-msg').textContent.match(/[\d.]+\d/) || [''])[0]; store.set('updateLater', v); $('#update-note').hidden = true; updateInteractive(); });
+async function checkRelease(current, file){
+  try{
+    const r = await fetch('https://api.github.com/repos/nosugarlessice/todopop/releases/latest', {headers:{Accept:'application/vnd.github+json'}, cache:'no-store'});
+    if(!r.ok) return; const v = String((await r.json()).tag_name || '').replace(/^v/, '');
+    if(/^\d+\.\d+/.test(v) && newerThan(v, current)) showUpdate(v, 'Download', () => { if(NATIVE) location.href = RELEASES + file; else window.open(RELEASES + file, '_blank'); });
+  }catch(e){} // offline: try again later
+}
+if(DESKTOP && window.todopop.getVersion){
+  window.todopop.onUpdate?.(info => showUpdate(info.version, 'Restart to update', () => window.todopop.installUpdate()));
+  if(window.todopop.platform === 'darwin') window.todopop.getVersion().then(cur => { const c = () => checkRelease(cur, 'TODOPOP-mac.dmg'); setTimeout(c, 15000); setInterval(c, 6*3600e3); });
+}
+if(NATIVE){
+  const App = window.Capacitor.Plugins?.App;
+  App?.getInfo?.().then(info => { const c = () => checkRelease(info.version, 'TODOPOP-android.apk'); c(); App.addListener?.('resume', c); }).catch(() => {});
 }
 // the phone web app on an Android phone: point to the real app
 if(REMOTE && !NATIVE && /Android/i.test(navigator.userAgent) && !DESKTOP){

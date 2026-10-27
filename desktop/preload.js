@@ -8,4 +8,8 @@ contextBridge.exposeInMainWorld('todopop', {
   onShowPanel: (cb) => ipcRenderer.on('show-panel', () => cb()),
   onPause: (cb) => ipcRenderer.on('pause', (_e, mode) => cb(mode)),
   setPaused: (on) => ipcRenderer.send('paused', !!on),
+  platform: process.platform,
+  getVersion: () => ipcRenderer.invoke('app-version'),
+  onUpdate: (cb) => ipcRenderer.on('update', (_e, info) => cb(info)), // Windows: a new version is downloaded and ready
+  installUpdate: () => ipcRenderer.send('install-update'),
 });

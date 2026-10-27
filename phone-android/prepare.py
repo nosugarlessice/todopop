@@ -64,4 +64,8 @@ def native(version, code):
 
 if __name__ == '__main__':
     if sys.argv[1] == 'www': www()
-    elif sys.argv[1] == 'native': native(sys.argv[2].lstrip('v') or '0.0.0', sys.argv[3])
+    elif sys.argv[1] == 'native':
+        import json
+        v = sys.argv[2].lstrip('v')
+        if not re.match(r'^\d+\.\d+', v): v = json.load(open(os.path.join(HERE, 'package.json')))['version'] # a test build (from a branch): the package version
+        native(v, sys.argv[3])

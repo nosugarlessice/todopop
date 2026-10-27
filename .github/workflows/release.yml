@@ -10,6 +10,8 @@
 #   https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg
 #   https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk
 #
+# latest.yml (with the Windows installer) is what installed Windows copies read to update themselves.
+#
 # The Android app is signed with the TODOPOP release key from the repo's secrets
 # (Settings → Secrets and variables → Actions): ANDROID_KEYSTORE_BASE64 and ANDROID_KEYSTORE_PASSWORD.
 
@@ -36,7 +38,10 @@ jobs:
         include:
           - os: windows-latest
             target: --win --x64
-            file: desktop/dist/TODOPOP-windows-setup.exe
+            file: |
+              desktop/dist/TODOPOP-windows-setup.exe
+              desktop/dist/TODOPOP-windows-setup.exe.blockmap
+              desktop/dist/latest.yml
           - os: macos-latest
             target: --mac --universal   # one app for both Apple-silicon and Intel Macs
             file: desktop/dist/TODOPOP-mac.dmg
@@ -125,6 +130,8 @@ jobs:
           make_latest: true
           files: |
             out/TODOPOP-windows-setup.exe
+            out/TODOPOP-windows-setup.exe.blockmap
+            out/latest.yml
             out/TODOPOP-mac.dmg
             out/TODOPOP-android.apk
           body: |

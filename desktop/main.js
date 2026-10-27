@@ -6,6 +6,10 @@
 const { app, BrowserWindow, screen, ipcMain, Tray, Menu, globalShortcut, nativeImage, shell } = require('electron');
 const path = require('path');
 const { openInNewWindow } = require('./openwin');
+// Windows updates itself from the GitHub releases (it downloads in the background and installs when TODOPOP restarts).
+// A Mac can't install unsigned updates, so there the page shows a "new version" note with a download link instead.
+let autoUpdater = null;
+try { ({ autoUpdater } = require('electron-updater')); } catch { /* running from source without it */ }
 
 const isMac = process.platform === 'darwin';
 const SHORTCUT = 'CommandOrControl+Shift+Space';
@@ -146,6 +150,19 @@ ipcMain.on('paused', (_event, on) => {
   if (tray) buildTrayMenu();
 });
 
+ipcMain.handle('app-version', () => app.getVersion());
+ipcMain.on('install-update', () => { if (autoUpdater) setImmediate(() => autoUpdater.quitAndInstall(true, true)); });
+function setupUpdates() {
+  if (isMac || !autoUpdater || !app.isPackaged) return;
+  autoUpdater.autoDownload = true;
+  autoUpdater.autoInstallOnAppQuit = true; // even if you never click Restart, the next start is the new version
+  autoUpdater.on('update-downloaded', (info) => { if (win) win.webContents.send('update', { version: info.version, ready: true }); });
+  autoUpdater.on('error', () => {}); // offline, or GitHub unreachable: try again later
+  const check = () => autoUpdater.checkForUpdates().catch(() => {});
+  setTimeout(check, 15000); // a moment after start
+  setInterval(check, 6 * 60 * 60 * 1000); // and every 6 hours
+}
+
 ipcMain.on('set-interactive', (_event, on) => {
   if (!win) return;
   interactive = !!on;
@@ -160,6 +177,7 @@ app.whenReady().then(() => {
   if (isMac && app.dock) app.dock.hide(); // a floating layer, not a regular windowed app
   createOverlay();
   createTray();
+  setupUpdates();
   globalShortcut.register(SHORTCUT, togglePanel);
   screen.on('display-metrics-changed', fitToDisplay);
   screen.on('display-added', fitToDisplay);
