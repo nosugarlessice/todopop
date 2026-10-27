@@ -313,6 +313,14 @@ html.remote .focus-name{max-width:none; white-space:normal; overflow:hidden; dis
 .edit-top{display:flex; align-items:center; justify-content:space-between}
 .edit-top .close{position:static; width:26px; height:26px}
 .edit-actions{display:flex; gap:8px; align-items:center; margin-top:2px}
+/* the last row of Edit: shrink a grown bubble back to the size it started at */
+.shrink-back{all:unset; box-sizing:border-box; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:7px; width:100%; margin-top:2px; padding:10px 0 0;
+  border-top:1px dashed var(--rule); font-family:var(--f-mono); font-size:8.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-soft)}
+.shrink-back svg{width:13px; height:13px; fill:none; stroke:currentColor; stroke-width:1.3}
+.shrink-back:hover{color:var(--ink)} .shrink-back:focus-visible{outline:2px solid var(--ink); outline-offset:2px; border-radius:6px}
+.shrink-back:disabled{opacity:.45; cursor:default}
+.pop-edit.step-mode .shrink-back{display:none}
+html.remote .shrink-back{font-size:10px; padding-top:14px}
 .edit-actions .link{all:unset; cursor:pointer; font-size:13px; color:var(--ink-soft); margin-right:auto; text-decoration:underline; text-underline-offset:3px}
 .edit-actions .link:hover{color:var(--ink)}
 .edit-actions .link:focus-visible{outline:2px solid var(--ink); outline-offset:2px; border-radius:4px}
@@ -1045,6 +1053,7 @@ input.has-cjk{line-height:1.5}
       <button type="button" class="btn small" id="edit-cancel">Cancel</button>
       <button type="submit" class="btn small solid">Save</button>
     </div>
+    <button type="button" class="shrink-back" id="edit-shrink"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.2"/><circle cx="8" cy="8" r="2.6"/><path d="M8 1.8v2.4M8 11.8v2.4M1.8 8h2.4M11.8 8h2.4"/></svg>Shrink back to starting size</button>
   </form>
 </div>
 
@@ -2244,7 +2253,8 @@ function step(dt, growDt = dt){
   const drift = REDUCED ? 1.5 : 7;
   for(const b of bubbles){
     b.spawn = Math.min(1, b.spawn + dt*1.6);
-    if(b.level>1 && !(drag && drag.b===b) && growing) b.R = Math.min(maxR, b.R + rate[b.level]*growDt); // growth pauses during focus, pause, or a full screen
+    if(b.toR != null){ b.R += (b.toR - b.R)*Math.min(1, dt*5); if(Math.abs(b.R - b.toR) < .5){ b.R = b.toR; b.toR = null; } } // shrinking back: a smooth deflate
+    else if(b.level>1 && !(drag && drag.b===b) && growing) b.R = Math.min(maxR, b.R + rate[b.level]*growDt); // growth pauses during focus, pause, or a full screen
     b.pulse = Math.max(0, b.pulse - dt*1.5);
   }
   // centers
@@ -2708,6 +2718,7 @@ function openEdit(b, x, y){
   $('#edit-name').value = b.name; edUrg.value = b.level; syncEditUrg(); $('#edit-url').value = b.url || ''; setDueInput($('#edit-due'), b.due);
   edGroup = gById(b.group) ? b.group : null; renderGroups(); renderStepsEdit();
   { const t = b.isStep ? 0 : focusSoFar(b); $('#edit-focus-label').textContent = t >= 1 ? 'Get back in the bubble' : 'Get in the bubble'; $('#edit-focus-time').textContent = t >= 1 ? fmtClock(t) : ''; }
+  { const sb = $('#edit-shrink'), base = startR(b); sb.disabled = b.isStep || (b.toR ?? b.R) <= base + 1; sb.title = sb.disabled ? 'It’s already at its starting size' : ''; }
   ed.hidden = false; ed.style.animation = 'none'; void ed.offsetWidth; ed.style.animation = '';
   const w = ed.offsetWidth, h = ed.offsetHeight;
   ed.style.left = Math.max(12, Math.min(W()-w-12, x+16))+'px';
@@ -2717,6 +2728,9 @@ function openEdit(b, x, y){
 }
 function closeEdit(){ if(!ed.hidden) popupClosedAt = performance.now(); ed.hidden = true; editing = null; updateInteractive(); }
 $('#edit-close').addEventListener('click', closeEdit);
+const startR = b => b.level === 1 ? 34 : 42; // the size every new bubble starts at
+$('#edit-shrink').addEventListener('click', () => { const b = editing; if(!b || b.isStep) return; closeEdit();
+  b.toR = startR(b); b.pulse = 1; if(REMOTE){ b.R = b.toR; b.toR = null; } save(); renderTasks(); showToast(`“${b.name}” is back to its starting size. It will grow again.`, false); });
 $('#edit-cancel').addEventListener('click', closeEdit);
 $('#edit-delete').addEventListener('click', () => { const b = editing; closeEdit(); if(!b) return;
   if(b.isStep){ const p = b.parent; p.steps.splice(p.steps.indexOf(b.step), 1); numberSteps(p); const i = bubbles.indexOf(b); if(i >= 0) bubbles.splice(i, 1); save(); renderTasks(); return; }
@@ -2999,7 +3013,10 @@ $('#focus-exit').addEventListener('click', () => endFocus(false));
 
 addEventListener('keydown', e => {
   if(e.key !== 'Escape') return;
-  if(focus){ if(!panel.hidden && !anyPopup()) setPanel(false); return; } // inside a bubble, Esc only tucks the panel away
+  if(focus){ // inside a bubble: Esc first closes what's open on top, then takes you out (the bubble stays, unpopped)
+    if(!$('#gcolor').hidden) setGColor(null); else if(!ed.hidden) closeEdit(); else if(!tintPop.hidden) setTint(false);
+    else if(!panel.hidden) setPanel(false); else endFocus(false);
+    return; }
   if(!$('#gcolor').hidden) setGColor(null); else if(!ed.hidden) closeEdit(); else if(!tintPop.hidden) setTint(false); else if(!panel.hidden) setPanel(false);
 });
 
