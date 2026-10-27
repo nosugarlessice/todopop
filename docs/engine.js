@@ -37,11 +37,13 @@
   const RATE = [0, 0, 0.45, 1.1, 2.5]; // the app's demo growth speeds, radius px / s
   const OUT = .08, GAP = 2.5, SQUISH = 9, JELLY = 0.55, SWELL = 34, HOLD_DELAY = .15, HOLD_TIME = .75;
   const bubbles = [], particles = [], rings = [];
+  const POP_GESTURE = 'double', DBL_MS = 280; let pending = null; // trying double-click to pop; 'hold' = press and hold, as before
   let time = 0, drawOrder = [], walls = [], ti = 0, dpr = 1, fieldAlpha = 1, fieldTarget = 1;
   const easeOut = t => { const c = 1.7; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); };
   const effR = b => b.R * easeOut(Math.min(1, b.spawn)) + SWELL*Math.pow(b.holdP || 0, 1.6);
   // on a website they stop growing before they cover what you're reading (the app lets them fill the screen)
-  const maxFor = level => (SMALL() ? .62 : 1)*[0, 34, 52, 66, 82][level];
+  const K = () => SMALL() ? 1.5 : 3; // big enough that you can't ignore them
+  const maxFor = level => K()*[0, 34, 52, 66, 82][level];
 
   function makeBubble(o){
     return {name:o.name, level:o.level, group:o.group, R:o.R, hx:o.hx, hy:o.hy, x:o.hx, y:o.hy, vx:0, vy:0, ax:0, ay:0,
@@ -64,12 +66,10 @@
   function freeSpot(R){ // the app's: the roomiest spot, away from the edges, the bar and the other bubbles
     const walls = solidWalls();
     const w = navWall(), x0 = 30, x1 = W()-30, y0 = (w ? w.y1 : 0) + 20, y1 = H()-30; let best = null, bestScore = -Infinity;
-    const words = [...document.querySelectorAll('main h1, main h2, main h3, main p, main .btn, main .cap, main li, main .o-note, main .bubble-hint, main .big, main .device')].map(e => e.getBoundingClientRect()).filter(q => q.bottom > 0 && q.top < H() && q.width);
     for(let k=0;k<160;k++){
       const x = x0 + Math.random()*Math.max(10,x1-x0), y = y0 + Math.random()*Math.max(10,y1-y0);
-      // on the website they start out in the side margins, beside the page rather than on it
-      let s = 260 - Math.min(x-x0, x1-x)*0.9 + Math.min(y-y0, y1-y)*0.2;
-      for(const q of words) if(x + R > q.left && x - R < q.right && y + R > q.top && y - R < q.bottom) s -= 300; // appear beside the words, not on them
+      // anywhere at all, as long as it isn't on top of another bubble
+      let s = Math.random()*40;
       for(const w of walls) if(x + R > w.x0 && x - R < w.x1 && y + R > w.y0 && y - R < w.y1) s -= 600;
       for(const b of bubbles) s = Math.min(s, Math.hypot(b.hx-x,b.hy-y) - b.R - R);
       if(s>bestScore){ bestScore=s; best={x,y}; }
@@ -78,7 +78,7 @@
   }
   function add(spec){
     const [name, level, group] = spec ? [spec.name, spec.level, spec.group || null] : TASKS[ti++ % TASKS.length], max = maxFor(level);
-    const start = (SMALL() ? .62 : 1)*(level === 1 ? 34 : 42);
+    const start = K()*(level === 1 ? 34 : 42)*.75;
     const R = spec ? start : level === 1 ? max : start + (max - start)*Math.random()*.6;
     const p = spec && spec.at ? {x:spec.at.x, y:spec.at.y} : freeSpot(R); if(!p) return null;
     const b = makeBubble({name, level, group, R, hx:p.x, hy:p.y}); bubbles.push(b); if(spec && spec.at) keepApart(b, 'home'); return b;
@@ -106,7 +106,7 @@
     }
     return null;
   }
-  const onBar = e => !!e.target?.closest?.('.nav, [data-solid], .tp-pop, .focus-bar');
+  const onBar = e => !!e.target?.closest?.('.nav, [data-solid], .tp-pop, .focus-bar, .edit-pop, a, button, input');
   addEventListener('pointermove', e => {
     const t = performance.now(), dt = Math.max(8, t - mouse.lastT);
     mouse.vx = (e.clientX-mouse.x)/dt*1000; mouse.vy = (e.clientY-mouse.y)/dt*1000;
@@ -139,7 +139,13 @@
     if(!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
     const {b, moved, t} = drag; drag = null;
     root.classList.remove('grabbing'); b.holding = false;
-    if(!moved && performance.now()-t < 300){ b.pulse = 1; api.onClick?.(b); } // a quick click: get in the bubble, like the app
+    if(!moved && performance.now()-t < 300){ // a quick click gets you in; a second click right after pops it instead
+      b.pulse = 1;
+      if(POP_GESTURE === 'double'){
+        if(pending && pending.b === b){ clearTimeout(pending.t); pending = null; pop(b); }
+        else { if(pending) clearTimeout(pending.t); pending = {b, t:setTimeout(() => { pending = null; api.onClick?.(b); }, DBL_MS)}; }
+      } else api.onClick?.(b);
+    }
     else if(moved){ b.fx = b.hx/W(); b.fy = b.hy/H(); }
     if(e.pointerType !== 'mouse'){ mouse.x = mouse.y = -999; } // a lifted finger stops pressing on the skin
     setTimeout(()=> suppressClick=false, 0);
@@ -192,7 +198,7 @@
   }
   function step(dt){
     time += dt;
-    if(drag && !drag.moved){
+    if(POP_GESTURE === 'hold' && drag && !drag.moved){
       const b = drag.b, held = (performance.now() - drag.t)/1000;
       b.holding = held > HOLD_DELAY; b.holdP = Math.max(0, Math.min(1, (held - HOLD_DELAY)/HOLD_TIME));
       if(b.holding) for(let i=0;i<N;i++) b.v[i] += (Math.random()-.5)*90*b.holdP; // a little tremble under the pressure
@@ -338,11 +344,11 @@
       ctx.save(); shapePath(b); ctx.clip();
       if(r>22){
         let cx=0, cy=0; for(let i=0;i<N;i++){ const rr=r+b.d[i]; cx += Math.min(W()-8, Math.max(8, b.x+COS[i]*rr*.8)); cy += Math.min(H()-8, Math.max(8, b.y+SIN[i]*rr*.8)); }
-        const lx = cx/N, ly = cy/N, fs = Math.max(9.5, Math.min(26, r*.16));
+        const lx = cx/N, ly = cy/N, fs = Math.max(9.5, Math.min(34, r*.15));
         ctx.fillStyle = rgba(1); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font = `400 ${fs}px ${FONT}`;
         let lines = wrap(b.name, r*1.45); const maxL = (r>70 || r<40) ? 3 : 2;
         if(lines.length>maxL){ lines = lines.slice(0,maxL); let l = lines[maxL-1]; while(l.length>1 && ctx.measureText(l+'…').width > r*1.45) l=l.slice(0,-1); lines[maxL-1] = l.replace(/[\s…]+$/,'')+'…'; }
-        const ms = Math.max(7, Math.min(9.5, r*.065)) + 1, showMeta = r>40;
+        const ms = Math.max(7, Math.min(12, r*.06)) + 1, showMeta = r>40;
         const lh = fs*1.15, total = lines.length*lh + (showMeta ? ms*1.9 : 0) + (showMeta && gp ? ms*1.6 : 0);
         let y = ly - total/2 + lh/2;
         for(const l of lines){ ctx.fillText(l, lx, y); y += lh; }
@@ -375,7 +381,7 @@
     add, pop, list: () => bubbles,
     hide(on){ fieldTarget = on ? 0 : 1; }, // focus mode: the others step out of the way
     rename(b, name, level){ b.name = name; if(level && level !== b.level){ b.level = level; if(level === 1) b.R = Math.min(b.R, maxFor(1)); } b.pulse = 1; },
-    shrink(b){ b.R = (SMALL() ? .62 : 1)*(b.level === 1 ? 34 : 42); b.pulse = 1; },
+    shrink(b){ b.R = K()*(b.level === 1 ? 34 : 42)*.75; b.pulse = 1; },
     setTint(rgb){ INK_RGB = rgb; retint(); },
     burstAt(x, y, r){ rings.push({x, y, r, t:0}); for(let k=0;k<22;k++){ const a = Math.random()*6.283, sp = 140 + Math.random()*260; particles.push({x:x+Math.cos(a)*r*.9, y:y+Math.sin(a)*r*.9, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:1.5+Math.random()*3.5, t:0, life:.5+Math.random()*.45}); } },
     groupColor: g => GROUP[g], short: l => SHORT[l],
@@ -383,7 +389,7 @@
 
   // ---- run ----
   addEventListener('resize', resize); resize();
-  const count = () => SMALL() ? 3 : (W() > 1200 ? 6 : 5);
+  const count = () => SMALL() ? 3 : (W() > 1200 ? 5 : 4);
   for(let k=0;k<count();k++) add();
   let last = performance.now();
   (function frame(now){ const dt = Math.min(1/30, (now-last)/1000); last = now; step(dt); draw(); requestAnimationFrame(frame); })(last);

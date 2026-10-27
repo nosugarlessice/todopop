@@ -307,7 +307,7 @@ html.paused .task:not(.lv1) .dot i{border-style:dashed}
 .focus-bar.dragging{cursor:grabbing; animation:none; transition:none !important; box-shadow:0 26px 60px -20px rgba(16,24,48,.5); scale:1.03}
 .focus-bar.dock-bl{left:22px; transform:none}
 .focus-bar.dock-br{left:calc(100% - 22px); transform:translateX(-100%)}
-.focus-bar.dock-l, .focus-bar.dock-r{writing-mode:vertical-rl; bottom:auto; top:50%; max-width:none; max-height:calc(100% - 40px)}
+.focus-bar.dock-l, .focus-bar.dock-r{writing-mode:vertical-rl; text-orientation:sideways; bottom:auto; top:50%; max-width:none; max-height:calc(100% - 40px)}
 .focus-bar.dock-r{left:calc(100% - 22px); transform:translate(-100%, -50%)}
 .focus-bar.dock-l{left:22px; transform:translateY(-50%) rotate(180deg)} /* reads bottom to top on the left edge */
 .focus-bar:is(.dock-l, .dock-r) .focus-name{max-inline-size:min(36ch, 46vh)}
@@ -941,7 +941,7 @@ input.has-cjk{line-height:1.5}
       <span class="remote-chip" title="Your bubbles float on your computer. Everything you change here shows up there."><i></i>Remote</span>
     </div>
     <ul class="info-pop" id="info-pop" hidden>
-      <li><b>Click</b> a bubble to get in. <b>Press and hold</b> to pop it.</li>
+      <li><b>Click</b> a bubble to get in. <b id="pop-how">Double-click</b> to pop it.</li>
       <li>Give a task a <b>deadline</b> if it has one: in its last day the bubble goes up one urgency level by itself.</li>
       <li>Press <b>Space</b> to blow a new bubble. <b>Enter</b> steps through name, link, urgency and group (<b>← →</b> to choose), then blows it.</li>
       <li><b>Drag</b> a bubble to move it.</li>
@@ -2198,7 +2198,13 @@ addEventListener('pointerup', e => {
   const {b, moved, t} = drag; drag = null;
   document.documentElement.classList.remove('dragging');
   b.holding = false;
-  if(!moved && performance.now()-t < 300){ if(b.isStep) popStep(b); else getIn(b); } // a quick click: get in (steps just pop)
+  if(!moved && performance.now()-t < 300){ // a quick click: get in (steps just pop)
+    if(b.isStep) popStep(b);
+    else if(POP_GESTURE === 'double'){ // wait a beat: a second click means pop, not get in
+      if(pendingClick && pendingClick.b === b){ clearTimeout(pendingClick.t); pendingClick = null; requestPop(b); }
+      else { if(pendingClick) clearTimeout(pendingClick.t); pendingClick = {b, t:setTimeout(() => { pendingClick = null; getIn(b); }, DBL_MS)}; }
+    } else getIn(b);
+  }
   else if(!moved){ /* let go mid-squeeze: nothing happens */ }
   else { if(sideOf(b)) relayoutSide(sideOf(b)); save(); } // dragging along its edge reorders the line
   setTimeout(()=> suppressClick=false, 0);
@@ -2285,10 +2291,14 @@ function outsideWall(b, x, y){ // nearest point to (x,y) that keeps this bubble'
 }
 
 const HOLD_DELAY = .15, HOLD_TIME = .75; // seconds: when the swell starts, and how long until it pops
+/* how a task gets popped: 'double' = double-click it, 'hold' = press and hold until it bursts.
+   Trying out double-click; set this back to 'hold' to return to press-and-hold. */
+const POP_GESTURE = 'double', DBL_MS = 280;
+let pendingClick = null;
 function step(dt, growDt = dt){
   time += dt;
   // press and hold: the bubble swells and its skin tightens, then it pops; let go early and it relaxes
-  if(drag && !drag.moved && !drag.b.isStep && !entering){
+  if(POP_GESTURE === 'hold' && drag && !drag.moved && !drag.b.isStep && !entering){
     const b = drag.b, held = (performance.now() - drag.t)/1000;
     b.holding = held > HOLD_DELAY; b.holdP = Math.max(0, Math.min(1, (held - HOLD_DELAY)/HOLD_TIME));
     if(b.holding) for(let i=0;i<N;i++) b.v[i] += (Math.random()-.5)*90*b.holdP; // a little tremble under the pressure
@@ -3028,6 +3038,7 @@ function dropBar(e){
 $('#focus').addEventListener('pointerup', dropBar); $('#focus').addEventListener('pointercancel', dropBar);
 addEventListener('resize', () => { if(!barDrag) applyDock(); });
 applyDock();
+if(POP_GESTURE === 'hold') $('#pop-how').textContent = 'Press and hold';
 function endFocus(popIt){
   if(!focus) return;
   const {b, start, panelWasOpen} = focus;

@@ -31,6 +31,22 @@
     notes.forEach(n => { const o = big.querySelectorAll('.o')[+n.dataset.o].getBoundingClientRect(); n.style.left = (o.left + o.width/2 - box.left) + 'px'; });
   }
   addEventListener('resize', placeNotes); document.fonts?.ready.then(placeNotes); placeNotes();
+  big.querySelectorAll('.o').forEach((o, k) => { const hot = on => notes.forEach(n => +n.dataset.o === k && n.classList.toggle('hot', on));
+    o.addEventListener('pointerenter', () => hot(true)); o.addEventListener('pointerleave', () => hot(false)); o.addEventListener('focus', () => hot(true)); o.addEventListener('blur', () => hot(false)); });
+
+  /* dotted circles that wobble like a bubble's skin, but stay put */
+  $$('.doodle').forEach((el, n) => {
+    const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), path = document.createElementNS(NS, 'path');
+    svg.setAttribute('class', 'wob'); svg.setAttribute('viewBox', '-1.1 -1.1 2.2 2.2'); svg.setAttribute('aria-hidden', 'true');
+    path.setAttribute('vector-effect', 'non-scaling-stroke'); svg.appendChild(path); el.prepend(svg);
+    const seed = n*2.3, M = 72;
+    const shape = t => { let d = ''; for(let i = 0; i <= M; i++){ const a = i/M*6.2832;
+      const r = 1 + .035*Math.sin(3*a + t*1.3 + seed) + .025*Math.sin(5*a - t*.9 + 1 + seed) + .02*Math.sin(2*a + t*.7) + .012*Math.sin(7*a + t*1.9);
+      d += (i ? 'L' : 'M') + (Math.cos(a)*r).toFixed(4) + ' ' + (Math.sin(a)*r).toFixed(4); } path.setAttribute('d', d + 'Z'); };
+    shape(0); if(REDUCED) return;
+    let vis = true; new IntersectionObserver(([e]) => vis = e.isIntersecting).observe(el);
+    (function tick(now){ if(vis) shape(now/1000); requestAnimationFrame(tick); })(0);
+  });
 
   let openO = null;
   const SHORT = {1:'REMIND', 2:'SOON', 3:'TODAY', 4:'NOW!'};
@@ -186,9 +202,25 @@
 
   /* ---------- focus mode, for real, on this page ---------- */
   const bar = $('#focus-bar'); bar.hidden = false; bar.inert = true;
-  let inside = null, started = 0, tick = 0;
-  function enterFocus(b){
-    if(!b) return; inside = b; started = Date.now(); closeEdit(); setO(null);
+  let inside = null, started = 0, tick = 0, entering = false;
+  const ease3 = t => t < .5 ? 4*t*t*t : 1 - Math.pow(-2*t + 2, 3)/2;
+  function enterFocus(b){ // like the app: the bubble's skin opens out to the edges of the screen, and you're inside
+    if(!b || entering || inside) return; closeEdit(); setO(null);
+    if(REDUCED){ startFocus(b); return; }
+    entering = true; b.pulse = .8;
+    const veil = document.createElement('div'), ring = document.createElement('div'); veil.className = 'veil'; ring.className = 'veil-ring'; document.body.append(veil, ring);
+    const x = b.x, y = b.y, r0 = Math.max(10, b.R), Rend = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 20, t0 = performance.now(), DUR = 800;
+    (function grow(now){
+      const t = Math.min(1, (now - t0)/DUR), r = r0 + (Rend - r0)*ease3(t);
+      veil.style.clipPath = `circle(${r}px at ${x}px ${y}px)`;
+      Object.assign(ring.style, {left:(x - r) + 'px', top:(y - r) + 'px', width:2*r + 'px', height:2*r + 'px'});
+      if(t < 1){ requestAnimationFrame(grow); return; }
+      ring.remove(); entering = false; startFocus(b);
+      veil.style.transition = 'opacity .7s ease'; veil.style.opacity = 0; setTimeout(() => veil.remove(), 720); // the skin thins out, leaving the frame
+    })(t0);
+  }
+  function startFocus(b){
+    inside = b; started = Date.now();
     $('#fb-name').textContent = b.name; $('#fb-time').textContent = '0:00';
     root.classList.add('focusing'); bar.inert = false; TP.hide?.(true);
     clearInterval(tick); tick = setInterval(() => { const s = Math.floor((Date.now() - started)/1000); $('#fb-time').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2, '0')}`; }, 1000);
@@ -200,6 +232,41 @@
     if(popIt) setTimeout(() => TP.pop?.(b), 350); // back out, then it bursts
   }
   TP.onClick = b => enterFocus(b);
+
+  /* the focus bar is magnetic, as in the app: drag it to a bottom corner, the middle, or a side edge */
+  const DOCKS = ['bl', 'bc', 'br', 'l', 'r'];
+  let dock = 'bc', bdrag = null; try{ const d = localStorage.getItem('tp-dock'); if(DOCKS.includes(d)) dock = d; }catch(e){}
+  const applyDock = () => DOCKS.forEach(d => bar.classList.toggle('dock-' + d, d === dock && d !== 'bc'));
+  function spots(){
+    const vw = innerWidth, vh = innerHeight, m = 22, sb = parseFloat(getComputedStyle(bar).bottom) || 26, was = bar.className;
+    bar.classList.remove('dock-l', 'dock-r', 'dock-bl', 'dock-br'); const hz = bar.getBoundingClientRect(); bar.classList.add('dock-r'); const vt = bar.getBoundingClientRect(); bar.className = was;
+    const hy = vh - sb - hz.height/2;
+    return {bl:{x:m + hz.width/2, y:hy}, bc:{x:vw/2, y:hy}, br:{x:vw - m - hz.width/2, y:hy}, l:{x:m + vt.width/2, y:vh/2}, r:{x:vw - m - vt.width/2, y:vh/2}};
+  }
+  const nearest = (S, x, y) => DOCKS.reduce((a, d) => Math.hypot(S[d].x - x, S[d].y - y) < Math.hypot(S[a].x - x, S[a].y - y) ? d : a, 'bc');
+  bar.addEventListener('pointerdown', e => {
+    if(e.button !== 0 || e.target.closest('button')) return; e.preventDefault();
+    const r = bar.getBoundingClientRect(), S = spots(), slots = document.createElement('div'); slots.className = 'dock-slots';
+    slots.innerHTML = DOCKS.map(d => { const v = d === 'l' || d === 'r', w = v ? 16 : 84, h = v ? 84 : 16; return `<span data-d="${d}" style="left:${S[d].x - w/2}px; top:${S[d].y - h/2}px; width:${w}px; height:${h}px"></span>`; }).join('');
+    document.body.appendChild(slots);
+    bdrag = {dx:e.clientX - (r.left + r.width/2), dy:e.clientY - (r.top + r.height/2), S, slots, moved:false, sx:e.clientX, sy:e.clientY}; bar.setPointerCapture(e.pointerId);
+  });
+  bar.addEventListener('pointermove', e => {
+    if(!bdrag) return; if(!bdrag.moved && Math.hypot(e.clientX - bdrag.sx, e.clientY - bdrag.sy) < 4) return;
+    if(!bdrag.moved){ bdrag.moved = true; bar.classList.add('dragging'); }
+    const near = nearest(bdrag.S, e.clientX, e.clientY); DOCKS.forEach(d => bar.classList.remove('dock-' + d)); if(near === 'l' || near === 'r') bar.classList.add('dock-' + near);
+    Object.assign(bar.style, {left:(e.clientX - bdrag.dx) + 'px', top:(e.clientY - bdrag.dy) + 'px', bottom:'auto', transform:`translate(-50%, -50%)${near === 'l' ? ' rotate(180deg)' : ''}`});
+    bdrag.slots.querySelectorAll('span').forEach(s => s.classList.toggle('near', s.dataset.d === near));
+  });
+  const drop = e => {
+    if(!bdrag) return; const d = bdrag; bdrag = null; d.slots.remove(); if(!d.moved) return;
+    dock = nearest(d.S, e.clientX, e.clientY); try{ localStorage.setItem('tp-dock', dock); }catch(err){}
+    const r = bar.getBoundingClientRect(); bar.classList.remove('dragging'); Object.assign(bar.style, {left:'', top:'', bottom:'', transform:''}); applyDock();
+    const to = bar.getBoundingClientRect(); bar.style.translate = `${(r.left + r.width/2) - (to.left + to.width/2)}px ${(r.top + r.height/2) - (to.top + to.height/2)}px`;
+    void bar.offsetWidth; bar.style.transition = 'translate .45s cubic-bezier(.3,1.35,.5,1)'; bar.style.translate = '0 0';
+    setTimeout(() => { bar.style.transition = ''; bar.style.translate = ''; }, 480);
+  };
+  bar.addEventListener('pointerup', drop); bar.addEventListener('pointercancel', drop); applyDock();
   $('#fb-exit').addEventListener('click', () => leaveFocus(false));
   $('#fb-done').addEventListener('click', () => leaveFocus(true));
   addEventListener('keydown', e => { if(e.key !== 'Escape') return; if(editPop) closeEdit(); else if(inside) leaveFocus(false); else if(openO !== null) setO(null); });
@@ -212,15 +279,21 @@
   const svg = $('#arrows');
   function drawArrows(){
     if(!svg || innerWidth < 860){ if(svg) svg.innerHTML = ''; return; }
-    const base = svg.getBoundingClientRect(), r = id => { const q = $('#' + id).getBoundingClientRect(); return {l:q.left - base.left, r:q.right - base.left, t:q.top - base.top, b:q.bottom - base.top, cx:(q.left + q.right)/2 - base.left}; };
+    // measured from the layout, not the screen, so cards mid-reveal or lifted on hover don't bend the arrows
+    const host = svg.parentElement, r = id => { let el = $('#' + id), x = 0, y = 0; const w = el.offsetWidth, h = el.offsetHeight;
+      while(el && el !== host){ x += el.offsetLeft; y += el.offsetTop; el = el.offsetParent; }
+      return {l:x, r:x + w, t:y, b:y + h, cx:x + w/2}; };
     const w1 = r('why1'), w2 = r('why2'), w3 = r('why3'), s = r('solves'), f1 = r('feat1'), f2 = r('feat2'), f3 = r('feat3');
-    const head = (x, y) => { const k = 9; return `M${x-k} ${y-k} L${x} ${y} L${x+k} ${y-k}`; };
-    // each reason leads down to the bubble behaviour that answers it
-    const y1 = f1.t - 34, y2 = f2.t - 34, y3 = f3.t - 34;
+    // the head follows the line: it points the way the curve is travelling as it arrives
+    const head = (x, y, cx, cy) => { const L = Math.hypot(x - cx, y - cy) || 1, ux = (x - cx)/L, uy = (y - cy)/L, k = 12, a = .6, ca = Math.cos(a), sa = Math.sin(a);
+      const p = (c, s2) => `${(x - k*(ux*c - uy*s2)).toFixed(1)} ${(y - k*(uy*c + ux*s2)).toFixed(1)}`; return `M${p(ca, sa)} L${x} ${y} L${p(ca, -sa)}`; };
+    // each reason leads down to the bubble behaviour that answers it; the tails start inside the reason's card
+    const e1 = [w1.l + 96, f1.t + 6], e2 = [f2.cx, f2.t + 6], e3 = [w3.r - 70, f3.t + 6];
+    const c1 = [w1.l - 60, e1[1] - 110], c2 = [f2.cx + 40, e2[1] - 70], c3 = [w3.r + 60, e3[1] - 110];
     const paths = [
-      [`M${w1.l + 30} ${w1.b + 4} C ${w1.l - 40} ${w1.b + 120}, ${w1.l - 40} ${y1 - 120}, ${w1.l + 34} ${y1}`, head(w1.l + 34, y1)],
-      [`M${w2.cx} ${w2.b + 4} C ${w2.cx + 40} ${s.t - 30}, ${s.r + 70} ${s.t}, ${s.r + 40} ${(s.t + s.b)/2} S ${f2.cx + 20} ${y2 - 50}, ${f2.cx} ${y2}`, head(f2.cx, y2)],
-      [`M${w3.r - 34} ${w3.b + 4} C ${w3.r + 40} ${w3.b + 120}, ${w3.r + 40} ${y3 - 120}, ${w3.r - 34} ${y3}`, head(w3.r - 34, y3)],
+      [`M${w1.l + 44} ${w1.b - 34} C ${w1.l - 50} ${w1.b + 40}, ${c1[0]} ${c1[1]}, ${e1[0]} ${e1[1]}`, head(...e1, ...c1)],
+      [`M${w2.cx - 10} ${w2.b - 34} C ${w2.cx + 20} ${s.t - 20}, ${s.r + 90} ${s.t}, ${s.r + 46} ${(s.t + s.b)/2} S ${c2[0]} ${c2[1]}, ${e2[0]} ${e2[1]}`, head(...e2, ...c2)],
+      [`M${w3.r - 44} ${w3.b - 34} C ${w3.r + 50} ${w3.b + 40}, ${c3[0]} ${c3[1]}, ${e3[0]} ${e3[1]}`, head(...e3, ...c3)],
     ];
     svg.innerHTML = paths.map(([d, h]) => `<g><path d="${d}"/>${h ? `<path class="head" d="${h}"/>` : ''}</g>`).join('');
   }
