@@ -64,7 +64,7 @@
   function freeSpot(R){ // the app's: the roomiest spot, away from the edges, the bar and the other bubbles
     const walls = solidWalls();
     const w = navWall(), x0 = 30, x1 = W()-30, y0 = (w ? w.y1 : 0) + 20, y1 = H()-30; let best = null, bestScore = -Infinity;
-    const words = [...document.querySelectorAll('main h1, main h2, main h3, main p, main .btn, main .cap, main li, main .o-note, main .bubble-hint, main .big')].map(e => e.getBoundingClientRect()).filter(q => q.bottom > 0 && q.top < H() && q.width);
+    const words = [...document.querySelectorAll('main h1, main h2, main h3, main p, main .btn, main .cap, main li, main .o-note, main .bubble-hint, main .big, main .device')].map(e => e.getBoundingClientRect()).filter(q => q.bottom > 0 && q.top < H() && q.width);
     for(let k=0;k<160;k++){
       const x = x0 + Math.random()*Math.max(10,x1-x0), y = y0 + Math.random()*Math.max(10,y1-y0);
       // on the website they start out in the side margins, beside the page rather than on it

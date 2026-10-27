@@ -288,9 +288,30 @@ html.paused .task:not(.lv1) .dot i{border-style:dashed}
 .focus-bar{
   position:fixed; z-index:9; left:50%; bottom:calc(22px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%);
   display:flex; align-items:center; gap:14px; max-width:calc(100% - 32px);
-  background:var(--paper); border:1px solid var(--rule); border-radius:999px; padding:7px 7px 7px 20px;
-  box-shadow:0 18px 50px -22px rgba(16,24,48,.4); animation:pop-in .4s cubic-bezier(.3,1.6,.5,1);
+  background:var(--paper); border:1px solid var(--rule); border-radius:999px; padding-block:7px; padding-inline:20px 7px;
+  box-shadow:0 18px 50px -22px rgba(16,24,48,.4); animation:bar-in .4s cubic-bezier(.3,1.6,.5,1);
 }
+@keyframes bar-in{from{opacity:0; scale:.9}}
+/* the bar is magnetic: drag it by its dots (or anywhere that isn't a button) and it snaps to a corner, the middle, or a side edge */
+.focus-grip{flex:none; width:8px; height:16px; margin-inline:-10px -4px; opacity:.55; cursor:grab;
+  background:radial-gradient(circle, var(--ink) 1.1px, transparent 1.4px) 0 0/4px 4px}
+.focus-bar.can-drag{cursor:grab; touch-action:none}
+.focus-bar.can-drag :is(button, input){cursor:pointer}
+.focus-bar.dragging{cursor:grabbing; animation:none; transition:none !important; box-shadow:0 26px 60px -20px rgba(16,24,48,.5); scale:1.03}
+.focus-bar.dock-bl{left:22px; transform:none}
+.focus-bar.dock-br{left:calc(100% - 22px); transform:translateX(-100%)}
+.focus-bar.dock-l, .focus-bar.dock-r{writing-mode:vertical-rl; bottom:auto; top:50%; max-width:none; max-height:calc(100% - 40px)}
+.focus-bar.dock-r{left:calc(100% - 22px); transform:translate(-100%, -50%)}
+.focus-bar.dock-l{left:22px; transform:translateY(-50%) rotate(180deg)} /* reads bottom to top on the left edge */
+.focus-bar:is(.dock-l, .dock-r) .focus-name{max-inline-size:min(36ch, 46vh)}
+.focus-bar:is(.dock-l, .dock-r) .focus-time{writing-mode:horizontal-tb; font-size:14px} /* the clock stays upright */
+.focus-bar.dock-l :is(.focus-time, #step-side, .close){transform:rotate(180deg)}
+.focus-bar:is(.dock-l, .dock-r) .focus-grip{width:16px; height:8px}
+.focus-bar:is(.dock-l, .dock-r) .step-in{position:absolute; writing-mode:horizontal-tb; top:50%; right:calc(100% + 12px); transform:translateY(-50%); background:var(--paper); border:1px solid var(--rule); border-radius:14px; padding:10px 14px; box-shadow:0 14px 34px -18px rgba(16,24,48,.4)}
+.focus-bar.dock-l .step-in{transform:translateY(-50%) rotate(180deg)}
+.dock-slots{position:fixed; inset:0; z-index:8; pointer-events:none}
+.dock-slots span{position:absolute; border:1.5px dashed var(--ink); border-radius:999px; opacity:.4; transition:opacity .2s, background .2s, scale .25s cubic-bezier(.3,1.6,.5,1)}
+.dock-slots span.near{opacity:1; background:var(--ink-wash); scale:1.25}
 .focus-bar .focus-ring{color:var(--ink)}
 .focus-name{font-size:19px; font-style:italic; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:36ch; line-height:normal}
 .focus-time{font-size:19px; font-variant-numeric:tabular-nums; color:var(--ink-soft); letter-spacing:.02em}
@@ -1031,6 +1052,7 @@ input.has-cjk{line-height:1.5}
 <!-- inside a bubble with no link: its name, front and centre, so you remember what you came in for -->
 <div class="focus-note" id="focus-note" role="status" hidden><span class="field-label">Now</span><p id="focus-note-name"></p></div>
 <div class="focus-bar" id="focus" role="region" aria-label="Focus mode" hidden>
+  <span class="focus-grip" aria-hidden="true" title="Drag to move the bar"></span>
   <span class="focus-ring" aria-hidden="true"></span>
   <span class="focus-name" id="focus-name"></span>
   <span class="focus-time" id="focus-time" aria-label="Time in focus">0:00</span>
@@ -2223,6 +2245,7 @@ function panelWall(){
     const r = n.getBoundingClientRect(), g = 10; return {x0:r.left-g, y0:r.top-g, x1:r.right+g, y1:r.bottom+g}; } } // (or around the panel, if you open it)
   if(typeof panel === 'undefined') return null;
   const g = 9;
+  if(focus && panel.hidden && !REMOTE){ const r = document.getElementById('focus').getBoundingClientRect(); if(r.width > 2) return {x0:r.left-g, y0:r.top-g, x1:r.right+g, y1:r.bottom+g}; }
   if(panel.hidden){ // tucked away: the small TODOPOP sticker is just as solid as the open panel
     const l = document.getElementById('launcher'); if(!l || l.hidden || REMOTE) return null;
     const r = l.getBoundingClientRect(); if(r.width < 2) return null;
@@ -2949,6 +2972,56 @@ function startFocus(b){
   document.documentElement.classList.remove('over-bubble');
   updateInteractive();
 }
+/* the focus bar is magnetic: five places it can live, remembered */
+const DOCKS = ['bl','bc','br','l','r'];
+let barDock = DOCKS.includes(store.get('focusDock')) ? store.get('focusDock') : 'bc', barDrag = null;
+function applyDock(){ const f = $('#focus'); DOCKS.forEach(d => f.classList.toggle('dock-' + d, d === barDock && d !== 'bc')); }
+function dockSpots(f){ // where the bar's centre would sit in each place, and its size there
+  const vw = innerWidth, vh = innerHeight, m = 22, sb = parseFloat(getComputedStyle(f).bottom) || 22;
+  const was = f.className; f.classList.remove('dock-l','dock-r','dock-bl','dock-br');
+  const hz = f.getBoundingClientRect(); f.classList.add('dock-r'); const vt = f.getBoundingClientRect(); f.className = was;
+  const hy = vh - sb - hz.height/2;
+  return {bl:{x:m + hz.width/2, y:hy, w:hz.width, h:hz.height}, bc:{x:vw/2, y:hy, w:hz.width, h:hz.height}, br:{x:vw - m - hz.width/2, y:hy, w:hz.width, h:hz.height},
+    l:{x:m + vt.width/2, y:vh/2, w:vt.width, h:vt.height}, r:{x:vw - m - vt.width/2, y:vh/2, w:vt.width, h:vt.height}};
+}
+function nearestDock(spots, x, y){ let best = 'bc', bd = Infinity; for(const d of DOCKS){ const q = spots[d], k = Math.hypot(q.x - x, q.y - y); if(k < bd){ bd = k; best = d; } } return best; }
+$('#focus').addEventListener('pointerdown', e => {
+  const f = $('#focus'); if(REMOTE || e.button !== 0 || e.target.closest('button, input')) return;
+  e.preventDefault(); const r = f.getBoundingClientRect(), spots = dockSpots(f);
+  const slots = document.createElement('div'); slots.className = 'dock-slots';
+  slots.innerHTML = DOCKS.map(d => { const q = spots[d], v = d === 'l' || d === 'r', w = v ? 16 : 84, h = v ? 84 : 16; // a small mark where each place is
+    return `<span data-d="${d}" style="left:${q.x - w/2}px; top:${q.y - h/2}px; width:${w}px; height:${h}px"></span>`; }).join('');
+  document.body.appendChild(slots);
+  barDrag = {dx:e.clientX - (r.left + r.width/2), dy:e.clientY - (r.top + r.height/2), spots, slots, moved:false, sx:e.clientX, sy:e.clientY};
+  f.setPointerCapture(e.pointerId); updateInteractive();
+});
+$('#focus').addEventListener('pointermove', e => {
+  const f = $('#focus'); if(!barDrag) return;
+  if(!barDrag.moved && Math.hypot(e.clientX - barDrag.sx, e.clientY - barDrag.sy) < 4) return;
+  if(!barDrag.moved){ barDrag.moved = true; f.classList.remove('settle'); f.classList.add('dragging'); }
+  const x = e.clientX - barDrag.dx, y = e.clientY - barDrag.dy, near = nearestDock(barDrag.spots, e.clientX, e.clientY); // where your hand is going
+  const vert = near === 'l' || near === 'r'; // it turns as it reaches a side edge
+  DOCKS.forEach(d => f.classList.toggle('dock-' + d, false)); if(vert) f.classList.add('dock-' + near);
+  f.style.left = x + 'px'; f.style.top = y + 'px'; f.style.bottom = 'auto'; f.style.transform = `translate(-50%, -50%)${near === 'l' ? ' rotate(180deg)' : ''}`;
+  barDrag.slots.querySelectorAll('span').forEach(s => s.classList.toggle('near', s.dataset.d === near));
+  mouse.x = e.clientX; mouse.y = e.clientY;
+});
+function dropBar(e){
+  const f = $('#focus'); if(!barDrag) return; const d = barDrag; barDrag = null; d.slots.remove();
+  if(d.moved){
+    barDock = nearestDock(d.spots, e.clientX, e.clientY); store.set('focusDock', barDock);
+    const r = f.getBoundingClientRect(); // glide from where you let go into its place
+    f.style.animation = 'none'; f.classList.remove('dragging');
+    f.style.left = f.style.top = f.style.bottom = f.style.transform = ''; applyDock();
+    const to = f.getBoundingClientRect(); f.style.translate = `${(r.left + r.width/2) - (to.left + to.width/2)}px ${(r.top + r.height/2) - (to.top + to.height/2)}px`;
+    void f.offsetWidth; f.style.transition = 'translate .45s cubic-bezier(.3,1.35,.5,1)'; f.style.translate = '0 0';
+    setTimeout(() => { f.style.transition = ''; f.style.translate = ''; }, 480);
+  }
+  updateInteractive();
+}
+$('#focus').addEventListener('pointerup', dropBar); $('#focus').addEventListener('pointercancel', dropBar);
+addEventListener('resize', () => { if(!barDrag) applyDock(); });
+applyDock();
 function endFocus(popIt){
   if(!focus) return;
   const {b, start, panelWasOpen} = focus;
@@ -2959,7 +3032,7 @@ function endFocus(popIt){
   }
   setStepInput(false); answer(false);
   focus = null; $('#focus-frame').hidden = true; $('#focus-note').hidden = true; document.documentElement.classList.remove('focusing'); if(REMOTE) renderTasks();
-  clearInterval(focusTimer); $('#focus').hidden = true;
+  clearInterval(focusTimer); $('#focus').hidden = true; $('#focus').style.animation = '';
   if(panel.hidden && $('#launcher').hidden && panelWasOpen) panel.hidden = false; // untouched while inside: back as it was
   $('#launcher').hidden = !panel.hidden; // opened or tucked away while inside: it stays that way
   b.focusTotal = (b.focusTotal || 0) + (Date.now()-start)/1000;
@@ -3048,7 +3121,7 @@ function inRect(el, x, y){ if(!el || el.hidden) return false; const r = el.getBo
 function updateInteractive(){
   if(!DESKTOP) return;
   const x = mouse.x, y = mouse.y;
-  const on = !!drag || !!pdrag || !ed.hidden || !gnew.hidden || !$('#pair').hidden || !$('#ask').hidden || inRect($('#ask'),x,y) || !tintPop.hidden || !$('#gcolor').hidden || !!hit(x,y) || inRect($('#focus'),x,y) || inRect(panel,x,y) || inRect($('#launcher'),x,y) || inRect($('#update-note'),x,y) || ($('#toast').classList.contains('show') && inRect($('#toast'),x,y));
+  const on = !!drag || !!pdrag || !!barDrag || !ed.hidden || !gnew.hidden || !$('#pair').hidden || !$('#ask').hidden || inRect($('#ask'),x,y) || !tintPop.hidden || !$('#gcolor').hidden || !!hit(x,y) || inRect($('#focus'),x,y) || inRect(panel,x,y) || inRect($('#launcher'),x,y) || inRect($('#update-note'),x,y) || ($('#toast').classList.contains('show') && inRect($('#toast'),x,y));
   if(on !== interactive){ interactive = on; window.todopop.setInteractive(on); }
 }
 addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; updateInteractive(); }, {passive:true});

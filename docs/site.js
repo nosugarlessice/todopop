@@ -37,7 +37,7 @@
   const LEVEL_NAME = {1:'Just a reminder', 2:'Soon', 3:'Today', 4:'Super urgent'};
   const GROUPS = ['School', 'Work', 'Home', 'Health'];
   const popped = []; // what you've popped on this page
-  TP.onPop = b => { popped.unshift({name:b.name, level:b.level, at:Date.now()}); if(openO === 1) renderProgress(); };
+  TP.onPop = (b, secs) => { popped.unshift({name:b.name, level:b.level, group:b.group || null, focus:secs || b.focusSecs || 0, at:Date.now()}); if(openO === 1){ selDay = null; renderProgress(); } };
 
   // the app's tints: hue + saturation, drawn at a lightness that always reads on white
   const hslToRgb = (h, s, l) => { const a = s*Math.min(l, 1-l), f = n => { const k = (n + h/30) % 12; return l - a*Math.max(-1, Math.min(k-3, 9-k, 1)); }; return [f(0), f(8), f(4)].map(v => Math.round(v*255)); };
@@ -68,13 +68,65 @@
     $('#tp-blow').addEventListener('click', blow); $('#tp-name').addEventListener('keydown', e => { if(e.key === 'Enter') blow(); });
     setTimeout(() => $('#tp-name')?.focus({preventScroll:true}), 60);
   }
-  const ago = t => { const m = Math.round((Date.now() - t)/60000); return m < 1 ? 'just now' : m === 1 ? '1 min ago' : m + ' min ago'; };
+  /* Popped: the app's week and month views. Today is what you've really popped on this page;
+     the days before it are a made-up history, so you can see what a few weeks of using it looks like. */
+  const MON = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const dayKey = d => `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+  const SAMPLE_TASKS = [['Problem set 3','School',4,52],['Reading response','School',3,38],['Email TA','School',2,0],['Studio crit prep','School',4,95],['Print posters','School',2,0],
+    ['Reply to emails','Work',3,14],['Figma critique','Work',3,41],['Send invoice','Work',2,0],['Update portfolio','Work',2,63],
+    ['Laundry','Home',2,0],['Groceries','Home',2,0],['Pay rent','Home',3,0],['Water the pothos','Home',1,0],['Clean desk','Home',1,0],
+    ['Gym','Health',2,0],['Book dentist','Health',2,0],['Call mom',null,1,0],['Return library book',null,1,0]];
+  const sample = (() => { // the same history every visit
+    let seed = 7; const rnd = () => (seed = (seed*16807) % 2147483647) / 2147483647;
+    const m = {}, today = new Date(); today.setHours(12, 0, 0, 0);
+    for(let i = 1; i < 75; i++){ const d = new Date(today); d.setDate(d.getDate() - i); const wk = d.getDay() === 0 || d.getDay() === 6;
+      const n = Math.max(0, Math.round(rnd()*(wk ? 3 : 6) - (rnd() < .18 ? 9 : 0)));
+      m[dayKey(d)] = Array.from({length:n}, () => { const [name, group, level, focus] = SAMPLE_TASKS[Math.floor(rnd()*SAMPLE_TASKS.length)]; return {name, group, level, focus:focus ? Math.round(focus*(.6 + rnd()*.8)) : 0}; }); }
+    return m; })();
+  let archMode = 'week', archOffset = 0, selDay = null;
+  const dur = mins => mins >= 60 ? `${Math.floor(mins/60)} h ${mins%60} min` : `${mins} min`;
+  function dayList(k){ return k === dayKey(new Date()) ? popped.map(p => ({name:p.name, group:p.group, level:p.level, focus:Math.round((p.focus || 0)/60)})) : (sample[k] || []); }
   function renderProgress(){
-    pop.innerHTML = `<div class="row"><h3>Popped</h3><span class="lbl">${popped.length} on this page</span><button type="button" class="x" aria-label="Close">×</button></div>` +
-      (popped.length ? `<ul class="popped-list">${popped.map(p => `<li><span>${esc(p.name)}</span><small>${SHORT[p.level]} · ${ago(p.at)}</small></li>`).join('')}</ul>`
-        : `<p class="note">Nothing popped yet. Press and hold a bubble until it bursts.</p>`) +
-      `<p class="note">In the app, this is where your week and month of popped tasks live, with the time you spent inside each bubble.</p>`;
+    const today = new Date(); today.setHours(12, 0, 0, 0); const tk = dayKey(today);
+    let days = [], cal = '', range = '';
+    if(archMode === 'week'){
+      const start = new Date(today); start.setDate(start.getDate() - 6 + archOffset*7);
+      for(let i = 0; i < 7; i++){ const d = new Date(start); d.setDate(d.getDate() + i); days.push(d); }
+      const e = days[6]; range = `${MON[start.getMonth()]} ${start.getDate()} – ${start.getMonth() !== e.getMonth() ? MON[e.getMonth()] + ' ' : ''}${e.getDate()}, ${e.getFullYear()}`;
+      cal = `<div class="week">` + days.map(d => { const k = dayKey(d), L = d > today ? [] : dayList(k);
+        return `<button type="button" class="wday${k === tk ? ' today' : ''}${k === selDay ? ' sel' : ''}" data-k="${k}" aria-label="${MON[d.getMonth()]} ${d.getDate()}: ${L.length} popped">
+          <span class="pips">${L.slice(0, 8).map((a, j) => `<i class="pip${a.group ? ' g' : ''}" style="--k:${j}${a.group ? `; --gc:${TP.groupColor?.(a.group)}` : ''}"></i>`).join('')}</span>
+          <span class="n">${L.length}</span><span class="d">${'MTWTFSS'[(d.getDay() + 6) % 7]} ${d.getDate()}</span></button>`; }).join('') + `</div>`;
+    } else {
+      const m = new Date(today.getFullYear(), today.getMonth() + archOffset, 1, 12); range = `${MONTHS[m.getMonth()]} ${m.getFullYear()}`;
+      const lead = (m.getDay() + 6) % 7, dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
+      cal = `<div class="month">` + 'MTWTFSS'.split('').map(c => `<span class="h">${c}</span>`).join('') + '<span class="mday out"></span>'.repeat(lead);
+      for(let i = 1; i <= dim; i++){ const d = new Date(m.getFullYear(), m.getMonth(), i, 12); days.push(d); const k = dayKey(d), n = d > today ? 0 : dayList(k).length, sz = n ? 30 + Math.min(n, 7)*10 : 0;
+        cal += `<button type="button" class="mday${n ? '' : ' zero'}${k === tk ? ' today' : ''}${k === selDay ? ' sel' : ''}" data-k="${k}" aria-label="${MON[d.getMonth()]} ${i}: ${n} popped">${n ? `<span class="c" style="width:${sz}%; height:${sz}%; --k:${i}"></span>` : ''}<span class="num">${i}</span></button>`; }
+      cal += `</div>`;
+    }
+    const inRange = days.filter(d => d <= today).map(d => ({d, list:dayList(dayKey(d))}));
+    const total = inRange.reduce((s, x) => s + x.list.length, 0), best = inRange.reduce((a, x) => x.list.length > (a?.list.length || 0) ? x : a, null);
+    const focus = inRange.reduce((s, x) => s + x.list.reduce((t, a) => t + a.focus, 0), 0);
+    if(selDay === null){ const last = [...inRange].reverse().find(x => x.list.length); selDay = last ? dayKey(last.d) : ''; }
+    const sel = days.find(d => dayKey(d) === selDay), L = sel ? dayList(selDay) : [];
+    pop.innerHTML = `<div class="row"><h3>Popped</h3><button type="button" class="x" aria-label="Close">×</button></div>` +
+      (popped.length ? '' : `<p class="empty">Nothing popped on this page yet. Press and hold a bubble until it bursts, and it lands in today.</p>`) +
+      `<div class="arch-bar"><div class="seg${archMode === 'month' ? ' on-month' : ''}" role="group" aria-label="View"><button type="button" data-m="week" class="${archMode === 'week' ? 'on' : ''}">Week</button><button type="button" data-m="month" class="${archMode === 'month' ? 'on' : ''}">Month</button></div>
+        <div class="arch-nav"><button type="button" data-nav="-1" aria-label="Earlier">‹</button><button type="button" data-nav="1" aria-label="Later"${archOffset >= 0 ? ' disabled' : ''}>›</button></div></div>
+      <div class="range">${range}</div>${cal}
+      <p class="arch-sum">${total ? `<b>${total}</b> popped this ${archMode}. Best day <b>${MON[best.d.getMonth()]} ${best.d.getDate()}</b> with ${best.list.length}.${focus >= 1 ? ` <b>${dur(focus)}</b> in focus mode.` : ''}` : `Nothing popped this ${archMode}.`}</p>` +
+      (L.length ? `<ul class="day-list"><li class="ttl">${MON[sel.getMonth()]} ${sel.getDate()}</li>${L.map(a => `<li><i style="--gc:${a.group ? TP.groupColor?.(a.group) : 'transparent'}"></i><span>${esc(a.name)}</span><small>${a.focus ? dur(a.focus) + ' · ' : ''}${SHORT[a.level]}</small></li>`).join('')}</ul>` : '') +
+      `<p class="note">Days before today are a sample history, to show what a few weeks of popping looks like.</p>`;
   }
+  pop.addEventListener('click', e => {
+    if(openO !== 1) return; const m = e.target.closest('[data-m]'), nav = e.target.closest('[data-nav]'), day = e.target.closest('[data-k]');
+    if(m && m.dataset.m !== archMode){ archMode = m.dataset.m; archOffset = 0; selDay = null; renderProgress(); }
+    else if(nav && !nav.disabled){ archOffset = Math.min(0, archOffset + +nav.dataset.nav); selDay = null; renderProgress(); }
+    else if(day){ selDay = selDay === day.dataset.k ? '' : day.dataset.k; renderProgress(); }
+    placePop();
+  });
   function renderCustomize(){
     pop.innerHTML = `<div class="row"><h3>Your color</h3><button type="button" class="x" aria-label="Close">×</button></div>
       <div class="swatches" role="group" aria-label="Tint">${PRESETS.map(([h, s], i) => `<button type="button" data-t="${i}" aria-pressed="${i === tint}" aria-label="Color ${i + 1}" style="background:${hex(hslToRgb(h, s, inkL(h, s)))}"></button>`).join('')}</div>
@@ -84,12 +136,20 @@
   function setO(i){
     openO = (i === openO) ? null : i;
     big.querySelectorAll('.o').forEach((o, k) => { o.classList.toggle('on', k === openO); o.setAttribute('aria-expanded', k === openO); });
-    if(openO === null){ pop.hidden = true; return; }
-    const o = big.querySelectorAll('.o')[openO].getBoundingClientRect(), pr = pop.parentElement.getBoundingClientRect();
-    pop.hidden = false; [renderCreate, renderProgress, renderCustomize][openO]();
-    const w = pop.getBoundingClientRect(); pop.style.setProperty('--ox', Math.max(0, Math.min(100, (o.left + o.width/2 - w.left)/w.width*100)) + '%');
+    if(openO === null){ pop.hidden = true; notes.forEach(n => n.classList.remove('lift')); return; }
+    pop.hidden = false; pop.classList.toggle('wide', openO === 1); if(openO === 1){ archMode = 'week'; archOffset = 0; selDay = null; }
+    [renderCreate, renderProgress, renderCustomize][openO](); placePop();
     pop.style.animation = 'none'; void pop.offsetWidth; pop.style.animation = '';
+    notes.forEach(n => n.classList.toggle('lift', +n.dataset.o === openO));
   }
+  function placePop(){ // floats over the page, hanging from the O you pressed; nothing underneath moves
+    if(openO === null || pop.hidden) return;
+    const o = big.querySelectorAll('.o')[openO].getBoundingClientRect(), wr = pop.parentElement.getBoundingClientRect(), b = big.getBoundingClientRect(), w = pop.offsetWidth;
+    const cx = o.left + o.width/2 - wr.left, left = Math.max(Math.min(0, (wr.width - w)/2), Math.min(Math.max(wr.width - w, (wr.width - w)/2), cx - w/2));
+    pop.style.left = left + 'px'; pop.style.top = (b.bottom - wr.top + 16) + 'px';
+    pop.style.setProperty('--ox', Math.max(8, Math.min(w - 8, cx - left)) + 'px');
+  }
+  addEventListener('resize', placePop);
   big.addEventListener('click', e => { const o = e.target.closest('.o'); if(o) setO(+o.dataset.o); });
   pop.addEventListener('click', e => { if(e.target.closest('.x')) setO(null); });
   addEventListener('pointerdown', e => { if(openO !== null && !e.target.closest('#tp-pop, #big')) setO(null); });
@@ -136,6 +196,7 @@
   function leaveFocus(popIt){
     if(!inside) return; const b = inside; inside = null; clearInterval(tick);
     root.classList.remove('focusing'); bar.inert = true; TP.hide?.(false);
+    b.focusSecs = (b.focusSecs || 0) + (Date.now() - started)/1000;
     if(popIt) setTimeout(() => TP.pop?.(b), 350); // back out, then it bursts
   }
   TP.onClick = b => enterFocus(b);
