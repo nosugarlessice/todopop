@@ -43,6 +43,12 @@
     f.style.paddingLeft = Math.max(0, rg.getBoundingClientRect().left - h.getBoundingClientRect().left) + 'px';
   }
   addEventListener('resize', alignFeats); document.fonts?.ready.then(alignFeats); alignFeats();
+  function fitCircles(){ // a dotted circle always big enough to hold its words, whatever the language
+    $$('.doodle').forEach(el => { const kids = [...el.children].filter(k => !k.matches('svg'));
+      el.style.width = ''; const w = Math.max(...kids.flatMap(k => [k, ...k.querySelectorAll('li')]).map(k => k.scrollWidth)), h = kids.reduce((s, k) => s + k.offsetHeight, 0) + 10;
+      const need = Math.ceil(Math.hypot(w, h) + 64); if(need > el.offsetWidth) el.style.width = need + 'px'; });
+  }
+  addEventListener('resize', fitCircles); document.fonts?.ready.then(fitCircles); fitCircles();
   big.querySelectorAll('.o').forEach((o, k) => { const hot = on => notes.forEach(n => +n.dataset.o === k && n.classList.toggle('hot', on));
     o.addEventListener('pointerenter', () => hot(true)); o.addEventListener('pointerleave', () => hot(false)); o.addEventListener('focus', () => hot(true)); o.addEventListener('blur', () => hot(false)); });
 
@@ -414,6 +420,6 @@
   I18N.onChange(() => {
     const o = openO; if(o !== null){ openO = null; pop.hidden = true; setO(o); }
     closeEdit(); if(inside) $('#fb-name').textContent = label(inside);
-    placeNotes(); alignFeats(); drawArrows(); TP.setLang?.();
+    placeNotes(); alignFeats(); fitCircles(); drawArrows(); TP.setLang?.();
   });
 })();
