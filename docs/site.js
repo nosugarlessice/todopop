@@ -4,6 +4,8 @@
   const root = document.documentElement, REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const TP = window.TP || {};
+  const I18N = window.I18N || {T:s => s, lang:'en', onChange(){}}, T = s => I18N.T(s), zh = () => I18N.lang === 'zh';
+  const label = b => TP.label ? TP.label(b) : b.name;
 
   /* ---------- downloads: the right one first ---------- */
   const ua = navigator.userAgent, ios = /iPhone|iPad|iPod/i.test(ua) || (navigator.maxTouchPoints > 1 && /Macintosh/.test(ua)), android = /Android/i.test(ua), mobile = ios || android;
@@ -14,10 +16,10 @@
   });
   if(mobile){
     const g = $('#hero-btns'), a = document.createElement('a'); a.className = 'btn solid';
-    if(android){ a.href = 'https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk'; a.innerHTML = 'Get the Android app <small>.apk</small>'; }
-    else { a.href = 'app/'; a.textContent = 'Get on iPhone'; }
-    g.querySelectorAll('[data-os]').forEach(b => b.classList.remove('solid')); g.prepend(a);
-    $('#hero-meta').textContent = 'Free · No Sign-up · No ads · The bubbles float on your computer; your phone is the remote.';
+    const fill = () => { if(android) a.innerHTML = `${T('Get the Android app')} <small>.apk</small>`; else a.textContent = T('Get on iPhone');
+      $('#hero-meta').textContent = T('Free · No Sign-up · No ads · The bubbles float on your computer; your phone is the remote.'); };
+    a.href = android ? 'https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk' : 'app/';
+    g.querySelectorAll('[data-os]').forEach(b => b.classList.remove('solid')); g.prepend(a); fill(); I18N.onChange(fill);
   }
 
   scrollTo({top:0, behavior:'instant'}); // a fresh start every time
@@ -36,8 +38,8 @@
   addEventListener('resize', placeNotes); document.fonts?.ready.then(placeNotes); placeNotes();
   function alignFeats(){ // the feature line starts under the "t" in "Additional Features"
     const h = $('#more-title'), f = $('.feats'); if(!h || !f) return;
-    const tn = [...h.childNodes].find(n => n.nodeType === 3 && n.textContent.includes('Additional')); if(!tn) return;
-    const rg = document.createRange(), k = tn.textContent.indexOf('Additional') + 4; rg.setStart(tn, k); rg.setEnd(tn, k + 1);
+    const word = zh() ? '更多' : 'Additional', tn = [...h.childNodes].find(n => n.nodeType === 3 && n.textContent.includes(word)); if(!tn){ f.style.paddingLeft = ''; return; }
+    const rg = document.createRange(), k = tn.textContent.indexOf(word) + (zh() ? 1 : 4); rg.setStart(tn, k); rg.setEnd(tn, k + 1);
     f.style.paddingLeft = Math.max(0, rg.getBoundingClientRect().left - h.getBoundingClientRect().left) + 'px';
   }
   addEventListener('resize', alignFeats); document.fonts?.ready.then(alignFeats); alignFeats();
@@ -100,7 +102,7 @@
   const LEVEL_NAME = {1:'Just a reminder', 2:'Soon', 3:'Today', 4:'Super urgent'};
   const GROUPS = ['School', 'Work', 'Home', 'Health'];
   const popped = []; // what you've popped on this page
-  TP.onPop = (b, secs) => { popped.unshift({name:b.name, level:b.level, group:b.group || null, focus:secs || b.focusSecs || 0, at:Date.now()}); if(openO === 1){ selDay = null; renderProgress(); } };
+  TP.onPop = (b, secs) => { popped.unshift({name:b.name, key:b.key || null, level:b.level, group:b.group || null, focus:secs || b.focusSecs || 0, at:Date.now()}); if(openO === 1){ selDay = null; renderProgress(); } };
 
   // the app's tints: hue + saturation, drawn at a lightness that always reads on white
   const hslToRgb = (h, s, l) => { const a = s*Math.min(l, 1-l), f = n => { const k = (n + h/30) % 12; return l - a*Math.max(-1, Math.min(k-3, 9-k, 1)); }; return [f(0), f(8), f(4)].map(v => Math.round(v*255)); };
@@ -114,17 +116,17 @@
     if(openO === 2) renderCustomize();
   }
 
-  function stopsHTML(cur){ return `<div class="stops" role="group" aria-label="Urgency">${[1,2,3,4].map(l => `<button type="button" data-l="${l}" aria-pressed="${l === cur}">${SHORT[l]}</button>`).join('')}</div>`; }
+  function stopsHTML(cur){ return `<div class="stops" role="group" aria-label="${T('Urgency')}">${[1,2,3,4].map(l => `<button type="button" data-l="${l}" aria-pressed="${l === cur}">${T(SHORT[l])}</button>`).join('')}</div>`; }
   function wireStops(box, onPick){ box.querySelector('.stops').addEventListener('click', e => { const b = e.target.closest('[data-l]'); if(!b) return; box.querySelectorAll('.stops button').forEach(x => x.setAttribute('aria-pressed', x === b)); onPick(+b.dataset.l); }); }
 
   function renderCreate(){
     let level = 2, group = null;
-    pop.innerHTML = `<div class="row"><h3>Blow a bubble</h3><button type="button" class="x" aria-label="Close">×</button></div>
-      <label class="lbl" for="tp-name">Task name</label><input class="tin" id="tp-name" maxlength="40" placeholder="e.g. Send the team the Figma link" autocomplete="off">
-      <span class="lbl">Urgency · <span id="tp-lv">${LEVEL_NAME[level]}</span></span>${stopsHTML(level)}
-      <span class="lbl">Group</span><div class="chips" id="tp-g"><button type="button" data-g="" aria-pressed="true"><i></i>No group</button>${GROUPS.map(g => `<button type="button" data-g="${g}" aria-pressed="false"><i style="background:${TP.groupColor?.(g)}"></i>${g}</button>`).join('')}</div>
-      <button type="button" class="btn solid" id="tp-blow" style="justify-content:center">Blow it</button>`;
-    wireStops(pop, l => { level = l; $('#tp-lv').textContent = LEVEL_NAME[l]; });
+    pop.innerHTML = `<div class="row"><h3>${T('Blow a bubble')}</h3><button type="button" class="x" aria-label="${T('Close')}">×</button></div>
+      <label class="lbl" for="tp-name">${T('Task name')}</label><input class="tin" id="tp-name" maxlength="40" placeholder="${T('e.g. Send the team the Figma link')}" autocomplete="off">
+      <span class="lbl">${T('Urgency')} · <span id="tp-lv">${T(LEVEL_NAME[level])}</span></span>${stopsHTML(level)}
+      <span class="lbl">${T('Group')}</span><div class="chips" id="tp-g"><button type="button" data-g="" aria-pressed="true"><i></i>${T('No group')}</button>${GROUPS.map(g => `<button type="button" data-g="${g}" aria-pressed="false"><i style="background:${TP.groupColor?.(g)}"></i>${T(g)}</button>`).join('')}</div>
+      <button type="button" class="btn solid" id="tp-blow" style="justify-content:center">${T('Blow it')}</button>`;
+    wireStops(pop, l => { level = l; $('#tp-lv').textContent = T(LEVEL_NAME[l]); });
     $('#tp-g').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if(!b) return; group = b.dataset.g || null; $$('#tp-g button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
     const blow = () => { const name = $('#tp-name').value.trim(); if(!name){ $('#tp-name').focus(); return; }
       const r = big.getBoundingClientRect(); TP.add?.({name, level, group, at:{x:r.left + r.width*(.2 + Math.random()*.6), y:Math.min(innerHeight - 80, r.bottom + 160)}}); setO(null); };
@@ -148,25 +150,27 @@
       m[dayKey(d)] = Array.from({length:n}, () => { const [name, group, level, focus] = SAMPLE_TASKS[Math.floor(rnd()*SAMPLE_TASKS.length)]; return {name, group, level, focus:focus ? Math.round(focus*(.6 + rnd()*.8)) : 0}; }); }
     return m; })();
   let archMode = 'week', archOffset = 0, selDay = null;
-  const dur = mins => mins >= 60 ? `${Math.floor(mins/60)} h ${mins%60} min` : `${mins} min`;
-  function dayList(k){ return k === dayKey(new Date()) ? popped.map(p => ({name:p.name, group:p.group, level:p.level, focus:Math.round((p.focus || 0)/60)})) : (sample[k] || []); }
+  const dur = mins => zh() ? (mins >= 60 ? `${Math.floor(mins/60)} 小时 ${mins%60} 分钟` : `${mins} 分钟`) : mins >= 60 ? `${Math.floor(mins/60)} h ${mins%60} min` : `${mins} min`;
+  const md = d => zh() ? `${d.getMonth() + 1}月${d.getDate()}日` : `${MON[d.getMonth()]} ${d.getDate()}`;
+  const WD = () => zh() ? '一二三四五六日' : 'MTWTFSS';
+  function dayList(k){ return k === dayKey(new Date()) ? popped.map(p => ({name:p.key ? T(p.key) : p.name, group:p.group, level:p.level, focus:Math.round((p.focus || 0)/60)})) : (sample[k] || []).map(a => ({...a, name:T(a.name)})); }
   function renderProgress(){
     const today = new Date(); today.setHours(12, 0, 0, 0); const tk = dayKey(today);
     let days = [], cal = '', range = '';
     if(archMode === 'week'){
       const start = new Date(today); start.setDate(start.getDate() - 6 + archOffset*7);
       for(let i = 0; i < 7; i++){ const d = new Date(start); d.setDate(d.getDate() + i); days.push(d); }
-      const e = days[6]; range = `${MON[start.getMonth()]} ${start.getDate()} – ${start.getMonth() !== e.getMonth() ? MON[e.getMonth()] + ' ' : ''}${e.getDate()}, ${e.getFullYear()}`;
+      const e = days[6]; range = zh() ? `${start.getFullYear()}年${md(start)} – ${md(e)}` : `${MON[start.getMonth()]} ${start.getDate()} – ${start.getMonth() !== e.getMonth() ? MON[e.getMonth()] + ' ' : ''}${e.getDate()}, ${e.getFullYear()}`;
       cal = `<div class="week">` + days.map(d => { const k = dayKey(d), L = d > today ? [] : dayList(k);
-        return `<button type="button" class="wday${k === tk ? ' today' : ''}${k === selDay ? ' sel' : ''}" data-k="${k}" aria-label="${MON[d.getMonth()]} ${d.getDate()}: ${L.length} popped">
+        return `<button type="button" class="wday${k === tk ? ' today' : ''}${k === selDay ? ' sel' : ''}" data-k="${k}" aria-label="${md(d)}: ${L.length}">
           <span class="pips">${L.slice(0, 8).map((a, j) => `<i class="pip${a.group ? ' g' : ''}" style="--k:${j}${a.group ? `; --gc:${TP.groupColor?.(a.group)}` : ''}"></i>`).join('')}</span>
-          <span class="n">${L.length}</span><span class="d">${'MTWTFSS'[(d.getDay() + 6) % 7]} ${d.getDate()}</span></button>`; }).join('') + `</div>`;
+          <span class="n">${L.length}</span><span class="d">${WD()[(d.getDay() + 6) % 7]} ${d.getDate()}</span></button>`; }).join('') + `</div>`;
     } else {
-      const m = new Date(today.getFullYear(), today.getMonth() + archOffset, 1, 12); range = `${MONTHS[m.getMonth()]} ${m.getFullYear()}`;
+      const m = new Date(today.getFullYear(), today.getMonth() + archOffset, 1, 12); range = zh() ? `${m.getFullYear()}年${m.getMonth() + 1}月` : `${MONTHS[m.getMonth()]} ${m.getFullYear()}`;
       const lead = (m.getDay() + 6) % 7, dim = new Date(m.getFullYear(), m.getMonth() + 1, 0).getDate();
-      cal = `<div class="month">` + 'MTWTFSS'.split('').map(c => `<span class="h">${c}</span>`).join('') + '<span class="mday out"></span>'.repeat(lead);
+      cal = `<div class="month">` + WD().split('').map(c => `<span class="h">${c}</span>`).join('') + '<span class="mday out"></span>'.repeat(lead);
       for(let i = 1; i <= dim; i++){ const d = new Date(m.getFullYear(), m.getMonth(), i, 12); days.push(d); const k = dayKey(d), n = d > today ? 0 : dayList(k).length, sz = n ? 30 + Math.min(n, 7)*10 : 0;
-        cal += `<button type="button" class="mday${n ? '' : ' zero'}${k === tk ? ' today' : ''}${k === selDay ? ' sel' : ''}" data-k="${k}" aria-label="${MON[d.getMonth()]} ${i}: ${n} popped">${n ? `<span class="c" style="width:${sz}%; height:${sz}%; --k:${i}"></span>` : ''}<span class="num">${i}</span></button>`; }
+        cal += `<button type="button" class="mday${n ? '' : ' zero'}${k === tk ? ' today' : ''}${k === selDay ? ' sel' : ''}" data-k="${k}" aria-label="${md(d)}: ${n}">${n ? `<span class="c" style="width:${sz}%; height:${sz}%; --k:${i}"></span>` : ''}<span class="num">${i}</span></button>`; }
       cal += `</div>`;
     }
     const inRange = days.filter(d => d <= today).map(d => ({d, list:dayList(dayKey(d))}));
@@ -174,14 +178,18 @@
     const focus = inRange.reduce((s, x) => s + x.list.reduce((t, a) => t + a.focus, 0), 0);
     if(selDay === null){ const last = [...inRange].reverse().find(x => x.list.length); selDay = last ? dayKey(last.d) : ''; }
     const sel = days.find(d => dayKey(d) === selDay), L = sel ? dayList(selDay) : [];
-    pop.innerHTML = `<div class="row"><h3>Popped</h3><button type="button" class="x" aria-label="Close">×</button></div>` +
-      (popped.length ? '' : `<p class="empty">Nothing popped on this page yet. Press and hold a bubble until it bursts, and it lands in today.</p>`) +
-      `<div class="arch-bar"><div class="seg${archMode === 'month' ? ' on-month' : ''}" role="group" aria-label="View"><button type="button" data-m="week" class="${archMode === 'week' ? 'on' : ''}">Week</button><button type="button" data-m="month" class="${archMode === 'month' ? 'on' : ''}">Month</button></div>
-        <div class="arch-nav"><button type="button" data-nav="-1" aria-label="Earlier">‹</button><button type="button" data-nav="1" aria-label="Later"${archOffset >= 0 ? ' disabled' : ''}>›</button></div></div>
+    const per = zh() ? (archMode === 'week' ? '本周' : '本月') : `this ${archMode}`;
+    const sum = !total ? (zh() ? `${per}还没有戳破任何泡泡。` : `Nothing popped ${per}.`)
+      : zh() ? `${per}戳破了 <b>${total}</b> 个。最多的一天是 <b>${md(best.d)}</b>，戳破了 ${best.list.length} 个。${focus >= 1 ? `专注模式共 <b>${dur(focus)}</b>。` : ''}`
+      : `<b>${total}</b> popped ${per}. Best day <b>${md(best.d)}</b> with ${best.list.length}.${focus >= 1 ? ` <b>${dur(focus)}</b> in focus mode.` : ''}`;
+    pop.innerHTML = `<div class="row"><h3>${T('Popped')}</h3><button type="button" class="x" aria-label="${T('Close')}">×</button></div>` +
+      (popped.length ? '' : `<p class="empty">${T('Nothing popped on this page yet. Double-click a bubble to pop it, and it lands in today.')}</p>`) +
+      `<div class="arch-bar"><div class="seg${archMode === 'month' ? ' on-month' : ''}" role="group" aria-label="${T('View')}"><button type="button" data-m="week" class="${archMode === 'week' ? 'on' : ''}">${T('Week')}</button><button type="button" data-m="month" class="${archMode === 'month' ? 'on' : ''}">${T('Month')}</button></div>
+        <div class="arch-nav"><button type="button" data-nav="-1" aria-label="${T('Earlier')}">‹</button><button type="button" data-nav="1" aria-label="${T('Later')}"${archOffset >= 0 ? ' disabled' : ''}>›</button></div></div>
       <div class="range">${range}</div>${cal}
-      <p class="arch-sum">${total ? `<b>${total}</b> popped this ${archMode}. Best day <b>${MON[best.d.getMonth()]} ${best.d.getDate()}</b> with ${best.list.length}.${focus >= 1 ? ` <b>${dur(focus)}</b> in focus mode.` : ''}` : `Nothing popped this ${archMode}.`}</p>` +
-      (L.length ? `<ul class="day-list"><li class="ttl">${MON[sel.getMonth()]} ${sel.getDate()}</li>${L.map(a => `<li><i style="--gc:${a.group ? TP.groupColor?.(a.group) : 'transparent'}"></i><span>${esc(a.name)}</span><small>${a.focus ? dur(a.focus) + ' · ' : ''}${SHORT[a.level]}</small></li>`).join('')}</ul>` : '') +
-      `<p class="note">Days before today are a sample history, to show what a few weeks of popping looks like.</p>`;
+      <p class="arch-sum">${sum}</p>` +
+      (L.length ? `<ul class="day-list"><li class="ttl">${md(sel)}</li>${L.map(a => `<li><i style="--gc:${a.group ? TP.groupColor?.(a.group) : 'transparent'}"></i><span>${esc(a.name)}</span><small>${a.focus ? dur(a.focus) + ' · ' : ''}${T(SHORT[a.level])}</small></li>`).join('')}</ul>` : '') +
+      `<p class="note">${T('Days before today are a sample history, to show what a few weeks of popping looks like.')}</p>`;
   }
   pop.addEventListener('click', e => {
     if(openO !== 1) return; const m = e.target.closest('[data-m]'), nav = e.target.closest('[data-nav]'), day = e.target.closest('[data-k]');
@@ -191,9 +199,9 @@
     placePop();
   });
   function renderCustomize(){
-    pop.innerHTML = `<div class="row"><h3>Your color</h3><button type="button" class="x" aria-label="Close">×</button></div>
+    pop.innerHTML = `<div class="row"><h3>${T('Your color')}</h3><button type="button" class="x" aria-label="${T('Close')}">×</button></div>
       <div class="swatches" role="group" aria-label="Tint">${PRESETS.map(([h, s], i) => `<button type="button" data-t="${i}" aria-pressed="${i === tint}" aria-label="Color ${i + 1}" style="background:${hex(hslToRgb(h, s, inkL(h, s)))}"></button>`).join('')}</div>
-      <p class="note">The whole page and every bubble follow your color. In the app you can pick any color at all, and your groups' colors shift to match it.</p>`;
+      <p class="note">${T('The whole page and every bubble follow your color. In the app you can pick any color at all, and your groups\u2019 colors shift to match it.')}</p>`;
     pop.querySelector('.swatches').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if(b) setTint(+b.dataset.t); });
   }
   function setO(i){
@@ -224,18 +232,18 @@
   function closeEdit(){ editPop?.remove(); editPop = null; }
   TP.onEdit = (b, x, y) => {
     closeEdit(); let level = b.level;
-    editPop = document.createElement('div'); editPop.className = 'tp-pop edit-pop'; editPop.setAttribute('role', 'dialog'); editPop.setAttribute('aria-label', 'Edit bubble');
-    editPop.innerHTML = `<div class="row"><span class="lbl">Edit bubble</span><button type="button" class="x" aria-label="Close">×</button></div>
-      <label class="lbl" for="ed-name">Task name</label><input class="tin" id="ed-name" maxlength="40" value="${esc(b.name)}">
-      <span class="lbl">Urgency</span>${stopsHTML(level)}
-      <button type="button" class="btn" id="ed-in" style="justify-content:center">Get in the bubble</button>
-      <div class="acts"><button type="button" class="link" id="ed-del">Delete</button><button type="button" class="btn small" id="ed-cancel">Cancel</button><button type="button" class="btn small solid" id="ed-save">Save</button></div>
-      <button type="button" class="shrink" id="ed-shrink">Shrink back to starting size</button>`;
+    editPop = document.createElement('div'); editPop.className = 'tp-pop edit-pop'; editPop.setAttribute('role', 'dialog'); editPop.setAttribute('aria-label', T('Edit bubble'));
+    editPop.innerHTML = `<div class="row"><span class="lbl">${T('Edit bubble')}</span><button type="button" class="x" aria-label="${T('Close')}">×</button></div>
+      <label class="lbl" for="ed-name">${T('Task name')}</label><input class="tin" id="ed-name" maxlength="40" value="${esc(label(b))}">
+      <span class="lbl">${T('Urgency')}</span>${stopsHTML(level)}
+      <button type="button" class="btn" id="ed-in" style="justify-content:center">${T('Get in the bubble')}</button>
+      <div class="acts"><button type="button" class="link" id="ed-del">${T('Delete')}</button><button type="button" class="btn small" id="ed-cancel">${T('Cancel')}</button><button type="button" class="btn small solid" id="ed-save">${T('Save')}</button></div>
+      <button type="button" class="shrink" id="ed-shrink">${T('Shrink back to starting size')}</button>`;
     document.body.appendChild(editPop);
     const w = editPop.offsetWidth, h = editPop.offsetHeight;
     editPop.style.left = Math.max(12, Math.min(innerWidth - w - 12, x + 14)) + 'px'; editPop.style.top = Math.max(12, Math.min(innerHeight - h - 12, y - 20)) + 'px';
     wireStops(editPop, l => level = l);
-    const save = () => { const n = $('#ed-name').value.trim(); if(n) TP.rename?.(b, n, level); closeEdit(); };
+    const save = () => { const n = $('#ed-name').value.trim(); if(n) TP.rename?.(b, n === label(b) ? b.name : n, level, n === label(b)); closeEdit(); };
     editPop.addEventListener('click', e => {
       const id = e.target.closest('button')?.id;
       if(e.target.closest('.x') || id === 'ed-cancel') closeEdit(); else if(id === 'ed-save') save();
@@ -268,7 +276,7 @@
   }
   function startFocus(b){
     inside = b; started = Date.now();
-    $('#fb-name').textContent = b.name; $('#fb-time').textContent = '0:00';
+    $('#fb-name').textContent = label(b); $('#fb-time').textContent = '0:00';
     root.classList.add('focusing'); bar.inert = false; TP.hide?.(true);
     clearInterval(tick); tick = setInterval(() => { const s = Math.floor((Date.now() - started)/1000); $('#fb-time').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2, '0')}`; }, 1000);
   }
@@ -319,7 +327,7 @@
   addEventListener('keydown', e => { if(e.key !== 'Escape') return; if(editPop) closeEdit(); else if(inside) leaveFocus(false); else if(openO !== null) setO(null); });
   $('#get-in').addEventListener('click', () => { // try it: the biggest bubble on screen
     const list = (TP.list?.() || []).filter(b => b.x > 0 && b.x < innerWidth && b.y > 0 && b.y < innerHeight).sort((a, c) => c.R - a.R);
-    const b = list[0] || TP.add?.({name:'Essay draft', level:4}); if(b) enterFocus(b);
+    const b = list[0] || TP.add?.({name:'Essay draft', key:'Essay draft', level:4}); if(b) enterFocus(b);
   });
 
   /* ---------- the hand-drawn arrows in the creation story ---------- */
@@ -361,7 +369,7 @@
   async function film(){
     while(alive){
       holder.innerHTML = ''; screen.classList.remove('in-focus'); $('#scr-t').textContent = '0:00'; pos(cursor, 88, 86);
-      const essay = mkBubble('Essay draft', 'NOW!', 26, 34, 15), mail = mkBubble('Reply to emails', 'TODAY', 74, 28, 12), wash = mkBubble('Laundry', 'SOON', 68, 72, 10), read = mkBubble('Read ch. 7', 'TODAY', 18, 76, 11);
+      const essay = mkBubble(T('Essay draft'), T('NOW!'), 26, 34, 15), mail = mkBubble(T('Reply to emails'), T('TODAY'), 74, 28, 12), wash = mkBubble(T('Laundry'), T('SOON'), 68, 72, 10), read = mkBubble(T('Read ch. 7'), T('TODAY'), 18, 76, 11);
       const others = [mail, wash, read];
       await sleep(900); if(!alive) break;
       // grows a little while you ignore it
@@ -373,7 +381,7 @@
       let secs = 0; const t = setInterval(() => { secs += 7; $('#scr-t').textContent = `${Math.floor(secs/60)}:${String(secs%60).padStart(2, '0')}`; }, 260);
       await sleep(1100); if(!alive){ clearInterval(t); break; }
       // break it into steps
-      const stepAt = [[30, 30], [58, 24], [44, 56]], names = ['Outline', 'Find 3 sources', 'Draft intro'], steps = [];
+      const stepAt = [[30, 30], [58, 24], [44, 56]], names = ['Outline', 'Find 3 sources', 'Draft intro'].map(T), steps = [];
       for(let k = 0; k < 3; k++){ const [sx, sy] = at($('#scr-step')); await moveTo(sx, sy, k ? 600 : 900); await click(sx, sy); steps.push(mkBubble(names[k], '', stepAt[k][0], stepAt[k][1], 12, 'step')); await sleep(450); }
       // press and hold a step until it pops
       await moveTo(30, 30); cursor.classList.add('down'); steps[0].classList.add('squeeze'); await sleep(800); steps[0].classList.add('gone'); burst(30, 30); cursor.classList.remove('down'); await sleep(700);
@@ -385,7 +393,7 @@
     playing = false;
   }
   if(screen){
-    if(REDUCED){ mkBubble('Essay draft', 'NOW!', 26, 34, 16); mkBubble('Reply to emails', 'TODAY', 74, 28, 12); mkBubble('Laundry', 'SOON', 68, 72, 10); }
+    if(REDUCED){ mkBubble(T('Essay draft'), T('NOW!'), 26, 34, 16); mkBubble(T('Reply to emails'), T('TODAY'), 74, 28, 12); mkBubble(T('Laundry'), T('SOON'), 68, 72, 10); }
     else new IntersectionObserver(([e]) => { alive = e.isIntersecting; if(alive && !playing){ playing = true; film(); } }, {threshold:.35}).observe(screen);
   }
 
@@ -401,4 +409,11 @@
     addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; if(!raf) raf = requestAnimationFrame(apply); }, {passive:true});
     addEventListener('scroll', () => { if(!raf) raf = requestAnimationFrame(apply); }, {passive:true});
   }
+
+  /* switching language: redraw everything the scripts drew themselves */
+  I18N.onChange(() => {
+    const o = openO; if(o !== null){ openO = null; pop.hidden = true; setO(o); }
+    closeEdit(); if(inside) $('#fb-name').textContent = label(inside);
+    placeNotes(); alignFeats(); drawArrows(); TP.setLang?.();
+  });
 })();

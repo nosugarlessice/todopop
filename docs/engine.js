@@ -8,7 +8,10 @@
   const cv = document.getElementById('field'), ctx = cv.getContext('2d'), root = document.documentElement;
   const REDUCED = matchMedia('(prefers-reduced-motion: reduce)').matches;
   let INK_RGB = [26, 65, 158]; const rgba = a => `rgba(${INK_RGB[0]},${INK_RGB[1]},${INK_RGB[2]},${a})`;
-  const FONT = '"Unbounded", "Varela Round", system-ui, sans-serif';
+  const FONT = '"Unbounded", "WDXL Lubrifont SC", "Varela Round", system-ui, sans-serif';
+  const T = s => window.I18N ? window.I18N.T(s) : s; // the page's language
+  const label = b => b.key ? T(b.key) : b.name; // built-in tasks follow the language; ones you named stay as you wrote them
+  const CJK = /[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef]/;
   // group colours are worked out from the tint exactly like the app's (six hues spaced around the wheel, clear of the tint)
   const oklchToRgb = (L, C, h) => { const a = C*Math.cos(h*Math.PI/180), b = C*Math.sin(h*Math.PI/180);
     const l = (L + .3963377774*a + .2158037573*b)**3, m = (L - .1055613458*a - .0638541728*b)**3, s2 = (L - .0894841775*a - 1.291485548*b)**3;
@@ -81,7 +84,7 @@
     const start = K()*(level === 1 ? 34 : 42)*.75;
     const R = spec ? start : level === 1 ? max : start + (max - start)*Math.random()*.6;
     const p = spec && spec.at ? {x:spec.at.x, y:spec.at.y} : freeSpot(R); if(!p) return null;
-    const b = makeBubble({name, level, group, R, hx:p.x, hy:p.y}); bubbles.push(b); if(spec && spec.at) keepApart(b, 'home'); return b;
+    const b = makeBubble({name, level, group, R, hx:p.x, hy:p.y}); b.key = spec ? spec.key || null : name; bubbles.push(b); if(spec && spec.at) keepApart(b, 'home'); return b;
   }
 
   // ---- size ----
@@ -322,7 +325,12 @@
     for(let i=0;i<N;i++){ const p=P[i], q=P[(i+1)%N]; ctx.quadraticCurveTo(p[0],p[1],(p[0]+q[0])/2,(p[1]+q[1])/2); }
     ctx.closePath();
   }
-  function wrap(text, maxW){ const words = text.split(/\s+/), lines=[]; let cur=''; for(const w of words){ const t = cur ? cur+' '+w : w; if(ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t; } if(cur) lines.push(cur); return lines; }
+  function wrap(text, maxW){ // words for English; Chinese can break between any two characters
+    const parts = text.match(/[\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef]|[^\s\u2e80-\u9fff\uf900-\ufaff\uff00-\uffef]+|\s+/g) || [], lines = []; let cur = '', sp = false;
+    for(const w of parts){ if(/^\s+$/.test(w)){ sp = true; continue; }
+      const glue = cur && sp && !(CJK.test(w) && CJK.test(cur.slice(-1))) ? ' ' : '', t = cur + glue + w; sp = false;
+      if(ctx.measureText(t).width > maxW && cur){ lines.push(cur); cur = w; } else cur = t; }
+    if(cur) lines.push(cur); return lines; }
   const hexRGB = h => [1,3,5].map(i => parseInt(h.slice(i, i+2), 16));
   function draw(){
     ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W(),H());
@@ -346,20 +354,20 @@
         let cx=0, cy=0; for(let i=0;i<N;i++){ const rr=r+b.d[i]; cx += Math.min(W()-8, Math.max(8, b.x+COS[i]*rr*.8)); cy += Math.min(H()-8, Math.max(8, b.y+SIN[i]*rr*.8)); }
         const lx = cx/N, ly = cy/N, fs = Math.max(9.5, Math.min(34, r*.15));
         ctx.fillStyle = rgba(1); ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.font = `400 ${fs}px ${FONT}`;
-        let lines = wrap(b.name, r*1.45); const maxL = (r>70 || r<40) ? 3 : 2;
+        const text = label(b); let lines = wrap(text, r*1.45); const maxL = (r>70 || r<40) ? 3 : 2;
         if(lines.length>maxL){ lines = lines.slice(0,maxL); let l = lines[maxL-1]; while(l.length>1 && ctx.measureText(l+'…').width > r*1.45) l=l.slice(0,-1); lines[maxL-1] = l.replace(/[\s…]+$/,'')+'…'; }
         const ms = Math.max(7, Math.min(12, r*.06)) + 1, showMeta = r>40;
-        const lh = fs*1.15, total = lines.length*lh + (showMeta ? ms*1.9 : 0) + (showMeta && gp ? ms*1.6 : 0);
+        const lh = fs*(CJK.test(text) ? 1.45 : 1.15), total = lines.length*lh + (showMeta ? ms*1.9 : 0) + (showMeta && gp ? ms*1.6 : 0);
         let y = ly - total/2 + lh/2;
         for(const l of lines){ ctx.fillText(l, lx, y); y += lh; }
         if(showMeta){
           ctx.font = `400 ${ms}px ${FONT}`; ctx.fillStyle = rgba(.62);
           if('letterSpacing' in ctx) ctx.letterSpacing = (ms*.1)+'px';
-          const meta = SHORT[b.level];
+          const meta = T(SHORT[b.level]);
           if(ctx.measureText(meta).width <= r*1.5) ctx.fillText(meta, lx, y + ms*.6);
           const ty = y + ms*.6 + ms*1.5;
           if(gp){
-            const tag = b.group.toUpperCase(), dr = ms*.45, gap = ms*.5;
+            const tag = T(b.group).toUpperCase(), dr = ms*.45, gap = ms*.5;
             ctx.font = `400 ${ms*.95}px ${FONT}`;
             const tw = ctx.measureText(tag).width, x0 = lx - (dr*2 + gap + tw)/2;
             ctx.beginPath(); ctx.arc(x0 + dr, ty, dr, 0, 6.283); ctx.fillStyle = gp; ctx.fill();
@@ -380,17 +388,19 @@
   const api = window.TP = {
     add, pop, list: () => bubbles,
     hide(on){ fieldTarget = on ? 0 : 1; }, // focus mode: the others step out of the way
-    rename(b, name, level){ b.name = name; if(level && level !== b.level){ b.level = level; if(level === 1) b.R = Math.min(b.R, maxFor(1)); } b.pulse = 1; },
+    rename(b, name, level, keepKey){ if(!keepKey){ b.name = name; b.key = null; } if(level && level !== b.level){ b.level = level; if(level === 1) b.R = Math.min(b.R, maxFor(1)); } b.pulse = 1; },
     shrink(b){ b.R = K()*(b.level === 1 ? 34 : 42)*.75; b.pulse = 1; },
     setTint(rgb){ INK_RGB = rgb; retint(); },
     burstAt(x, y, r){ rings.push({x, y, r, t:0}); for(let k=0;k<22;k++){ const a = Math.random()*6.283, sp = 140 + Math.random()*260; particles.push({x:x+Math.cos(a)*r*.9, y:y+Math.sin(a)*r*.9, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:1.5+Math.random()*3.5, t:0, life:.5+Math.random()*.45}); } },
-    groupColor: g => GROUP[g], short: l => SHORT[l],
+    groupColor: g => GROUP[g], short: l => SHORT[l], label,
+    setLang(){ document.fonts?.load?.(`400 20px "WDXL Lubrifont SC"`, bubbles.map(label).join('') + '提醒快了今天马上学校工作家健康'); }, // canvas text needs its font fetched first
   };
 
   // ---- run ----
   addEventListener('resize', resize); resize();
   const count = () => SMALL() ? 3 : (W() > 1200 ? 5 : 4);
   for(let k=0;k<count();k++) add();
+  if(window.I18N?.lang === 'zh') api.setLang();
   let last = performance.now();
   (function frame(now){ const dt = Math.min(1/30, (now-last)/1000); last = now; step(dt); draw(); requestAnimationFrame(frame); })(last);
 })();

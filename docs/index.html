@@ -12,6 +12,7 @@
 <meta property="og:description" content="A todo list that just can't be ignored. Every task is a bubble that floats over your screen and grows until you pop it.">
 <meta property="og:image" content="https://todopop.app/app/icons/icon-512.png">
 <meta property="og:url" content="https://todopop.app/">
+<link rel="stylesheet" href="app/fonts.css"><!-- the app's Chinese font (WDXL Lubrifont SC), loaded only for the characters the page uses -->
 <style>
 @font-face{font-family:'Unbounded';font-weight:300;font-display:swap;src:url(fonts/unbounded-latin-300-normal.woff2) format('woff2')}
 @font-face{font-family:'Unbounded';font-weight:400;font-display:swap;src:url(fonts/unbounded-latin-400-normal.woff2) format('woff2')}
@@ -27,7 +28,7 @@
   --rule:color-mix(in srgb, var(--ink) 22%, transparent);
   --faint:color-mix(in srgb, var(--ink) 12%, transparent);
   --wash:color-mix(in srgb, var(--ink) 5%, transparent);
-  --f:'Unbounded', 'Varela Round', system-ui, sans-serif;
+  --f:'Unbounded', 'WDXL Lubrifont SC', 'Varela Round', system-ui, sans-serif;
   --gut:max(16px, env(safe-area-inset-left, 0px));
   color-scheme:light;
 }
@@ -59,6 +60,12 @@ b, strong{font-weight:600}
 .nav ul{list-style:none; margin:0; padding:0; display:flex; align-items:center; gap:6px}
 .nav ul a{text-decoration:none; font-size:12px; font-weight:400; letter-spacing:.06em; text-transform:uppercase; padding:10px 12px; border-radius:999px}
 .nav ul a:hover{background:var(--wash)}
+.lang{all:unset; cursor:pointer; display:inline-flex; align-items:center; gap:2px; padding:3px; border:1.5px solid var(--rule); border-radius:999px; font-size:11px; font-weight:400; letter-spacing:.06em}
+.lang span{padding:5px 9px; border-radius:999px; color:var(--ink-soft); transition:background .25s, color .25s}
+html[lang="en"] .lang [data-l="en"], html[lang="zh-CN"] .lang [data-l="zh"]{background:var(--ink); color:var(--paper)}
+.lang:hover{border-color:var(--ink)} .lang:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+/* Chinese reads better a touch looser */
+html[lang="zh-CN"] body{line-height:1.7} html[lang="zh-CN"] .why .card, html[lang="zh-CN"] .q{line-height:1.5}
 .nav .get{background:var(--ink); color:var(--paper); padding:11px 18px}
 @media (max-width:700px){ .nav .hide-s{display:none} .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} }
 
@@ -244,7 +251,7 @@ html.focusing .focus-bar{opacity:1; scale:1; pointer-events:auto}
 .story-head{display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:6px 18px}
 .collab{margin:0; text-align:right; font-size:clamp(16px, 1.7vw, 21px); line-height:1.3; font-weight:400; padding-top:.3em}
 .collab .bk{font-weight:900} .collab .md{font-weight:600}
-@media (max-width:700px){ .collab{text-align:left} }
+@media (max-width:700px){ .collab{text-align:left; margin-bottom:10px} }
 .who{display:flex; align-items:center; gap:10px; font-size:clamp(20px, 2.6vw, 30px); padding-left:clamp(20px, 6vw, 110px)}
 .who svg{width:34px; height:36px; fill:none; stroke:var(--ink); stroke-width:3; stroke-linecap:round; stroke-linejoin:round}
 .trio{display:grid; grid-template-columns:repeat(3, 1fr); gap:clamp(14px, 2vw, 22px); margin-top:clamp(30px, 4vw, 46px); position:relative; z-index:1}
@@ -405,6 +412,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     <ul>
       <li class="hide-s"><a href="#how">How it works</a></li>
       <li class="hide-s"><a href="#phone">Phone</a></li>
+      <li><button type="button" class="lang" id="lang" aria-label="Switch language / 切换语言"><span data-l="en">EN</span><span data-l="zh">中</span></button></li>
       <li><a class="get" href="#download">Download</a></li>
     </ul>
   </div>
@@ -425,9 +433,9 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
       <h1 id="hero-title" class="sr">TODOPOP: a todo list that just can't be ignored</h1>
       <div class="o-notes" id="o-notes" aria-hidden="true">
         <p class="hint doodle"><span>*Interact with<br><span style="white-space:nowrap">the three O’s on this logo!</span></span></p>
-        <span class="o-note" data-o="0">Create task<svg viewBox="0 0 30 44"><path d="M15 2 C 6 14, 24 24, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
-        <span class="o-note" data-o="1">See your progress<svg viewBox="0 0 30 44"><path d="M15 2 C 24 14, 6 24, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
-        <span class="o-note" data-o="2">Customize<svg viewBox="0 0 30 44"><path d="M15 2 C 4 10, 26 26, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
+        <span class="o-note" data-o="0"><span class="tx">Create task</span><svg viewBox="0 0 30 44"><path d="M15 2 C 6 14, 24 24, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
+        <span class="o-note" data-o="1"><span class="tx">See your progress</span><svg viewBox="0 0 30 44"><path d="M15 2 C 24 14, 6 24, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
+        <span class="o-note" data-o="2"><span class="tx">Customize</span><svg viewBox="0 0 30 44"><path d="M15 2 C 4 10, 26 26, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
       </div>
       <div class="big" id="big" data-solid>
         <span class="logo" aria-label="TODOPOP">T<button type="button" class="o" data-o="0" aria-label="Create task" aria-expanded="false"></button>D<button type="button" class="o" data-o="1" aria-label="See your progress" aria-expanded="false"></button>P<button type="button" class="o" data-o="2" aria-label="Customize" aria-expanded="false"></button>P</span>
@@ -435,8 +443,8 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
       <div class="tp-pop" id="tp-pop" data-solid hidden></div>
       <p class="tagline">A todo list that just can’t be ignored</p>
       <div class="btns" id="hero-btns">
-        <a class="btn" data-os="mac" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.5-1-2.5-3.9ZM14 5.4c.7-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.9-1 2.9 1.1.1 2.1-.5 2.8-1.3Z"/></svg>Download for Mac</a>
-        <a class="btn solid" data-os="win" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-windows-setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.1 10.4 4v7.1H3V5.1Zm0 13.8 7.4 1.1v-7H3v5.9ZM11.3 3.9 21 2.5v8.6h-9.7V3.9Zm0 16.2 9.7 1.4V13h-9.7v7.1Z"/></svg>Download for Windows</a>
+        <a class="btn" data-os="mac" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-mac.dmg"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.6-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.3 1.2 9.7.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.5-1-2.5-3.9ZM14 5.4c.7-.8 1.1-1.9 1-3-.9 0-2.1.6-2.8 1.4-.6.7-1.2 1.9-1 2.9 1.1.1 2.1-.5 2.8-1.3Z"/></svg><span class="tx">Download for Mac</span></a>
+        <a class="btn solid" data-os="win" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-windows-setup.exe"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 5.1 10.4 4v7.1H3V5.1Zm0 13.8 7.4 1.1v-7H3v5.9ZM11.3 3.9 21 2.5v8.6h-9.7V3.9Zm0 16.2 9.7 1.4V13h-9.7v7.1Z"/></svg><span class="tx">Download for Windows</span></a>
       </div>
       <p class="meta" id="hero-meta">Free · No Sign-up · No ads</p>
       <div class="bubble-hint doodle">
@@ -453,16 +461,16 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     <div class="wrap" style="position:relative">
       <svg class="arrows" id="arrows" aria-hidden="true"></svg>
       <div class="story-head rv">
-        <h2 class="pill" id="story-title">A <span class="bk">(</span><a class="md cz" href="https://cindyzhao.design" target="_blank" rel="noopener">Cindy Zhao</a><span class="bk">)</span> creation</h2>
+        <h2 class="pill" id="story-title" data-solid>A <span class="bk">(</span><a class="md cz" href="https://cindyzhao.design" target="_blank" rel="noopener">Cindy Zhao</a><span class="bk">)</span> creation</h2>
         <p class="collab">*Made in Collaboration<br>with <span class="bk">(</span><span class="md">Melody Chen</span><span class="bk">)</span></p>
       </div>
-      <p class="who rv" style="--i:1"><svg viewBox="0 0 34 36" aria-hidden="true"><path d="M5 2 C 4 18, 10 26, 30 27"/><path d="M23 20 L30 27 L23 33"/></svg>who:</p>
+      <p class="who rv" style="--i:1"><svg viewBox="0 0 34 36" aria-hidden="true"><path d="M5 2 C 4 18, 10 26, 30 27"/><path d="M23 20 L30 27 L23 33"/></svg><span class="tx">who:</span></p>
       <div class="trio why">
         <div class="rv" style="--i:1"><span class="badge pop-in" style="--i:1">1.</span><div class="card" id="why1">If she can’t see it,<br>she won’t do it</div></div>
         <div class="rv" style="--i:2"><span class="badge pop-in" style="--i:2">2.</span><div class="card" id="why2">way too comfortable ignoring deadlines</div></div>
         <div class="rv" style="--i:3"><span class="badge pop-in" style="--i:3">3.</span><div class="card" id="why3">let unfinished tasks slide</div></div>
       </div>
-      <div class="solves rv"><h2 class="pill" id="solves"><span class="md">TODOPOP</span> solves my problem<br>because its task bubbles:</h2></div>
+      <div class="solves rv"><h2 class="pill" id="solves" data-solid><span class="md">TODOPOP</span> solves my problem<br>because its task bubbles:</h2></div>
       <div class="trio feat" style="margin-top:clamp(40px, 5vw, 56px)">
         <div class="rv" style="--i:1"><span class="badge pop-in" style="--i:1">1.</span><div class="card" id="feat1">
           <h3>Floats on top</h3>
@@ -501,7 +509,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
       <span class="badge pop-in">Q:</span>
       <h2 class="q rv" id="q-title">Cindy, Cindy,<br>What if I need to lock-in<br>But my task bubbles took over my screen?</h2>
       <span class="badge pop-in" style="--i:2">A:</span>
-      <p class="a rv" style="--i:2">Click to <button type="button" class="btn bubble-btn" id="get-in">Get in the bubble</button></p>
+      <p class="a rv" style="--i:2"><span class="tx">Click to</span> <button type="button" class="btn bubble-btn" id="get-in">Get in the bubble</button></p>
       <div class="screen rv" id="screen" style="--i:3" role="img" aria-label="Focus mode, shown on a computer screen: clicking a bubble opens it, a focus timer starts at the bottom, steps float in and pop, and the task is popped when it's done.">
         <div class="scr-win"><div class="bar"><i></i><i></i><i></i>&nbsp;Essay draft — Docs</div><div class="ln t"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
         <div id="scr-bubbles"></div>
@@ -549,7 +557,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
         </div>
       </div>
       <div class="phone-col rv">
-        <figure class="device" id="device"><div class="scr"><img src="phone-app.png" width="780" height="1688" alt="The TODOPOP phone app: your floating tasks in a list, with Pause, a big plus button and Popped along the bottom."><span class="glare"></span></div></figure>
+        <figure class="device" id="device" data-solid><div class="scr"><img src="phone-app.png" width="780" height="1688" alt="The TODOPOP phone app: your floating tasks in a list, with Pause, a big plus button and Popped along the bottom."><span class="glare"></span></div></figure>
       </div>
     </div>
   </section>
@@ -622,6 +630,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
   </div>
 </footer>
 
+<script src="i18n.js"></script>
 <script src="engine.js"></script>
 <script src="site.js"></script>
 </body>
