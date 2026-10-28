@@ -83,6 +83,7 @@
     ['#fb-done', '完成，戳破！'],
   ];
   const ATTRS = [ // [selector, attribute, Chinese]
+    ['#device img', 'src', 'phone-app-zh.png'],
     ['#device img', 'alt', 'TODOPOP 手机 App：漂浮中的任务排成一个列表，底部是暂停、一个大加号和已戳破。'],
     ['#fb-exit', 'aria-label', '离开泡泡（Esc）'], ['#fb-exit', 'title', '离开泡泡（Esc）'],
     ['#focus-bar .grip', 'title', '拖动来移动这个栏'],

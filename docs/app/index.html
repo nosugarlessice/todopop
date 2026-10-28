@@ -204,7 +204,7 @@ html.paused .task:not(.lv1) .dot i{border-style:dashed}
 #arch-mode button.on{background:none}
 @media (prefers-reduced-motion: reduce){ #arch-mode::before{transition:none} }
 .seg button:focus-visible{outline:2px solid var(--ink); outline-offset:1px}
-.lang-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:12px; border-top:1px dashed var(--rule)}
+.lang-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:12px; margin-top:12px; border-top:1px dashed var(--rule)}
 .lang-seg button{text-transform:none !important; letter-spacing:.02em}
 /* Chinese: the tiny spaced capitals become readable characters */
 html[lang="zh-CN"] .field-label, html[lang="zh-CN"] .acc-head .count, html[lang="zh-CN"] .day-list .ttl, html[lang="zh-CN"] .seg button,
@@ -224,6 +224,7 @@ html[lang="zh-CN"] .note, html[lang="zh-CN"] .wday .d, html[lang="zh-CN"] .month
 .wday .pip{width:9px; height:9px; border-radius:50%; border:1.2px solid var(--ink); background:var(--ink-faint)}
 .wday .n{font-family:var(--f-mono); font-size:10.5px; font-variant-numeric:tabular-nums}
 .wday .d{font-family:var(--f-mono); font-size:9.5px; color:var(--ink-soft); letter-spacing:.06em}
+html[lang="zh-CN"] .wday .d, html[lang="zh-CN"] .month .h{line-height:1.7; padding-bottom:2px; white-space:nowrap; overflow:visible}
 .wday.today .d{color:var(--ink); font-weight:500}
 .month{display:grid; grid-template-columns:repeat(7,1fr); gap:2px}
 .month .h{font-family:var(--f-mono); font-size:9.5px; color:var(--ink-soft); text-align:center; padding-bottom:4px; letter-spacing:.06em}
@@ -1042,7 +1043,6 @@ input.has-cjk{line-height:1.5}
         <div class="swatches" id="swatches"></div>
       </div>
       <span class="note">Outlines and text follow your color.</span>
-      <div class="lang-row"><span class="field-label">Language</span><div class="seg lang-seg" id="lang-seg" role="group" aria-label="Language"><button type="button" data-lang="en">English</button><button type="button" data-lang="zh">中文</button></div></div>
       <div class="sync" id="sync">
         <div class="sync-top"><span class="field-label">Phone app</span><span class="sync-state" id="sync-state"></span></div>
         <div class="sync-step" id="sync-off">
@@ -1056,6 +1056,7 @@ input.has-cjk{line-height:1.5}
         </div>
         <p class="note sync-err" id="sync-err" hidden></p>
       </div>
+      <div class="lang-row"><span class="field-label">Language</span><div class="seg lang-seg" id="lang-seg" role="group" aria-label="Language"><button type="button" data-lang="en">English</button><button type="button" data-lang="zh">中文</button></div></div>
     </div></div>
 
 <!-- getting in the bubble: the bubble's skin grows from the bubble until it wraps the whole screen -->
@@ -1513,15 +1514,11 @@ const defaultSat = h => Math.min(1, GLOW_C / Math.max(.01, cusp(h).C)); // where
 const rgbHex = v => '#' + v.map(x => x.toString(16).padStart(2,'0')).join('').toUpperCase();
 var inkHue = 265; // OKLCH hue of the current tint (set by applyTheme)
 const slotHue = i => (inkHue + 40 + i*56) % 360; // six hues, 56° apart, keeping 40° clear on each side of your tint
-const HUE_NAMES = ZH_ON ? [[15,'玫瑰'],[45,'珊瑚'],[75,'蜜桃'],[108,'奶油'],[132,'青柠'],[162,'薄荷'],[200,'水蓝'],[245,'天空'],[282,'长春花'],[318,'丁香'],[345,'兰花'],[360,'玫瑰']]
-  : [[15,'Rose'],[45,'Coral'],[75,'Peach'],[108,'Butter'],[132,'Lime'],[162,'Mint'],[200,'Aqua'],[245,'Sky'],[282,'Periwinkle'],[318,'Lilac'],[345,'Orchid'],[360,'Rose']];
-const hueName = h => HUE_NAMES.find(([e]) => ((h % 360) + 360) % 360 < e)[1];
 const isCustom = g => g.c == null && Number.isFinite(g.h);
 const gHue = g => isCustom(g) ? g.h : slotHue(g.c ?? 0);
 const gSat = g => !isCustom(g) ? defaultSat(gHue(g)) : Number.isFinite(g.sat) ? g.sat : defaultSat(g.h);
 const gRGB = g => isCustom(g) ? vividRGB(g.h, gSat(g)) : glowRGB(gHue(g));
 const gHex = g => rgbHex(gRGB(g));
-const gName = g => hueName(gHue(g));
 const hueDist = (a, b) => { const d = Math.abs(((a - b) % 360 + 360) % 360); return Math.min(d, 360 - d); };
 // no starter groups: you make your own. (An untouched School / Work / Life set from an earlier version is cleared once.)
 let groups = store.get('groups');
@@ -1590,7 +1587,7 @@ function setGroupSide(g, side){
 }
 function renderGroupEditor(){
   $('#gedit').innerHTML = groups.map(g => `<li data-g="${g.id}">
-      <button type="button" class="gc" style="--g:${gHex(g)}" aria-label="${L(`${esc(g.name)} is ${gName(g)}. Change color`, `${esc(g.name)}是${gName(g)}色。改颜色`)}" title="${L('Change color', '改颜色')}"></button>
+      <button type="button" class="gc" style="--g:${gHex(g)}" aria-label="${L(`${esc(g.name)}: change color`, `${esc(g.name)}：改颜色`)}" title="${L('Change color', '改颜色')}"></button>
       <input value="${esc(g.name)}" maxlength="16" aria-label="${L('Group name', '分组名称')}">
       ${REMOTE ? '' : `<button type="button" class="tool arrow gs" data-cycle="${gSide(g)}" title="${SIDE_NAME[gSide(g)]}${L(' (click to change)', '（点击切换）')}" aria-label="${esc(g.name)}: ${SIDE_NAME[gSide(g)]}. ${L('Change side', '换一边')}">${SIDE_ICON[gSide(g)]}</button>`}
       <button type="button" class="gx" aria-label="${L(`Delete group ${esc(g.name)}`, `删除分组“${esc(g.name)}”`)}" title="${L('Delete group', '删除分组')}">${X_ICON}</button></li>`).join('') +
@@ -1718,7 +1715,7 @@ $('#gedit').addEventListener('click', e => {
 $('#gedit').addEventListener('input', e => { const li = e.target.closest('li'), g = li && gById(li.dataset.g); if(!g) return; g.name = e.target.value; store.set('groups', groups); renderGroups(); renderTasks(); });
 $('#gedit').addEventListener('focusout', e => {
   const li = e.target.closest('li'), g = li && gById(li.dataset.g); if(!g || e.target.tagName !== 'INPUT') return;
-  if(!g.name.trim()){ g.name = gName(g); e.target.value = g.name; } else g.name = g.name.trim();
+  if(!g.name.trim()){ g.name = L('Group', '分组'); e.target.value = g.name; } else g.name = g.name.trim();
   saveGroups(); renderTasks();
 });
 /* right-click any group (a chip, a filter, or its swatch in Edit groups) to change its color */
@@ -1751,8 +1748,8 @@ function renderGColor(){
   const g = gcolG(); if(!g) return setGColor(null);
   if(g !== gDraft) $('#gcolor-title').textContent = g.name;
   $('#gside').innerHTML = sideButtons(gSide(g));
-  $('#gcolor-sw').innerHTML = Array.from({length:SLOTS}, (_, i) => { const o = groups.find(x => x !== g && x.c === i), h = slotHue(i), nm = hueName(h);
-    return `<button type="button" data-c="${i}" style="--g:${rgbHex(glowRGB(h))}" aria-pressed="${g.c === i}"${o ? ` data-taken title="${L(`${nm}: swaps with ${esc(o.name)}`, `${nm}：和“${esc(o.name)}”互换`)}"` : ` title="${nm}"`} aria-label="${nm}${o ? `, swaps with ${esc(o.name)}` : ''}"></button>`; }).join('') +
+  $('#gcolor-sw').innerHTML = Array.from({length:SLOTS}, (_, i) => { const o = groups.find(x => x !== g && x.c === i), h = slotHue(i), nm = L(`Color ${i + 1}`, `颜色 ${i + 1}`); // colors aren't named, just numbered for screen readers
+    return `<button type="button" data-c="${i}" style="--g:${rgbHex(glowRGB(h))}" aria-pressed="${g.c === i}"${o ? ` data-taken title="${L(`Swaps with ${esc(o.name)}`, `和“${esc(o.name)}”互换`)}"` : ''} aria-label="${nm}${o ? L(`, swaps with ${esc(o.name)}`, `，和“${esc(o.name)}”互换`) : ''}"></button>`; }).join('') +
     `<button type="button" class="sw-custom" data-custom aria-pressed="${isCustom(g)}" aria-expanded="${ringOpen}" title="${L('Custom color', '自定义颜色')}" aria-label="${L('Custom color', '自定义颜色')}"${isCustom(g) ? ` style="--g:${gHex(g)}"` : ''}></button>`;
   const ring = $('#gring'); showPick(!!ringOpen);
   if(ringOpen){ const h = gHue(g), C = gSat(g); paintRing(C);
@@ -1761,7 +1758,7 @@ function renderGColor(){
     $('#gsat').style.background = `linear-gradient(${bar.join(',')})`;
     $('#gsat-knob').style.top = ((1 - C)*100) + '%'; $('#gsat-knob').style.background = gHex(g);
     $('#gsat').setAttribute('aria-valuenow', Math.round(C*100)); $('#gring-knob').style.setProperty('--a', h + 'deg'); $('#gring-knob').style.background = gHex(g);
-    $('#gring-dot').style.setProperty('--g', gHex(g)); $('#gring-name').textContent = hueName(h); ring.setAttribute('aria-valuenow', Math.round(h)); ring.setAttribute('aria-valuetext', hueName(h)); }
+    $('#gring-dot').style.setProperty('--g', gHex(g)); ring.setAttribute('aria-valuenow', Math.round(h)); }
   // a gentle warning when a hue would be hard to tell apart
   const near = isCustom(g) && groups.find(o => o !== g && hueDist(gHue(o), g.h) < 22 && Math.abs(gSat(o) - gSat(g)) < .25);
   $('#gcolor-note').textContent = isCustom(g) && gSat(g) < .12 ? L('Almost grey. Slide up for more color.', '快成灰色了。往上滑，颜色会更浓。')
