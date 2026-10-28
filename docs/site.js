@@ -31,21 +31,52 @@
     notes.forEach(n => { const o = big.querySelectorAll('.o')[+n.dataset.o].getBoundingClientRect(); n.style.left = (o.left + o.width/2 - box.left) + 'px'; });
   }
   addEventListener('resize', placeNotes); document.fonts?.ready.then(placeNotes); placeNotes();
+  function alignFeats(){ // the feature line starts under the "t" in "Additional Features"
+    const h = $('#more-title'), f = $('.feats'); if(!h || !f) return;
+    const tn = [...h.childNodes].find(n => n.nodeType === 3 && n.textContent.includes('Additional')); if(!tn) return;
+    const rg = document.createRange(), k = tn.textContent.indexOf('Additional') + 4; rg.setStart(tn, k); rg.setEnd(tn, k + 1);
+    f.style.paddingLeft = Math.max(0, rg.getBoundingClientRect().left - h.getBoundingClientRect().left) + 'px';
+  }
+  addEventListener('resize', alignFeats); document.fonts?.ready.then(alignFeats); alignFeats();
   big.querySelectorAll('.o').forEach((o, k) => { const hot = on => notes.forEach(n => +n.dataset.o === k && n.classList.toggle('hot', on));
     o.addEventListener('pointerenter', () => hot(true)); o.addEventListener('pointerleave', () => hot(false)); o.addEventListener('focus', () => hot(true)); o.addEventListener('blur', () => hot(false)); });
 
-  /* dotted circles that wobble like a bubble's skin, but stay put */
-  $$('.doodle').forEach((el, n) => {
+  /* dotted circles: perfectly round at rest, but the skin ripples when your cursor passes through, like a bubble's in the app */
+  $$('.doodle').forEach(el => {
     const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), path = document.createElementNS(NS, 'path');
     svg.setAttribute('class', 'wob'); svg.setAttribute('viewBox', '-1.1 -1.1 2.2 2.2'); svg.setAttribute('aria-hidden', 'true');
     path.setAttribute('vector-effect', 'non-scaling-stroke'); svg.appendChild(path); el.prepend(svg);
-    const seed = n*2.3, M = 72;
-    const shape = t => { let d = ''; for(let i = 0; i <= M; i++){ const a = i/M*6.2832;
-      const r = 1 + .035*Math.sin(3*a + t*1.3 + seed) + .025*Math.sin(5*a - t*.9 + 1 + seed) + .02*Math.sin(2*a + t*.7) + .012*Math.sin(7*a + t*1.9);
-      d += (i ? 'L' : 'M') + (Math.cos(a)*r).toFixed(4) + ' ' + (Math.sin(a)*r).toFixed(4); } path.setAttribute('d', d + 'Z'); };
-    shape(0); if(REDUCED) return;
-    let vis = true; new IntersectionObserver(([e]) => vis = e.isIntersecting).observe(el);
-    (function tick(now){ if(vis) shape(now/1000); requestAnimationFrame(tick); })(0);
+    const M = 64, d = new Float32Array(M), v = new Float32Array(M), C = [], S2 = [];
+    for(let i = 0; i < M; i++){ C.push(Math.cos(i/M*6.2832)); S2.push(Math.sin(i/M*6.2832)); }
+    const shape = () => { let p = ''; for(let i = 0; i <= M; i++){ const k = i % M, r = 1 + d[k]; p += (i ? 'L' : 'M') + (C[k]*r).toFixed(4) + ' ' + (S2[k]*r).toFixed(4); } path.setAttribute('d', p + 'Z'); };
+    shape();
+    if(REDUCED) return;
+    let running = false, last = 0, px = null, py = null, pt = 0, inside = null;
+    function run(now){
+      const dt = Math.min(1/30, (now - last)/1000 || 1/60); last = now; let e = 0;
+      for(let i = 0; i < M; i++){ // a spring per point, tied to its neighbours so a dent travels round the skin
+        const L = d[(i + M - 1) % M], R = d[(i + 1) % M];
+        v[i] += (-170*d[i] + 60*(L + R - 2*d[i]) - 5*v[i])*dt;
+      }
+      for(let i = 0; i < M; i++){ d[i] += v[i]*dt; e += Math.abs(d[i]) + Math.abs(v[i])*.05; }
+      shape();
+      if(e > .002){ requestAnimationFrame(run); } else { d.fill(0); v.fill(0); shape(); running = false; }
+    }
+    const kick = () => { if(!running){ running = true; last = performance.now(); requestAnimationFrame(run); } };
+    addEventListener('pointermove', e => {
+      const r = el.getBoundingClientRect(); if(r.bottom < 0 || r.top > innerHeight) return;
+      const cx = r.left + r.width/2, cy = r.top + r.height/2, R = r.width/2, x = e.clientX, y = e.clientY, t = performance.now();
+      const vx = px === null ? 0 : (x - px)/Math.max(8, t - pt)*1000, vy = py === null ? 0 : (y - py)/Math.max(8, t - pt)*1000; px = x; py = y; pt = t;
+      const D = Math.hypot(x - cx, y - cy), now = D < R;
+      if(Math.abs(D - R) < 26 || (inside !== null && now !== inside)){ // the cursor is passing through the skin: it gives way where it's touched
+        const a = Math.atan2(y - cy, x - cx), push = Math.max(-1, Math.min(1, ((x - cx)*vx + (y - cy)*vy)/D/1400));
+        for(let i = 0; i < M; i++){ let da = Math.abs(i/M*6.2832 - (a < 0 ? a + 6.2832 : a)); da = Math.min(da, 6.2832 - da);
+          const f = Math.exp(-da*da/.16); v[i] += push*f*6.5; }
+        kick();
+      }
+      if(inside !== null && now !== inside){ for(let i = 0; i < M; i++) v[i] += (C[i]*vx + S2[i]*vy)/R*-.08; } // the whole bubble jiggles as you cross
+      inside = now;
+    }, {passive:true});
   });
 
   let openO = null;
@@ -349,7 +380,7 @@
     const apply = () => { raf = 0; const r = dev.getBoundingClientRect(); if(r.bottom < 0 || r.top > innerHeight) return;
       const cx = r.left + r.width/2, cy = r.top + r.height/2, dx = (mx - cx)/innerWidth, dy = (my - cy)/innerHeight, d = Math.min(1, Math.hypot(dx, dy)*1.6);
       dev.style.setProperty('--ry', (dx*14).toFixed(2) + 'deg'); dev.style.setProperty('--rx', (-dy*10).toFixed(2) + 'deg');
-      dev.style.setProperty('--sx', (-dx*90).toFixed(1) + 'px'); dev.style.setProperty('--sy', (30 - dy*70).toFixed(1) + 'px'); dev.style.setProperty('--sa', (.48 - d*.22).toFixed(2));
+      dev.style.setProperty('--sx', (-dx*110).toFixed(1) + 'px'); dev.style.setProperty('--sy', (44 - dy*80).toFixed(1) + 'px'); dev.style.setProperty('--sa', (.72 - d*.24).toFixed(2));
       dev.style.setProperty('--gx', ((mx - r.left)/r.width*100).toFixed(1) + '%'); dev.style.setProperty('--gy', ((my - r.top)/r.height*100).toFixed(1) + '%'); };
     addEventListener('pointermove', e => { mx = e.clientX; my = e.clientY; if(!raf) raf = requestAnimationFrame(apply); }, {passive:true});
     addEventListener('scroll', () => { if(!raf) raf = requestAnimationFrame(apply); }, {passive:true});

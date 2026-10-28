@@ -17,6 +17,7 @@
 @font-face{font-family:'Unbounded';font-weight:400;font-display:swap;src:url(fonts/unbounded-latin-400-normal.woff2) format('woff2')}
 @font-face{font-family:'Unbounded';font-weight:500;font-display:swap;src:url(fonts/unbounded-latin-500-normal.woff2) format('woff2')}
 @font-face{font-family:'Unbounded';font-weight:600;font-display:swap;src:url(fonts/unbounded-latin-600-normal.woff2) format('woff2')}
+@font-face{font-family:'Unbounded Var';font-weight:200 900;font-display:swap;src:url(fonts/unbounded-latin-var.woff2) format('woff2')}
 @font-face{font-family:'Unbounded';font-weight:900;font-display:swap;src:url(fonts/unbounded-latin-900-normal.woff2) format('woff2')}
 :root{
   --bg:#F7F7F5; --paper:#FFFFFF; --ink:#1A419E;
@@ -69,7 +70,8 @@ html.grab, html.grab *{cursor:grab !important} html.grabbing, html.grabbing *{cu
 .pill{display:inline-block; padding:.28em .8em .32em; border:3px solid var(--ink); border-radius:999px; background:var(--tint25);
   font-size:clamp(20px, 3vw, 34px); line-height:1.2; font-weight:400}
 .pill .md{font-weight:500}
-.cz{text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:.16em; transition:color .2s}
+.cz, .o-note{font-family:'Unbounded Var', var(--f); transition:font-weight .35s ease, color .2s, translate .35s cubic-bezier(.3,1.6,.5,1)}
+.cz{text-decoration:underline; text-decoration-thickness:2px; text-underline-offset:.16em}
 .cz:hover, .cz:focus-visible{text-decoration-style:wavy; text-decoration-thickness:1.5px; font-weight:900} .pill .bk{font-weight:900}
 .badge{flex:none; width:clamp(48px, 5vw, 64px); aspect-ratio:1; border-radius:50%; border:3px solid var(--ink); background:var(--tint25); display:grid; place-items:center;
   font-size:clamp(17px, 1.9vw, 23px); font-weight:400; color:var(--ink)}
@@ -78,9 +80,9 @@ html.grab, html.grab *{cursor:grab !important} html.grabbing, html.grabbing *{cu
 .badge{transition:scale .35s cubic-bezier(.3,1.6,.5,1), rotate .35s cubic-bezier(.3,1.6,.5,1), translate .35s cubic-bezier(.3,1.6,.5,1), background .25s}
 .badge.pop-in.in{transition:opacity .4s ease calc(var(--i, 0)*90ms + 120ms), transform .6s cubic-bezier(.3,1.6,.5,1) calc(var(--i, 0)*90ms + 120ms), scale .35s cubic-bezier(.3,1.6,.5,1), rotate .35s cubic-bezier(.3,1.6,.5,1), translate .35s cubic-bezier(.3,1.6,.5,1), background .25s}
 .badge:hover, .trio > div:hover .badge, .tut li:hover .badge, .qa .badge:hover{scale:1.16; rotate:-9deg; translate:0 4px; background:color-mix(in srgb, var(--tint25) 60%, var(--paper))}
-.trio > div:hover .card, .more-left .card:hover, .priv:hover{translate:0 -5px; box-shadow:0 26px 50px -34px rgba(16,24,60,.35)}
+.trio > div:hover .card, .more-left .card:hover{translate:0 -5px; box-shadow:0 26px 50px -34px rgba(16,24,60,.35)}
 .rv.card.in{transition:opacity .7s ease, transform .8s cubic-bezier(.2,.9,.25,1.05), translate .35s cubic-bezier(.3,1.5,.5,1), box-shadow .35s}
-.pill{transition:rotate .4s cubic-bezier(.3,1.6,.5,1), scale .4s cubic-bezier(.3,1.6,.5,1)} .pill:hover{rotate:-1.5deg; scale:1.02}
+.pill{transition:rotate .4s cubic-bezier(.3,1.6,.5,1), scale .4s cubic-bezier(.3,1.6,.5,1)} .pill:hover{rotate:-1.5deg; scale:1.02} .priv-head .pill:hover{rotate:0deg; scale:1}
 .rv.pill.in{transition:opacity .7s ease, transform .8s cubic-bezier(.2,.9,.25,1.05), rotate .4s cubic-bezier(.3,1.6,.5,1), scale .4s cubic-bezier(.3,1.6,.5,1)}
 .feats span{display:inline-block; transition:translate .3s cubic-bezier(.3,1.6,.5,1)} .feats span:hover{translate:0 -3px}
 .who svg{transition:translate .4s cubic-bezier(.3,1.6,.5,1)} .who:hover svg{translate:5px 3px}
@@ -103,7 +105,7 @@ section{padding:clamp(70px, 9vw, 120px) 0}
 .pop-in.in{opacity:1; transform:none; transition:opacity .4s ease, transform .6s cubic-bezier(.3,1.6,.5,1); transition-delay:calc(var(--i, 0)*90ms + 120ms)}
 
 /* ---------- 1. the landing ---------- */
-.hero{position:relative; min-height:min(940px, 100svh); display:grid; align-content:center; margin-top:-80px; padding:200px 0 110px}
+.hero{position:relative; min-height:calc(100svh + 80px); box-sizing:border-box; display:grid; align-content:center; margin-top:-80px; padding:250px 0 270px} /* the landing is the bar and the logo, nothing else until you scroll */
 .hero .wrap{position:relative; display:grid; justify-items:center; text-align:center; gap:22px}
 .o-notes{position:relative; width:100%; height:92px; margin-bottom:-6px; pointer-events:none}
 .o-notes .hint{position:absolute; left:-30px; top:-118px; width:220px; aspect-ratio:1; display:grid; place-items:center; text-align:center; font-size:14px; line-height:1.45; color:var(--ink-mid); rotate:-6deg; margin:0}
@@ -115,7 +117,7 @@ section{padding:clamp(70px, 9vw, 120px) 0}
 .o-note[data-o="0"]{rotate:-9deg; bottom:4px} .o-note[data-o="0"] svg{rotate:8deg}
 .o-note[data-o="1"]{rotate:5deg; bottom:-2px} .o-note[data-o="1"] svg{rotate:-6deg}
 .o-note[data-o="2"]{rotate:-4deg; bottom:10px} .o-note[data-o="2"] svg{rotate:14deg; translate:-6px 0}
-.o-note{transition:translate .35s cubic-bezier(.3,1.6,.5,1)} .o-note.lift{translate:0 -6px}
+.o-note.lift{translate:0 -6px}
 .o-note svg{width:30px; height:44px; fill:none; stroke:var(--ink); stroke-width:1.6; stroke-dasharray:4 4}
 .o-note svg path{stroke-dashoffset:0}
 .big{position:relative; display:inline-block; padding:clamp(14px, 1.8vw, 24px) clamp(28px, 3.6vw, 52px); border-radius:999px; background:var(--paper); box-shadow:inset 0 0 0 clamp(3px, .4vw, 5px) var(--ink), 0 26px 60px -36px rgba(16,24,60,.35)}
@@ -293,7 +295,7 @@ html.focusing .focus-bar{opacity:1; scale:1; pointer-events:auto}
 .btn.bubble-btn{font-size:clamp(17px, 2vw, 22px); padding:14px 26px; border-width:3px}
 .screen{grid-column:2; margin-top:16px; position:relative; aspect-ratio:16/9; border-radius:clamp(14px, 2vw, 24px); overflow:hidden; background:var(--bg);
   background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:22px 22px; box-shadow:inset 0 0 0 1px var(--rule), 0 40px 80px -50px rgba(16,24,60,.45)}
-.qa .body{grid-column:2; display:grid; gap:14px; font-size:15px; line-height:1.65; color:var(--ink-mid); max-width:62em}
+.qa .body{grid-column:2; margin-top:clamp(36px, 4.5vw, 60px); display:grid; gap:14px; font-size:15px; line-height:1.65; color:var(--ink-mid); max-width:62em}
 .qa .body b{color:var(--ink)}
 @media (max-width:700px){ .qa{grid-template-columns:1fr} .screen, .qa .body{grid-column:1} }
 /* the demo screen */
@@ -351,7 +353,7 @@ html.focusing .focus-bar{opacity:1; scale:1; pointer-events:auto}
 .phone-col{display:grid; justify-items:end; align-self:stretch; perspective:1600px; margin-right:clamp(-120px, -6vw, 0px)}
 .device{margin:clamp(10px, 2vw, 30px) 0 0; width:min(560px, 41vw); padding:clamp(10px, 1.1vw, 16px); border-radius:clamp(44px, 5vw, 76px); background:#1d1a1b; transform-style:preserve-3d;
   transform:rotate(4.5deg) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg)); transition:transform .25s ease-out, box-shadow .25s ease-out;
-  box-shadow:var(--sx, 0px) var(--sy, 30px) 60px -18px rgba(16,24,60,var(--sa, .38)), calc(var(--sx, 0px)*.4) calc(var(--sy, 30px)*.4) 18px -10px rgba(16,24,60,.22)}
+  box-shadow:var(--sx, 0px) var(--sy, 40px) 90px -14px rgba(16,24,60,var(--sa, .6)), calc(var(--sx, 0px)*.45) calc(var(--sy, 40px)*.45) 26px -6px rgba(16,24,60,.38)}
 .device .scr{position:relative; border-radius:clamp(34px, 3.9vw, 60px); overflow:hidden}
 .device img{display:block; width:100%; height:auto}
 .device .glare{position:absolute; inset:0; pointer-events:none; background:radial-gradient(circle at var(--gx, 30%) var(--gy, 10%), rgba(255,255,255,.35), transparent 45%); mix-blend-mode:soft-light; transition:background .2s}
