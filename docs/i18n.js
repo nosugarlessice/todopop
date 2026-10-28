@@ -30,7 +30,7 @@
     ['.feat .card > p', ['<span class="ph">一直浮在你正在用的窗口上方</span><br><span class="ph">不会藏在关掉的 App 里</span>',
       '<span class="ph">截止日期越近 泡泡越大</span><br><span class="ph">温柔地制造视觉压力</span>',
       '<span class="ph">没戳破的泡泡会一直留在屏幕上</span><br><span class="ph">没有“过了午夜就清零”这种借口</span>']],
-    ['#feat1 .fb', ['习题集 4<small>马上！</small>', '回邮件<small>今天</small>', '洗衣服<small>快了</small>']],
+    ['#feat1 .fb', ['数学作业<small>马上！</small>', '回邮件<small>今天</small>', '洗衣服<small>快了</small>']],
 
     ['#q-title', 'Cindy<br>可是我要 lock in 了<br>任务泡泡们却已经霸占了整个屏幕呢？'],
     ['#focus .a .tx', '点这里'],
@@ -109,10 +109,10 @@
     'Essay draft': '论文草稿', 'Reply to emails': '回邮件', 'Laundry': '洗衣服', 'Read ch. 7': '读第 7 章',
     'Outline': '列提纲', 'Find 3 sources': '找 3 篇文献', 'Draft intro': '写开头',
     // the floating bubbles, and the sample history
-    'Problem set 4': '习题集 4', 'Figma critique': 'Figma 评图', 'Water the pothos': '给绿萝浇水', 'Book dentist': '约牙医',
+    'Problem set 4': '数学作业', 'Figma critique': '改设计稿', 'Water the pothos': '给绿萝浇水', 'Book dentist': '约牙医',
     'Portfolio review': '作品集评审', 'Call mom': '给妈妈打电话', 'Drink water': '喝水', 'Pay rent': '交房租', 'Gym': '去健身',
     'Email the landlord': '给房东发邮件', 'Groceries': '买菜', 'Return library books': '还图书馆的书', 'Taxes': '报税',
-    'Problem set 3': '习题集 3', 'Reading response': '阅读反馈', 'Email TA': '给助教发邮件', 'Studio crit prep': '准备评图', 'Print posters': '打印海报',
+    'Problem set 3': '物理作业', 'Reading response': '阅读反馈', 'Email TA': '给助教发邮件', 'Studio crit prep': '准备课堂汇报', 'Print posters': '打印海报',
     'Send invoice': '发账单', 'Update portfolio': '更新作品集', 'Clean desk': '收拾桌面', 'Return library book': '还图书馆的书',
   };
 
