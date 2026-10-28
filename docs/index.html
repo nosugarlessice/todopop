@@ -138,7 +138,7 @@ section{padding:clamp(70px, 9vw, 120px) 0}
 .tagline{font-size:clamp(17px, 2vw, 24px); font-weight:400}
 .hero .meta{font-size:13px}
 .bubble-hint{position:absolute; right:-70px; bottom:-205px; width:320px; aspect-ratio:1; display:grid; place-content:center; text-align:left; font-size:13px; line-height:1.5; color:var(--ink-mid); rotate:3deg}
-.bubble-hint b{font-weight:400; color:var(--ink)}
+.bubble-hint b{font-weight:400; color:var(--ink)} .bubble-hint li b{font-weight:600}
 .bubble-hint ul{list-style:none; margin:8px 0 0; padding:0; display:grid; gap:3px}
 .bubble-hint li{display:flex; align-items:center; gap:10px}
 .bubble-hint li::before{content:""; width:9px; height:9px; border-radius:50%; background:var(--ink); flex:none}
@@ -340,6 +340,8 @@ html.focusing .focus-bar{opacity:1; scale:1; pointer-events:auto}
 .feats{list-style:none; margin:0; padding:0 0 0 clamp(4px, 1vw, 14px); display:flex; flex-wrap:wrap; gap:6px 0; font-size:15px; line-height:1.65; color:var(--ink-mid)}
 .feats li{display:inline-flex; align-items:center}
 .feats li + li::before{content:"·"; margin:0 .6em; color:var(--ink-soft)}
+.feats li.brk{display:none} html[lang="zh-CN"] .feats li.brk{display:block; flex-basis:100%; height:0} .feats li.brk::before, .feats li.brk + li::before{content:none}
+.ph{white-space:nowrap} /* a short Chinese phrase stays on one line */
 .pill.over{position:relative; z-index:2; margin-bottom:calc(-1*clamp(42px, 4.6vw, 52px))}
 .card.under{padding-top:clamp(52px, 6vw, 70px)}
 /* the cards run on under the phone: the overlap is on purpose */
@@ -449,7 +451,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
       <p class="meta" id="hero-meta">Free · No Sign-up · No ads</p>
       <div class="bubble-hint doodle">
         <b>*Interact with these task bubbles!</b>
-        <ul><li>drag to reposition</li><li>right click to edit</li><li>click once to get into focus mode</li><li>double click to pop and mark done</li></ul>
+        <ul><li><b>drag</b> to reposition</li><li><b>right click</b> to edit</li><li><b>click once</b> to get into focus mode</li><li><b>double click</b> to pop and mark done</li></ul>
       </div>
     </div>
   </section>
@@ -535,6 +537,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
           <li class="rv" style="--i:1"><span>Color Grouping</span></li>
           <li class="rv" style="--i:2"><span>Send to Edge</span></li>
           <li class="rv" style="--i:3"><span>Attach a Link</span></li>
+          <li class="brk" aria-hidden="true"></li>
           <li class="rv" style="--i:4"><span>Pause Growth</span></li>
           <li class="rv" style="--i:5"><span>Reset Size</span></li>
         </ul>
