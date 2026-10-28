@@ -197,6 +197,13 @@ html.paused .task:not(.lv1) .dot i{border-style:dashed}
 #arch-mode button.on{background:none}
 @media (prefers-reduced-motion: reduce){ #arch-mode::before{transition:none} }
 .seg button:focus-visible{outline:2px solid var(--ink); outline-offset:1px}
+.lang-row{display:flex; align-items:center; justify-content:space-between; gap:10px; padding-top:12px; border-top:1px dashed var(--rule)}
+.lang-seg button{text-transform:none !important; letter-spacing:.02em}
+/* Chinese: the tiny spaced capitals become readable characters */
+html[lang="zh-CN"] .field-label, html[lang="zh-CN"] .acc-head .count, html[lang="zh-CN"] .day-list .ttl, html[lang="zh-CN"] .seg button,
+html[lang="zh-CN"] .range-label, html[lang="zh-CN"] .toast button, html[lang="zh-CN"] .focus-note .field-label{font-size:11px; letter-spacing:.02em}
+html[lang="zh-CN"] .stops, html[lang="zh-CN"] .task .name small, html[lang="zh-CN"] .redo .lv, html[lang="zh-CN"] .redo .again,
+html[lang="zh-CN"] .note, html[lang="zh-CN"] .wday .d, html[lang="zh-CN"] .month .h{font-size:10px; letter-spacing:.02em}
 .nav{margin-left:auto; display:flex; align-items:center; gap:4px}
 .nav button{all:unset; cursor:pointer; width:24px; height:24px; border-radius:50%; display:grid; place-items:center; font-size:14px; color:var(--ink)}
 .nav button:hover{background:var(--ink-wash)}
@@ -1029,6 +1036,7 @@ input.has-cjk{line-height:1.5}
         <div class="swatches" id="swatches"></div>
       </div>
       <span class="note">Outlines and text follow your color.</span>
+      <div class="lang-row"><span class="field-label">Language</span><div class="seg lang-seg" id="lang-seg" role="group" aria-label="Language"><button type="button" data-lang="en">English</button><button type="button" data-lang="zh">中文</button></div></div>
       <div class="sync" id="sync">
         <div class="sync-top"><span class="field-label">Phone app</span><span class="sync-state" id="sync-state"></span></div>
         <div class="sync-step" id="sync-off">
@@ -1159,12 +1167,70 @@ if(REMOTE) document.documentElement.classList.add('remote');
 const DOCK = !REMOTE;
 if(DOCK) document.documentElement.classList.add('dock');
 
+/* ---------- language: English or 简体中文. Picked in the third O; switching reloads the app in the new language. ---------- */
+const LANG = (() => { try{ const v = JSON.parse(localStorage.getItem('todopop:lang')); if(v === 'zh' || v === 'en') return v; }catch(e){} return /^zh\b/i.test(navigator.language || '') ? 'zh' : 'en'; })();
+const ZH_ON = LANG === 'zh';
+document.documentElement.lang = ZH_ON ? 'zh-CN' : 'en';
+const L = (en, zh) => ZH_ON ? zh : en; // a sentence with things filled in: both versions side by side
+const ZH = { // fixed words, English → Chinese
+  'TODOPOP controls':'TODOPOP 控制面板', 'Hide control panel':'隐藏控制面板', 'Hide (Esc)':'隐藏（Esc）',
+  'Pop it before it fills your screen.':'趁它占满屏幕前 戳破它', 'How TODOPOP works':'TODOPOP 怎么用',
+  'Your bubbles float on your computer. Everything you change here shows up there.':'你的泡泡飘在电脑上。在这里做的修改都会同步过去。', 'Remote':'遥控',
+  'Unpair this phone':'解除这台手机的配对', 'Blow a bubble':'吹一个泡泡', 'Task name':'任务名称', 'e.g. Send the team the Figma link':'比如：把 Figma 链接发给组员',
+  'Task URL':'任务链接', 'if there is one':'如果有的话', 'Deadline':'截止日期', 'Paste a link, e.g. the Canvas page':'粘贴链接，比如 Canvas 页面', 'Paste a link':'粘贴链接',
+  'No deadline':'无截止日期', 'Tonight':'今晚', 'Tomorrow':'明天', 'Urgency':'紧急程度', 'Urgency, 1 to 4':'紧急程度，1 到 4',
+  'REMIND':'提醒', 'SOON':'快了', 'TODAY':'今天', 'NOW!':'马上！', 'Just a reminder':'只是提醒', 'Soon':'快了', 'Today':'今天', 'Super urgent':'超级紧急',
+  'Group':'分组', 'Edit groups':'编辑分组', 'Blow it':'吹出来', 'Floating':'漂浮中', 'Not connected to your computer.':'还没连上你的电脑。', 'Scan code':'扫码',
+  'Arrange bubbles':'排列泡泡', 'Shuffle into a new layout':'随机重新排列', 'Shuffle bubbles into a new layout':'把泡泡随机重新排列',
+  'Line up along the left edge':'沿左边排成一列', 'Line up along the top edge':'沿顶部排成一行', 'Line up along the bottom edge':'沿底部排成一行', 'Line up along the right edge':'沿右边排成一列',
+  'Pause growing':'暂停生长', '30 min':'30 分钟', '1 hour':'1 小时', 'Till tomorrow':'到明天', 'Until I resume':'直到我恢复', 'Paused':'已暂停', 'Resume':'恢复', 'Show one group':'只看一个分组',
+  'Popped':'已戳破', 'Week':'周', 'Month':'月', 'Previous':'往前', 'Next':'往后', 'Days before today include sample history.':'今天之前的记录包含示例数据。',
+  'Tint':'主题色', 'Tint hue':'主题色色相', 'Tint saturation':'主题色饱和度', 'Outlines and text follow your color.':'轮廓和文字都会跟着你的颜色变。', 'Language':'语言',
+  'Phone app':'手机 App', 'Not now':'以后再说', 'Show the code again':'再显示一次二维码', 'Unpair':'解除配对',
+  'Now':'当前', 'Focus mode':'专注模式', 'Drag to move the bar':'拖动来移动这个栏', 'Time in focus':'专注时长', 'Where the steps live':'步骤放在哪里',
+  '+ Step':'+ 步骤', 'Break it into steps':'拆成小步骤', 'Next step, then Enter':'输入下一步，按回车', 'New step':'新步骤', 'Done, pop it!':'完成，戳破！',
+  'Leave focus mode without popping':'离开专注模式（不戳破）', 'Leave focus mode':'离开专注模式', 'Open TODOPOP':'打开 TODOPOP',
+  'Edit bubble':'编辑泡泡', 'Cancel editing':'取消编辑', 'Steps':'步骤', '+ Add a step':'+ 添加步骤', 'Add a step':'添加步骤', 'Get in the bubble':'钻进泡泡',
+  'Delete':'删除', 'Cancel':'取消', 'Save':'保存', 'Shrink back to starting size':'缩回初始大小',
+  'Color':'颜色', "Where this group's bubbles live":'这个分组的泡泡放在哪里', 'Custom hue':'自定义色相', 'Saturation':'饱和度',
+  'New group':'新分组', 'Name':'名称', 'e.g. School':'比如：学校', 'Make group':'创建分组',
+  'Scan with your phone':'用手机扫一扫', 'Pairing code':'配对二维码', 'Phone connected. You can close this.':'手机已连接，可以关掉这个窗口了。', 'Copy link':'复制链接', 'Done':'完成',
+  'Phone controls':'手机控制', 'Pause':'暂停', 'Not yet':'还没', 'Pop it!':'戳破！', 'Undo':'撤销',
+  'Press and hold':'长按', 'Double-click':'双击',
+  'Off':'关闭', 'Synced':'已同步', 'Syncing':'同步中', 'Offline':'离线', 'Reconnecting':'重新连接中', 'Not connected':'未连接',
+  // starter tasks and the sample history
+  'Problem set 4':'习题集 4', 'Reply to emails':'回邮件', 'Figma critique':'Figma 评图', 'Book dentist':'约牙医', 'Laundry':'洗衣服', 'Water the pothos':'给绿萝浇水', 'Drink water':'喝水',
+  'Reading response':'阅读反馈', 'Email TA':'给助教发邮件', 'Groceries':'买菜', 'Gym':'去健身', 'Studio crit prep':'准备评图', 'Call mom':'给妈妈打电话', 'Pay rent':'交房租',
+  'Problem set':'习题集', 'Water plants':'浇花', 'Clean desk':'收拾桌面', 'Return library book':'还图书馆的书', 'Print posters':'打印海报',
+};
+const T = s => ZH_ON && ZH[s] != null ? ZH[s] : s;
+
+/* the page's own words, in Chinese when that's the language */
+if(ZH_ON){
+  const INFO = ['<b>单击</b>泡泡钻进去，<b id="pop-how">双击</b>戳破它。', '有截止日期就设上<b>截止日期</b>：到最后一天，泡泡会自己升一级紧急程度。',
+    '按<b>空格键</b>吹一个新泡泡。<b>回车</b>依次填写名称、链接、紧急程度和分组（用 <b>← →</b> 选），最后吹出来。',
+    '<b>拖动</b>泡泡来移动它。', '<b>右键</b>泡泡可以编辑，或者钻进泡泡。', '按住面板顶部边缘可以<b>拖动面板</b>。'];
+  document.querySelectorAll('#info-pop > li:not([id])').forEach((li, i) => { if(INFO[i]) li.innerHTML = INFO[i]; });
+  const esc0 = document.getElementById('info-esc'); if(esc0) esc0.innerHTML = '<b>点空白处</b>或按 <b>Esc</b> 把它收进 TODOPOP 按钮；按 <b>Ctrl/⌘ + Shift + Space</b> 叫回来。';
+  const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, {acceptNode: n => n.parentNode && /^(SCRIPT|STYLE)$/.test(n.parentNode.nodeName) ? NodeFilter.FILTER_REJECT : NodeFilter.FILTER_ACCEPT});
+  for(let n; (n = w.nextNode());){ const k = n.nodeValue.trim(); if(k && ZH[k] != null) n.nodeValue = n.nodeValue.replace(k, ZH[k]); }
+  document.querySelectorAll('[placeholder], [title], [aria-label]').forEach(el => { for(const a of ['placeholder', 'title', 'aria-label']){ const v = el.getAttribute(a); if(v && ZH[v] != null) el.setAttribute(a, ZH[v]); } });
+}
+document.querySelectorAll('#lang-seg [data-lang]').forEach(b => b.classList.toggle('on', b.dataset.lang === LANG));
+document.getElementById('lang-seg')?.addEventListener('click', e => { // switching: save everything, then come back in the other language
+  const b = e.target.closest('[data-lang]'); if(!b || b.dataset.lang === LANG) return;
+  try{ save(); }catch(err){}
+  try{ localStorage.setItem('todopop:lang', JSON.stringify(b.dataset.lang)); }catch(err){}
+  window.todopop?.setLang?.(b.dataset.lang); location.reload();
+});
+window.todopop?.setLang?.(LANG); // the desktop app's menu follows along
+
 /* ---------- urgency model ---------- */
 const LEVELS = {
-  1:{name:'Just a reminder', short:'REMIND', desc:'Stays small. A little bubble that sits on screen to remind you.'},
-  2:{name:'Soon', short:'SOON', desc:'Grows about 1 cm every hour.'},
-  3:{name:'Today', short:'TODAY', desc:'Grows about 1 cm every 10 minutes.'},
-  4:{name:'Super urgent', short:'NOW!', desc:'Grows about 1 cm every 2 minutes. It will cover your screen if you wait.'},
+  1:{name:T('Just a reminder'), short:T('REMIND'), desc:L('Stays small. A little bubble that sits on screen to remind you.', '一直很小。一个停在屏幕上提醒你的小泡泡。')},
+  2:{name:T('Soon'), short:T('SOON'), desc:L('Grows about 1 cm every hour.', '大约每小时长大 1 厘米。')},
+  3:{name:T('Today'), short:T('TODAY'), desc:L('Grows about 1 cm every 10 minutes.', '大约每 10 分钟长大 1 厘米。')},
+  4:{name:T('Super urgent'), short:T('NOW!'), desc:L('Grows about 1 cm every 2 minutes. It will cover your screen if you wait.', '大约每 2 分钟长大 1 厘米。再拖下去，它会盖住你的屏幕。')},
 };
 const CM = 38; // CSS px per cm
 const RATE = { real:[0,0, CM/3600, CM/600, CM/120], demo:[0,0, 0.45, 1.1, 2.5] }; // radius px / s (halved: bubbles grow at half the original pace)
@@ -1176,7 +1242,7 @@ const store = {
   set(k,v){ try{ localStorage.setItem('todopop:'+k, JSON.stringify(v)); }catch(e){} }
 };
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-const DEMO_POPS = ['Laundry','Reading response','Email TA','Groceries','Gym','Studio crit prep','Call mom','Pay rent','Problem set','Water plants','Clean desk','Return library book','Print posters'];
+const DEMO_POPS = ['Laundry','Reading response','Email TA','Groceries','Gym','Studio crit prep','Call mom','Pay rent','Problem set','Water plants','Clean desk','Return library book','Print posters'].map(T);
 let archive = store.get('archive');
 if(!Array.isArray(archive)){
   archive = [];
@@ -1242,13 +1308,13 @@ function seedTasks(){
   const narrow = sizeOK() && W()<700, ah = narrow ? H()*.45 : H(); // a zero-size start is not a phone
   const ago = m => Date.now() - m*60000;
   [
-    {name:'Problem set 4', level:4, R:118, fx:.8, fy:.6, created:ago(52)},
-    {name:'Reply to emails', level:3, R:78, fx:.19, fy:.3, created:ago(34)},
-    {name:'Figma critique', level:3, R:64, fx:.83, fy:.2, created:ago(20)},
-    {name:'Book dentist', level:2, R:50, fx:.21, fy:.73, created:ago(140)},
-    {name:'Laundry', level:2, R:44, fx:.3, fy:.9, created:ago(95)},
-    {name:'Water the pothos', level:1, R:34, fx:.7, fy:.91, created:ago(300)},
-    {name:'Drink water', level:1, R:34, fx:.06, fy:.1, created:ago(400)},
+    {name:T('Problem set 4'), level:4, R:118, fx:.8, fy:.6, created:ago(52)},
+    {name:T('Reply to emails'), level:3, R:78, fx:.19, fy:.3, created:ago(34)},
+    {name:T('Figma critique'), level:3, R:64, fx:.83, fy:.2, created:ago(20)},
+    {name:T('Book dentist'), level:2, R:50, fx:.21, fy:.73, created:ago(140)},
+    {name:T('Laundry'), level:2, R:44, fx:.3, fy:.9, created:ago(95)},
+    {name:T('Water the pothos'), level:1, R:34, fx:.7, fy:.91, created:ago(300)},
+    {name:T('Drink water'), level:1, R:34, fx:.06, fy:.1, created:ago(400)},
   ].forEach(t => bubbles.push(makeBubble({...t, fy: t.fy*(narrow ? .45 : 1), hx: t.fx*W(), hy: t.fy*ah, spawn:0})));
 }
 if(Array.isArray(saved) && saved.length){
@@ -1309,7 +1375,7 @@ function applyTheme(){
   bar.addEventListener('pointermove', e => { if(sd) spick(e); });
   bar.addEventListener('pointerup', () => sd = false);
   const presets = [[222,.72],[354.9,.771],[178,.9],[95,.55],[268,.55],[24,.85],[0,0]];
-  $('#swatches').innerHTML = presets.map(([h,s]) => `<button type="button" class="sw" data-h="${h}" data-s="${s}" aria-label="Preset ${toHex(hslToRgb(h,s,inkL(h,s)))}" style="background:${toHex(hslToRgb(h,s,inkL(h,s)))}"></button>`).join('');
+  $('#swatches').innerHTML = presets.map(([h,s]) => `<button type="button" class="sw" data-h="${h}" data-s="${s}" aria-label="${L('Preset', '预设')} ${toHex(hslToRgb(h,s,inkL(h,s)))}" style="background:${toHex(hslToRgb(h,s,inkL(h,s)))}"></button>`).join('');
   $('#swatches').addEventListener('click', e => { const b=e.target.closest('.sw'); if(!b) return; theme={h:+b.dataset.h, s:+b.dataset.s}; applyTheme(); });
 })();
 applyTheme();
@@ -1374,20 +1440,20 @@ $('#new-form').addEventListener('submit', e => {
 syncUrg();
 
 /* ---------- current tasks list ---------- */
-const age = ts => { const m = Math.max(0, (Date.now()-ts)/60000); return m<1 ? 'just now' : m<60 ? Math.round(m)+'m' : m<1440 ? Math.round(m/60)+'h' : Math.round(m/1440)+'d'; };
+const age = ts => { const m = Math.max(0, (Date.now()-ts)/60000); return m<1 ? L('just now', '刚刚') : m<60 ? Math.round(m)+L('m', '分钟') : m<1440 ? Math.round(m/60)+L('h', '小时') : Math.round(m/1440)+L('d', '天'); };
 function renderTasks(){
   if(reorder) return; // don't rebuild the list under the user's finger
   const list = [...tasks()].sort((a,b)=> a.order - b.order);
-  $('#cur-count').textContent = (REMOTE ? `${tasks().length} ${PAIRED ? 'ON YOUR COMPUTER' : 'ON THIS PHONE'}` : `${tasks().length} FLOATING`) + (isPaused() ? ' · PAUSED' : screenFull ? ' · SCREEN FULL' : '');
+  $('#cur-count').textContent = (REMOTE ? `${tasks().length} ${PAIRED ? L('ON YOUR COMPUTER', '个在你的电脑上') : L('ON THIS PHONE', '个在这台手机上')}` : L(`${tasks().length} FLOATING`, `${tasks().length} 个漂浮中`)) + (isPaused() ? L(' · PAUSED', ' · 已暂停') : screenFull ? L(' · SCREEN FULL', ' · 屏幕已满') : '');
   renderFilter();
   $('#tasks').innerHTML = list.length ? list.map(b => {
     const s = [0,8,12,17,24][b.level], g = gById(b.group);
     return `<li class="task lv${b.level}${focus && focus.b === b ? ' inside' : ''}" data-id="${b.id}"${gFilter && b.group !== gFilter ? ' hidden' : ''}>
-      <button class="grip" type="button" aria-label="Reorder ${esc(b.name)}. Drag, or use the up and down arrow keys" title="Drag to reorder"><svg viewBox="0 0 8 14" aria-hidden="true"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/><circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/></svg></button>
+      <button class="grip" type="button" aria-label="${L(`Reorder ${esc(b.name)}. Drag, or use the up and down arrow keys`, `调整“${esc(b.name)}”的顺序。拖动，或用上下方向键`)}" title="${L('Drag to reorder', '拖动调整顺序')}"><svg viewBox="0 0 8 14" aria-hidden="true"><circle cx="2" cy="2" r="1.2"/><circle cx="6" cy="2" r="1.2"/><circle cx="2" cy="7" r="1.2"/><circle cx="6" cy="7" r="1.2"/><circle cx="2" cy="12" r="1.2"/><circle cx="6" cy="12" r="1.2"/></svg></button>
       <span class="dot"><i style="width:${s}px;height:${s}px${g ? `;--g:${gHex(g)}` : ''}"></i></span>
-      <button class="name" type="button" data-act="find"><span>${esc(b.name)}</span><small>${LEVELS[b.level].short}${b.steps.length ? ` · ${b.steps.length - stepsLeft(b)}/${b.steps.length} steps` : ''}${g ? ' · '+esc(g.name) : ''}${b.due ? ' · '+fmtDue(b.due).toLowerCase() : ''}${focusSoFar(b) >= 1 ? ` · ${fmtClock(focusSoFar(b))} inside` : ''}</small></button>
-      <button class="pop-btn" type="button" data-act="pop" aria-label="Pop ${esc(b.name)}"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5"/></svg></button>
-    </li>`; }).join('') + (REMOTE && gFilter && !list.some(b => b.group === gFilter) ? `<li class="empty">Nothing in ${esc(gById(gFilter)?.name || 'this group')} yet.</li>` : '') : `<li class="empty">No bubbles left. The screen is all yours.</li>`;
+      <button class="name" type="button" data-act="find"><span>${esc(b.name)}</span><small>${LEVELS[b.level].short}${b.steps.length ? ` · ${b.steps.length - stepsLeft(b)}/${b.steps.length} ${L('steps', '步')}` : ''}${g ? ' · '+esc(g.name) : ''}${b.due ? ' · '+fmtDue(b.due).toLowerCase() : ''}${focusSoFar(b) >= 1 ? L(` · ${fmtClock(focusSoFar(b))} inside`, ` · 专注 ${fmtClock(focusSoFar(b))}`) : ''}</small></button>
+      <button class="pop-btn" type="button" data-act="pop" aria-label="${L('Pop', '戳破')} ${esc(b.name)}"><svg viewBox="0 0 16 16"><path d="M3 8.5l3.2 3L13 4.5"/></svg></button>
+    </li>`; }).join('') + (REMOTE && gFilter && !list.some(b => b.group === gFilter) ? `<li class="empty">${L(`Nothing in ${esc(gById(gFilter)?.name || 'this group')} yet.`, `${esc(gById(gFilter)?.name || '这个分组')}里还没有任务。`)}</li>` : '') : `<li class="empty">${L('No bubbles left. The screen is all yours.', '泡泡都戳完了 屏幕全归你')}</li>`;
 }
 // typing Chinese into a field: the line grows to fit the doubled characters
 const cjkFit = e => { const t = e.target; if(t && t.tagName === 'INPUT') t.classList.toggle('has-cjk', /[\u2e80-\u9fff\u3000-\u303f\uff00-\uffef]/.test(t.value)); };
@@ -1441,7 +1507,8 @@ const defaultSat = h => Math.min(1, GLOW_C / Math.max(.01, cusp(h).C)); // where
 const rgbHex = v => '#' + v.map(x => x.toString(16).padStart(2,'0')).join('').toUpperCase();
 var inkHue = 265; // OKLCH hue of the current tint (set by applyTheme)
 const slotHue = i => (inkHue + 40 + i*56) % 360; // six hues, 56° apart, keeping 40° clear on each side of your tint
-const HUE_NAMES = [[15,'Rose'],[45,'Coral'],[75,'Peach'],[108,'Butter'],[132,'Lime'],[162,'Mint'],[200,'Aqua'],[245,'Sky'],[282,'Periwinkle'],[318,'Lilac'],[345,'Orchid'],[360,'Rose']];
+const HUE_NAMES = ZH_ON ? [[15,'玫瑰'],[45,'珊瑚'],[75,'蜜桃'],[108,'奶油'],[132,'青柠'],[162,'薄荷'],[200,'水蓝'],[245,'天空'],[282,'长春花'],[318,'丁香'],[345,'兰花'],[360,'玫瑰']]
+  : [[15,'Rose'],[45,'Coral'],[75,'Peach'],[108,'Butter'],[132,'Lime'],[162,'Mint'],[200,'Aqua'],[245,'Sky'],[282,'Periwinkle'],[318,'Lilac'],[345,'Orchid'],[360,'Rose']];
 const hueName = h => HUE_NAMES.find(([e]) => ((h % 360) + 360) % 360 < e)[1];
 const isCustom = g => g.c == null && Number.isFinite(g.h);
 const gHue = g => isCustom(g) ? g.h : slotHue(g.c ?? 0);
@@ -1470,10 +1537,10 @@ function retintGroups(){ // the tint changed: every slot color moves with it (cu
 let newGroup = null, edGroup = null, gFilter = null;
 const setHTML = (el, html) => { if(el._h !== html){ el.innerHTML = html; el._h = html; } }; // no rebuild (and no lost focus) when nothing changed
 function chipsHTML(sel, withAdd){
-  if(!groups.length && withAdd === true) return `<button type="button" class="add" data-add>+ New group</button><span class="note gnote">Sort bubbles by color. Make your first group.</span>`;
-  return `<button type="button" class="none" data-g="" aria-pressed="${!sel}"><i class="sw-dot"></i>No group</button>` +
-    groups.map(g => `<button type="button" data-g="${g.id}" aria-pressed="${sel === g.id}" style="--g:${gHex(g)}" ${REMOTE ? '' : 'title="Right-click to change color"'}><i class="sw-dot"></i>${esc(g.name)}</button>`).join('') +
-    (withAdd && groups.length < SLOTS ? `<button type="button" class="add" data-add aria-label="Add a group">+ New${groups.length ? '' : ' group'}</button>` : '');
+  if(!groups.length && withAdd === true) return `<button type="button" class="add" data-add>${L('+ New group', '+ 新分组')}</button><span class="note gnote">${L('Sort bubbles by color. Make your first group.', '按颜色给泡泡分类。先建第一个分组吧。')}</span>`;
+  return `<button type="button" class="none" data-g="" aria-pressed="${!sel}"><i class="sw-dot"></i>${L('No group', '不分组')}</button>` +
+    groups.map(g => `<button type="button" data-g="${g.id}" aria-pressed="${sel === g.id}" style="--g:${gHex(g)}" ${REMOTE ? '' : `title="${L('Right-click to change color', '右键改颜色')}"`}><i class="sw-dot"></i>${esc(g.name)}</button>`).join('') +
+    (withAdd && groups.length < SLOTS ? `<button type="button" class="add" data-add aria-label="${L('Add a group', '添加分组')}">${L(`+ New${groups.length ? '' : ' group'}`, '+ 新分组')}</button>` : '');
 }
 function renderGroups(){
   if(newGroup && !gById(newGroup)) newGroup = null;
@@ -1488,10 +1555,10 @@ function renderFilter(){
   const used = groups.filter(g => tasks().some(b => b.group === g.id));
   if(gFilter && !REMOTE && !used.some(g => g.id === gFilter)) gFilter = null; // the phone keeps an empty group picked and says so
   const el = $('#gfilter'), show = REMOTE ? groups : used; el.hidden = !REMOTE && !used.length;
-  setHTML(el, `<button type="button" data-g="" aria-pressed="${!gFilter}">All</button>` +
-    show.map(g => `<button type="button" data-g="${g.id}" aria-pressed="${gFilter === g.id}" style="--g:${gHex(g)}" ${REMOTE ? '' : 'title="Right-click to change color"'}><i class="sw-dot"></i>${esc(g.name)}</button>`).join('') +
-    (REMOTE && groups.length < SLOTS ? `<button type="button" class="add" data-add>+ New${groups.length ? '' : ' group'}</button>` : '') +
-    (REMOTE && groups.length ? `<button type="button" class="add edit" data-gedit>Edit</button>` : ''));
+  setHTML(el, `<button type="button" data-g="" aria-pressed="${!gFilter}">${L('All', '全部')}</button>` +
+    show.map(g => `<button type="button" data-g="${g.id}" aria-pressed="${gFilter === g.id}" style="--g:${gHex(g)}" ${REMOTE ? '' : `title="${L('Right-click to change color', '右键改颜色')}"`}><i class="sw-dot"></i>${esc(g.name)}</button>`).join('') +
+    (REMOTE && groups.length < SLOTS ? `<button type="button" class="add" data-add>${L(`+ New${groups.length ? '' : ' group'}`, '+ 新分组')}</button>` : '') +
+    (REMOTE && groups.length ? `<button type="button" class="add edit" data-gedit>${L('Edit', '编辑')}</button>` : ''));
 }
 const X_ICON = '<svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2 2l8 8M10 2l-8 8"/></svg>';
 const SIDE_ICON = {
@@ -1501,7 +1568,8 @@ const SIDE_ICON = {
   bottom:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2.5 13.5h11M8 2.5V10M5 7l3 3 3-3"/></svg>',
   right:'<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M13.5 2.5v11M2.5 8H10M7 5l3 3-3 3"/></svg>',
 };
-const SIDE_NAME = {any:'Floats anywhere', left:'Lives on the left edge', top:'Lives along the top', bottom:'Lives along the bottom', right:'Lives on the right edge'};
+const SIDE_NAME = ZH_ON ? {any:'随处漂浮', left:'住在左边', top:'住在顶部', bottom:'住在底部', right:'住在右边'}
+  : {any:'Floats anywhere', left:'Lives on the left edge', top:'Lives along the top', bottom:'Lives along the bottom', right:'Lives on the right edge'};
 const SIDE_ORDER = ['any','left','top','bottom','right'];
 const gSide = g => (g && SIDES.includes(g.side)) ? g.side : 'any';
 const sideButtons = (cur, cls='') => SIDE_ORDER.map(sd => `<button type="button" class="tool arrow ${cls}" data-gside="${sd}" aria-pressed="${cur === sd}" title="${SIDE_NAME[sd]}" aria-label="${SIDE_NAME[sd]}">${SIDE_ICON[sd]}</button>`).join('');
@@ -1516,16 +1584,16 @@ function setGroupSide(g, side){
 }
 function renderGroupEditor(){
   $('#gedit').innerHTML = groups.map(g => `<li data-g="${g.id}">
-      <button type="button" class="gc" style="--g:${gHex(g)}" aria-label="${esc(g.name)} is ${gName(g)}. Change color" title="Change color"></button>
-      <input value="${esc(g.name)}" maxlength="16" aria-label="Group name">
-      ${REMOTE ? '' : `<button type="button" class="tool arrow gs" data-cycle="${gSide(g)}" title="${SIDE_NAME[gSide(g)]} (click to change)" aria-label="${esc(g.name)}: ${SIDE_NAME[gSide(g)]}. Change side">${SIDE_ICON[gSide(g)]}</button>`}
-      <button type="button" class="gx" aria-label="Delete group ${esc(g.name)}" title="Delete group">${X_ICON}</button></li>`).join('') +
-    (groups.length < SLOTS ? `<li class="chips gchips"><button type="button" class="add" data-add>+ Add a group</button></li>`
-      : `<li class="note">Six groups, one per color.</li>`);
+      <button type="button" class="gc" style="--g:${gHex(g)}" aria-label="${L(`${esc(g.name)} is ${gName(g)}. Change color`, `${esc(g.name)}是${gName(g)}色。改颜色`)}" title="${L('Change color', '改颜色')}"></button>
+      <input value="${esc(g.name)}" maxlength="16" aria-label="${L('Group name', '分组名称')}">
+      ${REMOTE ? '' : `<button type="button" class="tool arrow gs" data-cycle="${gSide(g)}" title="${SIDE_NAME[gSide(g)]}${L(' (click to change)', '（点击切换）')}" aria-label="${esc(g.name)}: ${SIDE_NAME[gSide(g)]}. ${L('Change side', '换一边')}">${SIDE_ICON[gSide(g)]}</button>`}
+      <button type="button" class="gx" aria-label="${L(`Delete group ${esc(g.name)}`, `删除分组“${esc(g.name)}”`)}" title="${L('Delete group', '删除分组')}">${X_ICON}</button></li>`).join('') +
+    (groups.length < SLOTS ? `<li class="chips gchips"><button type="button" class="add" data-add>${L('+ Add a group', '+ 添加分组')}</button></li>`
+      : `<li class="note">${L('Six groups, one per color.', '最多六个分组，一种颜色一个。')}</li>`);
 }
 function setGroupEditor(open){
   $('#gedit').hidden = !open; $('#gchips-new').hidden = open;
-  const b = $('#grp-edit-btn'); b.textContent = open ? 'Done' : 'Edit groups'; b.setAttribute('aria-expanded', open);
+  const b = $('#grp-edit-btn'); b.textContent = open ? T('Done') : T('Edit groups'); b.setAttribute('aria-expanded', open);
   if(open) renderGroupEditor(); else renderGroups();
 }
 function saveGroups(){ store.set('groups', groups); renderGroups(); }
@@ -1543,7 +1611,7 @@ const gnew = $('#gnew'), gnewName = $('#gnew-name');
 let gnewDone = null;
 const PICKER = ['gcolor-sw', 'gpick', 'gcolor-note'].map(id => document.getElementById(id)), PICK_SIDE = document.getElementById('gside');
 function openNewGroup(done){
-  if(groups.length >= SLOTS){ showToast('Six groups is the most. Delete one in Edit groups to make room.', false); return; }
+  if(groups.length >= SLOTS){ showToast(L('Six groups is the most. Delete one in Edit groups to make room.', '最多只能有六个分组。在“编辑分组”里删掉一个再加。'), false); return; }
   if(!gcol.hidden) setGColor(null);
   gnewDone = done; gnewName.value = ''; $('#gnew-yes').disabled = true;
   gDraft = {id:'__draft', name:'', c:freeSlot(null)}; gcolFor = '__draft'; ringOpen = false;
@@ -1678,8 +1746,8 @@ function renderGColor(){
   if(g !== gDraft) $('#gcolor-title').textContent = g.name;
   $('#gside').innerHTML = sideButtons(gSide(g));
   $('#gcolor-sw').innerHTML = Array.from({length:SLOTS}, (_, i) => { const o = groups.find(x => x !== g && x.c === i), h = slotHue(i), nm = hueName(h);
-    return `<button type="button" data-c="${i}" style="--g:${rgbHex(glowRGB(h))}" aria-pressed="${g.c === i}"${o ? ` data-taken title="${nm}: swaps with ${esc(o.name)}"` : ` title="${nm}"`} aria-label="${nm}${o ? `, swaps with ${esc(o.name)}` : ''}"></button>`; }).join('') +
-    `<button type="button" class="sw-custom" data-custom aria-pressed="${isCustom(g)}" aria-expanded="${ringOpen}" title="Custom color" aria-label="Custom color"${isCustom(g) ? ` style="--g:${gHex(g)}"` : ''}></button>`;
+    return `<button type="button" data-c="${i}" style="--g:${rgbHex(glowRGB(h))}" aria-pressed="${g.c === i}"${o ? ` data-taken title="${L(`${nm}: swaps with ${esc(o.name)}`, `${nm}：和“${esc(o.name)}”互换`)}"` : ` title="${nm}"`} aria-label="${nm}${o ? `, swaps with ${esc(o.name)}` : ''}"></button>`; }).join('') +
+    `<button type="button" class="sw-custom" data-custom aria-pressed="${isCustom(g)}" aria-expanded="${ringOpen}" title="${L('Custom color', '自定义颜色')}" aria-label="${L('Custom color', '自定义颜色')}"${isCustom(g) ? ` style="--g:${gHex(g)}"` : ''}></button>`;
   const ring = $('#gring'); showPick(!!ringOpen);
   if(ringOpen){ const h = gHue(g), C = gSat(g); paintRing(C);
     // the saturation bar: this hue from vivid (top) to grey (bottom)
@@ -1690,9 +1758,9 @@ function renderGColor(){
     $('#gring-dot').style.setProperty('--g', gHex(g)); $('#gring-name').textContent = hueName(h); ring.setAttribute('aria-valuenow', Math.round(h)); ring.setAttribute('aria-valuetext', hueName(h)); }
   // a gentle warning when a hue would be hard to tell apart
   const near = isCustom(g) && groups.find(o => o !== g && hueDist(gHue(o), g.h) < 22 && Math.abs(gSat(o) - gSat(g)) < .25);
-  $('#gcolor-note').textContent = isCustom(g) && gSat(g) < .12 ? 'Almost grey. Slide up for more color.'
-    : isCustom(g) && hueDist(g.h, inkHue) < 28 ? 'Close to your tint, so it may blend into the outline.'
-    : near ? `Looks a lot like ${near.name}.` : isCustom(g) ? 'Custom color. It stays put when you change your tint.'
+  $('#gcolor-note').textContent = isCustom(g) && gSat(g) < .12 ? L('Almost grey. Slide up for more color.', '快成灰色了。往上滑，颜色会更浓。')
+    : isCustom(g) && hueDist(g.h, inkHue) < 28 ? L('Close to your tint, so it may blend into the outline.', '和你的主题色很接近，可能会和轮廓混在一起。')
+    : near ? L(`Looks a lot like ${near.name}.`, `和“${near.name}”看起来很像。`) : isCustom(g) ? L('Custom color. It stays put when you change your tint.', '自定义颜色。换主题色时它不会跟着变。')
     : '';
 }
 // custom color: a hue ring plus a saturation bar beside it, from soft grey up to each hue's most intense color;
@@ -1917,7 +1985,7 @@ document.querySelector('.lineup').addEventListener('click', e => { const b = e.t
 
 /* ---------- asking first: a project with steps left ---------- */
 let askResolve = null;
-function ask(text, yes='Pop it!', no='Not yet'){
+function ask(text, yes=T('Pop it!'), no=T('Not yet')){
   if(askResolve) askResolve(false);
   $('#ask-text').textContent = text; $('#ask-yes').textContent = yes; $('#ask-no').textContent = no;
   $('#ask').hidden = false; $('#ask-yes').focus(); updateInteractive();
@@ -1929,7 +1997,7 @@ $('#ask-no').addEventListener('click', () => answer(false));
 // every "pop this task" goes through here: a task with steps still open asks first
 async function requestPop(b){
   const left = stepsLeft(b);
-  if(left && !(await ask(`${left} step${left > 1 ? 's' : ''} left in “${b.name}”. Pop it anyway?`, 'Pop all', 'Keep it'))) return;
+  if(left && !(await ask(L(`${left} step${left > 1 ? 's' : ''} left in “${b.name}”. Pop it anyway?`, `“${b.name}”还有 ${left} 个步骤没完成。还是要戳破吗？`), L('Pop all', '全部戳破'), L('Keep it', '先留着')))) return;
   if(focus && focus.b === b) endFocus(true); else pop(b);
 }
 
@@ -1968,7 +2036,7 @@ function pop(b, complete=true, focusSecs=0, fromSync=false){
   const entry = complete ? {id:'p' + Date.now().toString(36) + Math.random().toString(36).slice(2,6), tid:b.id, name:b.name, level:b.level, day:dayKey(new Date()), ...(b.group ? {g:b.group} : {}), ...(b.url ? {url:b.url} : {}), ...(focusSecs ? {focus:Math.round(focusSecs)} : {})} : null;
   if(entry) archive.push(entry);
   lastPopped = {b, entry}; lastStep = null;
-  showToast(!complete ? `Deleted “${b.name}”` : focusSecs >= 60 ? `Popped “${b.name}” after ${fmtDur(focusSecs)} of focus` : `Popped “${b.name}”`, true);
+  showToast(!complete ? L(`Deleted “${b.name}”`, `已删除“${b.name}”`) : focusSecs >= 60 ? L(`Popped “${b.name}” after ${fmtDur(focusSecs)} of focus`, `专注 ${fmtDur(focusSecs)} 后戳破了“${b.name}”`) : L(`Popped “${b.name}”`, `戳破了“${b.name}”`), true);
   selDay = null; archOffset = 0; // show today's pops
   renderTasks(); renderArchive(); save();
 }
@@ -1993,26 +2061,26 @@ const MONTHS = ['January','February','March','April','May','June','July','August
 function counts(){ const m = {}; archive.forEach(a => (m[a.day] ||= []).push(a)); return m; }
 function renderArchive(){
   const C = counts(), today = new Date(); today.setHours(12,0,0,0); const tk = dayKey(today);
-  $('#arch-count').textContent = `${archive.length} POPPED`;
+  $('#arch-count').textContent = L(`${archive.length} POPPED`, `已戳破 ${archive.length} 个`);
   let days = [], html = '';
   if(archMode==='week'){
     const start = new Date(today); start.setDate(start.getDate() - 6 + archOffset*7);
     for(let i=0;i<7;i++){ const d=new Date(start); d.setDate(d.getDate()+i); days.push(d); }
     const e = days[6];
-    $('#range-label').textContent = `${MON[start.getMonth()]} ${start.getDate()} – ${start.getMonth()!==e.getMonth()?MON[e.getMonth()]+' ':''}${e.getDate()}, ${e.getFullYear()}`;
+    $('#range-label').textContent = ZH_ON ? `${start.getFullYear()}年${start.getMonth()+1}月${start.getDate()}日 – ${e.getMonth()+1}月${e.getDate()}日` : `${MON[start.getMonth()]} ${start.getDate()} – ${start.getMonth()!==e.getMonth()?MON[e.getMonth()]+' ':''}${e.getDate()}, ${e.getFullYear()}`;
     html = `<div class="week">` + days.map(d => { const k=dayKey(d), n=(C[k]||[]).length;
-      return `<button type="button" class="wday${k===tk?' today':''}${k===selDay?' sel':''}" data-k="${k}" aria-label="${k}: ${n} popped">
+      return `<button type="button" class="wday${k===tk?' today':''}${k===selDay?' sel':''}" data-k="${k}" aria-label="${k}: ${L(`${n} popped`, `戳破 ${n} 个`)}">
         <span class="pips">${(C[k]||[]).slice(0,8).map(a => `<i class="pip"${gStyle(a.g)}></i>`).join('')}</span>
-        <span class="n">${n}${n>8?'':''}</span><span class="d">${'MTWTFSS'[(d.getDay()+6)%7]} ${d.getDate()}</span></button>`; }).join('') + `</div>`;
+        <span class="n">${n}${n>8?'':''}</span><span class="d">${L('MTWTFSS', '一二三四五六日')[(d.getDay()+6)%7]} ${d.getDate()}</span></button>`; }).join('') + `</div>`;
   } else {
     const m = new Date(today.getFullYear(), today.getMonth()+archOffset, 1, 12);
-    $('#range-label').textContent = `${MONTHS[m.getMonth()]} ${m.getFullYear()}`;
+    $('#range-label').textContent = L(`${MONTHS[m.getMonth()]} ${m.getFullYear()}`, `${m.getFullYear()}年${m.getMonth()+1}月`);
     const lead = (m.getDay()+6)%7, dim = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
-    html = `<div class="month">` + 'MTWTFSS'.split('').map(c=>`<span class="h">${c}</span>`).join('');
+    html = `<div class="month">` + L('MTWTFSS', '一二三四五六日').split('').map(c=>`<span class="h">${c}</span>`).join('');
     for(let i=0;i<lead;i++) html += `<span class="mday out"></span>`;
     for(let i=1;i<=dim;i++){ const d=new Date(m.getFullYear(), m.getMonth(), i, 12); days.push(d); const k=dayKey(d), n=(C[k]||[]).length;
       const sz = n ? 30 + Math.min(n,7)*10 : 0;
-      html += `<button type="button" class="mday${n?'':' zero'}${k===tk?' today':''}${k===selDay?' sel':''}" data-k="${k}" aria-label="${k}: ${n} popped">${n?`<span class="c" style="width:${sz}%;height:${sz}%"></span>`:''}<span class="num">${i}</span></button>`; }
+      html += `<button type="button" class="mday${n?'':' zero'}${k===tk?' today':''}${k===selDay?' sel':''}" data-k="${k}" aria-label="${k}: ${L(`${n} popped`, `戳破 ${n} 个`)}">${n?`<span class="c" style="width:${sz}%;height:${sz}%"></span>`:''}<span class="num">${i}</span></button>`; }
     html += `</div>`;
   }
   $('#cal').innerHTML = html;
@@ -2020,14 +2088,15 @@ function renderArchive(){
   const total = inRange.reduce((s,x)=>s+x.list.length,0);
   const best = inRange.reduce((a,x)=> x.list.length > (a?.list.length||0) ? x : a, null);
   const focusSecs = inRange.reduce((s,x)=> s + x.list.reduce((t,a)=> t + (a.focus||0), 0), 0);
-  $('#arch-sum').innerHTML = total ? `<b>${total}</b> popped this ${archMode}. Best day <b>${MON[best.d.getMonth()]} ${best.d.getDate()}</b> with ${best.list.length}.` +
-    (focusSecs >= 60 ? ` <b>${fmtDur(focusSecs)}</b> in focus mode.` : '') : `Nothing popped this ${archMode} yet.`;
+  const per = L(`this ${archMode}`, archMode === 'week' ? '本周' : '本月');
+  $('#arch-sum').innerHTML = total ? L(`<b>${total}</b> popped ${per}. Best day <b>${MON[best.d.getMonth()]} ${best.d.getDate()}</b> with ${best.list.length}.`, `${per}戳破了 <b>${total}</b> 个。最多的一天是 <b>${best.d.getMonth()+1}月${best.d.getDate()}日</b>，戳破了 ${best.list.length} 个。`) +
+    (focusSecs >= 60 ? L(` <b>${fmtDur(focusSecs)}</b> in focus mode.`, `专注模式共 <b>${fmtDur(focusSecs)}</b>。`) : '') : L(`Nothing popped ${per} yet.`, `${per}还没有戳破任何泡泡。`);
   const dl = $('#day-list');
   if(selDay === null){ const last = [...inRange].reverse().find(x => x.list.length); if(last) selDay = dayKey(last.d); }
   if(selDay && C[selDay]?.length){
     const [y,mo,da] = selDay.split('-').map(Number);
-    dl.innerHTML = `<li class="ttl">${MON[mo-1]} ${da} · click a task to bubble it again</li>` +
-      C[selDay].map(a=>`<li><button type="button" class="redo"${gStyle(a.g)} data-i="${archive.indexOf(a)}" aria-label="Bubble “${esc(a.name)}” again at ${LEVELS[a.level].name}${gById(a.g) ? ` in ${esc(gById(a.g).name)}` : ''}${a.focus ? `. ${fmtDur(a.focus)} in focus` : ''}"><span class="nm">${esc(a.name)}</span>${a.focus ? `<span class="fx" title="Total time in focus mode"><i class="focus-ring" aria-hidden="true"></i>${fmtDur(a.focus)}</span>` : ''}<span class="lv">${LEVELS[a.level].short}</span><span class="again">+ AGAIN</span></button></li>`).join('');
+    dl.innerHTML = `<li class="ttl">${L(`${MON[mo-1]} ${da} · click a task to bubble it again`, `${mo}月${da}日 · 点一个任务可以再吹一次`)}</li>` +
+      C[selDay].map(a=>`<li><button type="button" class="redo"${gStyle(a.g)} data-i="${archive.indexOf(a)}" aria-label="${L(`Bubble “${esc(a.name)}” again at ${LEVELS[a.level].name}${gById(a.g) ? ` in ${esc(gById(a.g).name)}` : ''}${a.focus ? `. ${fmtDur(a.focus)} in focus` : ''}`, `再吹一次“${esc(a.name)}”（${LEVELS[a.level].name}）`)}"><span class="nm">${esc(a.name)}</span>${a.focus ? `<span class="fx" title="${L('Total time in focus mode', '专注模式总时长')}"><i class="focus-ring" aria-hidden="true"></i>${fmtDur(a.focus)}</span>` : ''}<span class="lv">${LEVELS[a.level].short}</span><span class="again">${L('+ AGAIN', '+ 再来')}</span></button></li>`).join('');
     dl.hidden = false;
   } else dl.hidden = true;
 }
@@ -2039,7 +2108,7 @@ $('#day-list').addEventListener('click', e => {
   const nb = makeBubble({name:a.name, level:a.level, R:R0, hx:p.x, hy:p.y, order:topOrder(), group:gById(a.g) ? a.g : null, url:a.url || null});
   bubbles.push(nb); if(sideOf(nb)){ dockNew(nb, 0); nb.x = nb.hx; nb.y = nb.hy; }
   renderTasks(); save();
-  showToast(`Bubbled “${a.name}” again`, false);
+  showToast(L(`Bubbled “${a.name}” again`, `又吹了一次“${a.name}”`), false);
 });
 $('#arch-mode').addEventListener('click', e => { const b=e.target.closest('button'); if(!b || b.dataset.m === archMode) return; archMode=b.dataset.m; archOffset=0; document.querySelectorAll('#arch-mode button').forEach(x=>x.classList.toggle('on',x===b)); $('#arch-mode').classList.toggle('on-month', archMode === 'month'); selDay=null; smoothArch(renderArchive); });
 $('#prev').addEventListener('click', () => { archOffset--; selDay=null; smoothArch(renderArchive); });
@@ -2070,18 +2139,18 @@ function setPause(mode){
   else { pauseUntil = Date.now() + (+mode)*60000; }
   store.set('pauseUntil', pauseUntil === Infinity ? -1 : pauseUntil);
   syncPause(); renderTasks();
-  showToast(isPaused() ? `Bubbles paused ${pauseLabel().toLowerCase()}` : 'Bubbles are growing again', false);
+  showToast(isPaused() ? L(`Bubbles paused ${pauseLabel().toLowerCase()}`, `泡泡已暂停，${pauseLabel()}`) : L('Bubbles are growing again', '泡泡又开始长大了'), false);
 }
-const clock = t => new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+const clock = t => new Date(t).toLocaleTimeString(ZH_ON ? 'zh-CN' : [], {hour:'numeric', minute:'2-digit'});
 function pauseLabel(){
-  if(pauseUntil === Infinity) return 'Until you resume';
+  if(pauseUntil === Infinity) return L('Until you resume', '直到你恢复');
   const d = new Date(pauseUntil), today = new Date();
-  return d.toDateString() === today.toDateString() ? `Until ${clock(pauseUntil)}` : `Until tomorrow, ${clock(pauseUntil)}`;
+  return d.toDateString() === today.toDateString() ? L(`Until ${clock(pauseUntil)}`, `到 ${clock(pauseUntil)}`) : L(`Until tomorrow, ${clock(pauseUntil)}`, `到明天 ${clock(pauseUntil)}`);
 }
 function syncPause(){
   const on = isPaused();
   $('#pause-pick').hidden = on; $('#pause-on').hidden = !on; document.documentElement.classList.toggle('paused', on);
-  if(on) $('#pause-text').textContent = `Paused · ${pauseLabel()}`;
+  if(on) $('#pause-text').textContent = `${T('Paused')} · ${pauseLabel()}`;
   const pt = document.getElementById('pause-tool'); if(pt){ pt.classList.toggle('on', on); if(on) $('#pause').classList.remove('folded'); }
   window.todopop?.setPaused?.(on); if(typeof syncPauseBar === 'function') syncPauseBar();
 }
@@ -2111,7 +2180,7 @@ setInterval(() => {
   const stalled = covHist.length === 6 && c - covHist[0] < .004 && !isPaused() && !focus;
   if(!screenFull && (c >= .9 || (c >= .8 && stalled))){
     screenFull = true; fullAt = c; renderTasks();
-    showToast('Your screen is full, so bubbles stopped growing. Pop one to make room.', false);
+    showToast(L('Your screen is full, so bubbles stopped growing. Pop one to make room.', '屏幕满了，泡泡不再长大。戳破一个腾点地方吧。'), false);
   } else if(screenFull && c < fullAt - .03){ screenFull = false; covHist.length = 0; renderTasks(); }
 }, 2000);
 
@@ -2507,7 +2576,7 @@ function draw(){
         if(ctx.measureText(meta).width <= r*1.5) ctx.fillText(meta, lx, y + ms*.6);
         let ty = y + ms*.6 + ms*1.5;
         if(dueLine){ // when it's due, in the same quiet ink; shorter wording on small bubbles
-          const t = [dueLine, fmtDue(b.due, true), b.due < Date.now() ? 'WAS DUE' : 'DUE'].find(x => ctx.measureText(x).width <= r*1.6);
+          const t = [dueLine, fmtDue(b.due, true), b.due < Date.now() ? L('WAS DUE', '已过期') : L('DUE', '有期限')].find(x => ctx.measureText(x).width <= r*1.6);
           if(t) ctx.fillText(t, lx, ty); ty += ms*1.5; }
         if(grp){ // ● SCHOOL
           const tag = grp.name.toUpperCase(), dr = ms*.45, gap = ms*.5; needCJK(tag);
@@ -2553,13 +2622,13 @@ const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent)
 const KEYS = IS_MAC ? ['⌘','⇧','Space'] : ['Ctrl','Shift','Space'];
 const KEYS_TEXT = KEYS.join(' + ');
 $('#kbd-hint').innerHTML = KEYS.map(k => `<kbd>${k}</kbd>`).join('');
-$('#launcher').setAttribute('aria-label', `Open TODOPOP (${KEYS_TEXT})`);
-$('#close-panel').title = `Hide (Esc). Bring it back with ${KEYS_TEXT}`;
+$('#launcher').setAttribute('aria-label', L(`Open TODOPOP (${KEYS_TEXT})`, `打开 TODOPOP（${KEYS_TEXT}）`));
+$('#close-panel').title = L(`Hide (Esc). Bring it back with ${KEYS_TEXT}`, `隐藏（Esc）。按 ${KEYS_TEXT} 叫回来`);
 function setPanel(show){
   if(REMOTE) show = true; // on a phone the panel is the whole app
   if(!show && !panel.hidden){ // the first few times it tucks away, say how to bring it back
     const n = store.get('tuckHints') || 0;
-    if(n < 3){ store.set('tuckHints', n + 1); setTimeout(() => showToast(`Tucked away. ${KEYS_TEXT} brings it back${DESKTOP ? ', from any app' : ''}.`, false), 120); }
+    if(n < 3){ store.set('tuckHints', n + 1); setTimeout(() => showToast(L(`Tucked away. ${KEYS_TEXT} brings it back${DESKTOP ? ', from any app' : ''}.`, `收起来了。按 ${KEYS_TEXT} 就能叫回来${DESKTOP ? '，在任何 App 里都行' : ''}。`), false), 120); }
   }
   if(!show && DOCK && dockOpen) setDock(null); // tucking away closes whatever was open
   panel.hidden = !show; $('#launcher').hidden = show; setTint(false);
@@ -2626,11 +2695,11 @@ function setDock(which){
   if(which === 'new') setTimeout(() => $('#task-name').focus({preventScroll:true}), 60);
   syncOs(); updateInteractive();
 }
-const O_INFO = DOCK ? [['new','Blow a bubble','body-new'], ['arch','Popped: what you\'ve finished','body-arch'], ['tint','Tint: change your color','tint-pop']] : null;
+const O_INFO = DOCK ? [['new',T('Blow a bubble'),'body-new'], ['arch',L('Popped: what you\'ve finished', '已戳破：你完成的事'),'body-arch'], ['tint',L('Tint: change your color', '主题色：换颜色 · 语言 · 手机'),'tint-pop']] : null;
 Os.forEach((o, i) => {
   o.setAttribute('role','button'); o.setAttribute('tabindex','0');
-  o.setAttribute('aria-label', DOCK ? O_INFO[i][1] : 'Tint: change your color'); o.setAttribute('aria-controls', DOCK ? O_INFO[i][2] : 'tint-pop');
-  if(DOCK) o.title = O_INFO[i][1].split(':')[0];
+  o.setAttribute('aria-label', DOCK ? O_INFO[i][1] : L('Tint: change your color', '主题色：换颜色')); o.setAttribute('aria-controls', DOCK ? O_INFO[i][2] : 'tint-pop');
+  if(DOCK) o.title = O_INFO[i][1].split(/[:：]/)[0];
   const act = () => {
     if(!DOCK){ setTint(tintPop.hidden); return; }
     if(i === 2){ if(dockOpen) setDock(null); setTint(tintPop.hidden); syncOs(); return; }
@@ -2646,7 +2715,7 @@ if(DOCK){
   const strip = document.createElement('div'); strip.className = 'strip';
   const arr = $('.arrange'), pauseBox = $('#pause');
   const pt = document.createElement('button'); pt.type = 'button'; pt.className = 'tool arrow'; pt.id = 'pause-tool';
-  pt.title = 'Pause growing'; pt.setAttribute('aria-label', 'Pause growing'); pt.setAttribute('aria-expanded', 'false');
+  pt.title = T('Pause growing'); pt.setAttribute('aria-label', T('Pause growing')); pt.setAttribute('aria-expanded', 'false');
   pt.innerHTML = '<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M6 4v8M10 4v8"/></svg>';
   arr.insertBefore(pt, arr.querySelector('.lineup'));
   strip.append(arr, $('#gfilter'), pauseBox);
@@ -2727,8 +2796,9 @@ addEventListener('keydown', e => {
 });
 window.todopop?.onTogglePanel?.(() => setPanel(panel.hidden));
 window.todopop?.onShowPanel?.(() => setPanel(true));
-if(REMOTE) $('#info-pop').innerHTML = '<li>This is your <b>remote</b>. Your bubbles float on your computer.</li><li><b>Tap +</b> to blow a bubble. <b>Popped</b> shows what you’ve popped.</li><li><b>Tap a task</b> to edit it, change its group, or get in the bubble.</li><li><b>Tap ✓</b> to pop it.</li><li><b>Tap Edit</b> beside your groups to rename, recolor, or delete one.</li><li id="info-unpair" hidden><button type="button" class="link" id="unpair-phone">Unpair this phone</button></li>';
-else if(DESKTOP) $('#info-esc').innerHTML = '<b>Click anywhere else</b> or press <b>Esc</b> to tuck it into the TODOPOP button; <b>Ctrl/⌘ + Shift + Space</b> brings it back from any app.';
+if(REMOTE) $('#info-pop').innerHTML = L('<li>This is your <b>remote</b>. Your bubbles float on your computer.</li><li><b>Tap +</b> to blow a bubble. <b>Popped</b> shows what you’ve popped.</li><li><b>Tap a task</b> to edit it, change its group, or get in the bubble.</li><li><b>Tap ✓</b> to pop it.</li><li><b>Tap Edit</b> beside your groups to rename, recolor, or delete one.</li>',
+  '<li>这是你的<b>遥控器</b>。泡泡飘在你的电脑上。</li><li><b>点 +</b> 吹一个泡泡。<b>已戳破</b>里是你完成的事。</li><li><b>点任务</b>可以编辑、换分组，或者钻进泡泡。</li><li><b>点 ✓</b> 戳破它。</li><li>点分组旁边的<b>编辑</b>，可以改名、换颜色或删除分组。</li>') + `<li id="info-unpair" hidden><button type="button" class="link" id="unpair-phone">${T('Unpair this phone')}</button></li>`;
+else if(DESKTOP) $('#info-esc').innerHTML = L('<b>Click anywhere else</b> or press <b>Esc</b> to tuck it into the TODOPOP button; <b>Ctrl/⌘ + Shift + Space</b> brings it back from any app.', '<b>点别的地方</b>或按 <b>Esc</b> 把它收进 TODOPOP 按钮；在任何 App 里按 <b>Ctrl/⌘ + Shift + Space</b> 都能叫回来。');
 const infoBtn = $('#info-btn'), infoPop = $('#info-pop');
 let infoBack = null;
 if(REMOTE){ // on the phone the note is a popup over everything, so it lives on the page itself
@@ -2754,7 +2824,7 @@ $('#edit-stops').addEventListener('click', e => { const b=e.target.closest('butt
 function renderStepsEdit(){
   const b = editing, box = $('#steps-edit');
   box.hidden = !(REMOTE && b && !b.isStep); if(box.hidden) return;
-  $('#steps-list').innerHTML = b.steps.map(st => `<li data-s="${st.id}"><button type="button" class="st-check" aria-pressed="${st.done}" aria-label="${st.done ? 'Undo' : 'Done'}: ${esc(st.name)}"></button><span>${esc(st.name)}</span><button type="button" class="gx st-x" aria-label="Delete step ${esc(st.name)}">${X_ICON}</button></li>`).join('');
+  $('#steps-list').innerHTML = b.steps.map(st => `<li data-s="${st.id}"><button type="button" class="st-check" aria-pressed="${st.done}" aria-label="${st.done ? T('Undo') : T('Done')}: ${esc(st.name)}"></button><span>${esc(st.name)}</span><button type="button" class="gx st-x" aria-label="${L('Delete step', '删除步骤')} ${esc(st.name)}">${X_ICON}</button></li>`).join('');
 }
 $('#steps-list').addEventListener('click', e => {
   const b = editing, li = e.target.closest('li'); if(!b || !li) return; const st = b.steps.find(x => x.id === li.dataset.s); if(!st) return;
@@ -2764,13 +2834,13 @@ $('#steps-list').addEventListener('click', e => {
 $('#steps-new').addEventListener('keydown', e => { if(e.key !== 'Enter') return; e.preventDefault(); const v = e.target.value.trim(); if(v && editing){ addStep(editing, v); e.target.value = ''; renderStepsEdit(); } });
 function openEdit(b, x, y){
   ed.classList.toggle('step-mode', !!b.isStep);
-  $('#edit-title').textContent = b.isStep ? `Step in ${b.parent.name}` : 'Edit bubble';
+  $('#edit-title').textContent = b.isStep ? L(`Step in ${b.parent.name}`, `“${b.parent.name}”里的步骤`) : T('Edit bubble');
   if(REMOTE){ x = W()/2; y = H()/2; } // no bubble to point at on the phone: open as a sheet
   editing = b; b.pulse = .6;
   $('#edit-name').value = b.name; edUrg.value = b.level; syncEditUrg(); $('#edit-url').value = b.url || ''; setDueInput($('#edit-due'), b.due);
   edGroup = gById(b.group) ? b.group : null; renderGroups(); renderStepsEdit();
-  { const t = b.isStep ? 0 : focusSoFar(b); $('#edit-focus-label').textContent = t >= 1 ? 'Get back in the bubble' : 'Get in the bubble'; $('#edit-focus-time').textContent = t >= 1 ? fmtClock(t) : ''; }
-  { const sb = $('#edit-shrink'), base = startR(b); sb.disabled = b.isStep || (b.toR ?? b.R) <= base + 1; sb.title = sb.disabled ? 'It’s already at its starting size' : ''; }
+  { const t = b.isStep ? 0 : focusSoFar(b); $('#edit-focus-label').textContent = t >= 1 ? L('Get back in the bubble', '重新钻进泡泡') : T('Get in the bubble'); $('#edit-focus-time').textContent = t >= 1 ? fmtClock(t) : ''; }
+  { const sb = $('#edit-shrink'), base = startR(b); sb.disabled = b.isStep || (b.toR ?? b.R) <= base + 1; sb.title = sb.disabled ? L('It’s already at its starting size', '已经是初始大小了') : ''; }
   ed.hidden = false; ed.style.animation = 'none'; void ed.offsetWidth; ed.style.animation = '';
   const w = ed.offsetWidth, h = ed.offsetHeight;
   ed.style.left = Math.max(12, Math.min(W()-w-12, x+16))+'px';
@@ -2782,7 +2852,7 @@ function closeEdit(){ if(!ed.hidden) popupClosedAt = performance.now(); ed.hidde
 $('#edit-close').addEventListener('click', closeEdit);
 const startR = b => b.level === 1 ? 34 : 42; // the size every new bubble starts at
 $('#edit-shrink').addEventListener('click', () => { const b = editing; if(!b || b.isStep) return; closeEdit();
-  b.toR = startR(b); b.pulse = 1; if(REMOTE){ b.R = b.toR; b.toR = null; } save(); renderTasks(); showToast(`“${b.name}” is back to its starting size. It will grow again.`, false); });
+  b.toR = startR(b); b.pulse = 1; if(REMOTE){ b.R = b.toR; b.toR = null; } save(); renderTasks(); showToast(L(`“${b.name}” is back to its starting size. It will grow again.`, `“${b.name}”缩回了初始大小，还会继续长大。`), false); });
 $('#edit-cancel').addEventListener('click', closeEdit);
 $('#edit-delete').addEventListener('click', () => { const b = editing; closeEdit(); if(!b) return;
   if(b.isStep){ const p = b.parent; p.steps.splice(p.steps.indexOf(b.step), 1); numberSteps(p); const i = bubbles.indexOf(b); if(i >= 0) bubbles.splice(i, 1); save(); renderTasks(); return; }
@@ -2802,12 +2872,12 @@ $('#edit-form').addEventListener('submit', e => {
   }
   if(edGroup !== b.group){ const was = sideOf(b); b.group = edGroup; b.pulse = .7; if(sideOf(b)) dockNew(b); if(was) relayoutSide(was); }
   closeEdit(); renderTasks(); save();
-  showToast(`Updated “${b.name}”`, false);
+  showToast(L(`Updated “${b.name}”`, `已更新“${b.name}”`), false);
 });
 /* ---------- focus mode: hide every bubble, time the session, pop when done ---------- */
 let focusTimer = null;
 const fmtClock = s => { s = Math.floor(s); const h = Math.floor(s/3600), m = Math.floor(s/60)%60, ss = String(s%60).padStart(2,'0'); return h ? `${h}:${String(m).padStart(2,'0')}:${ss}` : `${m}:${ss}`; };
-function fmtDur(s){ const m = Math.round(s/60); return m < 1 ? '<1 min' : m < 60 ? `${m} min` : `${Math.floor(m/60)} h ${m%60} min`; }
+function fmtDur(s){ const m = Math.round(s/60); return ZH_ON ? (m < 1 ? '不到 1 分钟' : m < 60 ? `${m} 分钟` : `${Math.floor(m/60)} 小时 ${m%60} 分钟`) : m < 1 ? '<1 min' : m < 60 ? `${m} min` : `${Math.floor(m/60)} h ${m%60} min`; }
 const focusSoFar = b => (b.focusTotal || 0) + (focus && focus.b === b ? (Date.now() - focus.start)/1000 : 0); // total time inside, including right now
 function tickFocus(){ if(focus) $('#focus-time').textContent = fmtClock(focusSoFar(focus.b)); }
 // "Get in the bubble": the bubble swells from where it floats until it wraps the screen, then you're inside
@@ -2829,13 +2899,13 @@ const DAY = 864e5;
 const pad2 = n => String(n).padStart(2, '0');
 const toLocalInput = ms => { const d = new Date(ms); return `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`; };
 function readDue(inp){ const v = inp.value; if(!v) return null; const t = new Date(v).getTime(); return Number.isFinite(t) ? t : null; }
-const MOS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], WDS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-const fmtTime = d => `${(d.getHours()%12)||12}:${pad2(d.getMinutes())} ${d.getHours() < 12 ? 'AM' : 'PM'}`;
-const fmtDueField = ms => { const d = new Date(ms); return `${WDS[d.getDay()]}, ${MOS[d.getMonth()]} ${d.getDate()} · ${fmtTime(d)}`; };
+const MOS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], WDS = ZH_ON ? ['周日','周一','周二','周三','周四','周五','周六'] : ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const fmtTime = d => ZH_ON ? `${d.getHours() < 12 ? '上午' : '下午'}${(d.getHours()%12)||12}:${pad2(d.getMinutes())}` : `${(d.getHours()%12)||12}:${pad2(d.getMinutes())} ${d.getHours() < 12 ? 'AM' : 'PM'}`;
+const fmtDueField = ms => { const d = new Date(ms); return ZH_ON ? `${d.getMonth()+1}月${d.getDate()}日 ${WDS[d.getDay()]} · ${fmtTime(d)}` : `${WDS[d.getDay()]}, ${MOS[d.getMonth()]} ${d.getDate()} · ${fmtTime(d)}`; };
 function setDueInput(inp, ms){
   inp.value = ms ? toLocalInput(ms) : '';
   const row = inp.parentElement; row.querySelector('.due-x').hidden = !ms;
-  const f = row.querySelector('.due-field'); f.textContent = ms ? fmtDueField(ms) : 'No deadline'; f.classList.toggle('set', !!ms);
+  const f = row.querySelector('.due-field'); f.textContent = ms ? fmtDueField(ms) : T('No deadline'); f.classList.toggle('set', !!ms);
   const pk = row.nextElementSibling; if(pk && pk.classList.contains('due-pick') && pk.classList.contains('open')) drawPicker(pk);
 }
 /* the picker: a small month calendar and a time, always in English */
@@ -2874,13 +2944,13 @@ function drawPicker(pk){
   const t = cur ? new Date(cur) : new Date(0, 0, 0, 23, 59), h12 = (t.getHours()%12)||12, mins = [0, 15, 30, 45, 59];
   const mi = mins.includes(t.getMinutes()) ? t.getMinutes() : t.getMinutes();
   const opt = (v, lab, sel) => `<option value="${v}"${sel ? ' selected' : ''}>${lab}</option>`;
-  pk.querySelector('.dp-box').innerHTML = `<div class="dp-head"><button type="button" data-nav="-1" aria-label="Previous month">‹</button><span>${MONTHS[view.getMonth()]} ${view.getFullYear()}</span><button type="button" data-nav="1" aria-label="Next month">›</button></div>
-    <div class="dp-grid"><i>M</i><i>T</i><i>W</i><i>T</i><i>F</i><i>S</i><i>S</i>${cells}</div>
-    <div class="dp-time"><span class="field-label">Time</span>
-      <select class="dp-h" aria-label="Hour">${[12,1,2,3,4,5,6,7,8,9,10,11].map(h => opt(h, h, h === h12)).join('')}</select>
-      <select class="dp-m" aria-label="Minute">${[...new Set([...mins, mi])].sort((a,b)=>a-b).map(m => opt(m, pad2(m), m === mi)).join('')}</select>
-      <select class="dp-ap" aria-label="AM or PM">${opt('AM','AM', t.getHours() < 12)}${opt('PM','PM', t.getHours() >= 12)}</select>
-      <button type="button" class="btn small" data-done>Done</button></div>`;
+  pk.querySelector('.dp-box').innerHTML = `<div class="dp-head"><button type="button" data-nav="-1" aria-label="${L('Previous month', '上个月')}">‹</button><span>${L(`${MONTHS[view.getMonth()]} ${view.getFullYear()}`, `${view.getFullYear()}年${view.getMonth()+1}月`)}</span><button type="button" data-nav="1" aria-label="${L('Next month', '下个月')}">›</button></div>
+    <div class="dp-grid">${[...L('MTWTFSS', '一二三四五六日')].map(c => `<i>${c}</i>`).join('')}${cells}</div>
+    <div class="dp-time"><span class="field-label">${L('Time', '时间')}</span>
+      <select class="dp-h" aria-label="${L('Hour', '小时')}">${[12,1,2,3,4,5,6,7,8,9,10,11].map(h => opt(h, h, h === h12)).join('')}</select>
+      <select class="dp-m" aria-label="${L('Minute', '分钟')}">${[...new Set([...mins, mi])].sort((a,b)=>a-b).map(m => opt(m, pad2(m), m === mi)).join('')}</select>
+      <select class="dp-ap" aria-label="${L('AM or PM', '上午或下午')}">${opt('AM', L('AM', '上午'), t.getHours() < 12)}${opt('PM', L('PM', '下午'), t.getHours() >= 12)}</select>
+      <button type="button" class="btn small" data-done>${T('Done')}</button></div>`;
 }
 document.addEventListener('click', e => {
   const f = e.target.closest('.due-field'); if(!f) return;
@@ -2909,17 +2979,18 @@ function dueTick(){
   if(changed){ renderTasks(); save(); }
 }
 setInterval(dueTick, 20000); setTimeout(dueTick, 600); // and once at start, for deadlines that came or went while the app was closed
-const WD = ['SUN','MON','TUE','WED','THU','FRI','SAT'], MO = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const WD = ZH_ON ? ['周日','周一','周二','周三','周四','周五','周六'] : ['SUN','MON','TUE','WED','THU','FRI','SAT'], MO = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 function fmtDue(due, short){
   const now = new Date(), d = new Date(due), left = due - now.getTime();
   const day0 = x => new Date(x.getFullYear(), x.getMonth(), x.getDate()).getTime();
   const days = Math.round((day0(d) - day0(now)) / DAY);
-  const time = (d.getMinutes() ? `${(d.getHours()%12)||12}:${pad2(d.getMinutes())}` : `${(d.getHours()%12)||12}`) + (d.getHours() < 12 ? ' AM' : ' PM');
-  const when = days === 0 ? (left < 0 || short ? 'TODAY' : time) : days === 1 ? 'TOMORROW' : days === -1 ? 'YESTERDAY' : Math.abs(days) < 7 ? WD[d.getDay()] : `${MO[d.getMonth()]} ${d.getDate()}`;
-  if(left < 0) return 'WAS DUE ' + when;
-  if(left < 3600e3) return `DUE IN ${Math.max(1, Math.round(left/60e3))}M`;
-  if(left < 6*3600e3) return `DUE IN ${Math.round(left/3600e3)}H`;
-  return 'DUE ' + when;
+  const hm = d.getMinutes() ? `${(d.getHours()%12)||12}:${pad2(d.getMinutes())}` : `${(d.getHours()%12)||12}`;
+  const time = ZH_ON ? (d.getHours() < 12 ? '上午' : '下午') + hm : hm + (d.getHours() < 12 ? ' AM' : ' PM');
+  const when = days === 0 ? (left < 0 || short ? T('TODAY') : time) : days === 1 ? L('TOMORROW', '明天') : days === -1 ? L('YESTERDAY', '昨天') : Math.abs(days) < 7 ? WD[d.getDay()] : L(`${MO[d.getMonth()]} ${d.getDate()}`, `${d.getMonth()+1}月${d.getDate()}日`);
+  if(left < 0) return L('WAS DUE ' + when, when + '已过期');
+  if(left < 3600e3) return L(`DUE IN ${Math.max(1, Math.round(left/60e3))}M`, `${Math.max(1, Math.round(left/60e3))} 分钟后到期`);
+  if(left < 6*3600e3) return L(`DUE IN ${Math.round(left/3600e3)}H`, `${Math.round(left/3600e3)} 小时后到期`);
+  return L('DUE ' + when, when + '到期');
 }
 // the date fields: Tonight / Tomorrow / clear
 document.addEventListener('click', e => {
@@ -3032,7 +3103,7 @@ function dropBar(e){
 $('#focus').addEventListener('pointerup', dropBar); $('#focus').addEventListener('pointercancel', dropBar);
 addEventListener('resize', () => { if(!barDrag) applyDock(); });
 applyDock();
-if(POP_GESTURE === 'hold') $('#pop-how').textContent = 'Press and hold';
+if(POP_GESTURE === 'hold') $('#pop-how').textContent = T('Press and hold');
 function endFocus(popIt){
   if(!focus) return;
   const {b, start, panelWasOpen} = focus;
@@ -3064,7 +3135,7 @@ addEventListener('keydown', e => {
 function syncStepSide(){
   const sd = focus && SIDES.includes(focus.b.stepSide) ? focus.b.stepSide : 'any', btn = $('#step-side');
   btn.innerHTML = SIDE_ICON[sd]; btn.hidden = REMOTE || !focus || !$('#step-in').hidden;
-  btn.title = sd === 'any' ? 'Steps float anywhere (click to line them up on a side)' : `Steps ${SIDE_NAME[sd].replace(/^Lives/, 'live').toLowerCase()} (click to change)`;
+  btn.title = sd === 'any' ? L('Steps float anywhere (click to line them up on a side)', '步骤随处漂浮（点击让它们排到一边）') : L(`Steps ${SIDE_NAME[sd].replace(/^Lives/, 'live').toLowerCase()} (click to change)`, `步骤${SIDE_NAME[sd]}（点击切换）`);
   btn.classList.toggle('on', sd !== 'any');
 }
 $('#step-side').addEventListener('click', () => {
@@ -3103,11 +3174,11 @@ async function popStep(sb){
   for(let k=0;k<14;k++){ const a = Math.random()*6.283, sp = 120 + Math.random()*200; particles.push({x:sb.x+Math.cos(a)*r*.9, y:sb.y+Math.sin(a)*r*.9, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:1.5+Math.random()*3, t:0, life:.5+Math.random()*.4}); }
   const p = sb.parent, done = p.steps.length - stepsLeft(p);
   lastPopped = null; lastStep = sb;
-  $('#toast-msg').textContent = `Step done · ${done} of ${p.steps.length}`; $('#undo').hidden = false;
+  $('#toast-msg').textContent = L(`Step done · ${done} of ${p.steps.length}`, `完成一步 · ${done}/${p.steps.length}`); $('#undo').hidden = false;
   $('#toast').classList.add('show'); clearTimeout(toastTimer); toastTimer = setTimeout(() => $('#toast').classList.remove('show'), 3200);
   save(); renderTasks();
   if(!stepsLeft(p) && focus && focus.b === p){ // the last one: offer to pop the whole thing
-    if(await ask(`That's all of them. Pop “${p.name}”?`, 'Pop it!', 'Not yet')) endFocus(true);
+    if(await ask(L(`That's all of them. Pop “${p.name}”?`, `全部完成了。要戳破“${p.name}”吗？`), T('Pop it!'), T('Not yet'))) endFocus(true);
   }
 }
 $('#focus-done').addEventListener('click', () => { if(!focus) return; const li = REMOTE && document.querySelector(`#tasks .task[data-id="${focus.b.id}"]`);
@@ -3180,13 +3251,13 @@ function localItems(){
   m['settings:me'] = {theme, pauseUntil: pauseUntil === Infinity ? -1 : pauseUntil};
   return m;
 }
-function setSyncState(s, text){ const el = $('#sync-state'); el.dataset.s = s; el.textContent = text; }
+function setSyncState(s, text){ const el = $('#sync-state'); el.dataset.s = s; el.textContent = T(text); }
 // say what actually went wrong, so a setup problem can be found from a screenshot
 function syncFail(e){
   const m = String(e?.message || e?.error_description || e || ''), c = e?.code ? ` (${e.code})` : '';
-  syncErr(!navigator.onLine ? 'You’re offline. Changes will sync when you’re back.'
-    : /does not exist|could not find the table|PGRST205|42P01/i.test(m + c) ? `The sync table isn’t set up yet: run schema.sql in Supabase.${c}`
-    : /permission denied|42501|row-level security/i.test(m + c) ? `Supabase refused access: run schema.sql again in Supabase.${c}`
+  syncErr(!navigator.onLine ? L('You’re offline. Changes will sync when you’re back.', '你现在离线。等联网后修改会自动同步。')
+    : /does not exist|could not find the table|PGRST205|42P01/i.test(m + c) ? L(`The sync table isn’t set up yet: run schema.sql in Supabase.${c}`, `同步用的表还没建好：请在 Supabase 里运行 schema.sql。${c}`)
+    : /permission denied|42501|row-level security/i.test(m + c) ? L(`Supabase refused access: run schema.sql again in Supabase.${c}`, `Supabase 拒绝了访问：请在 Supabase 里重新运行 schema.sql。${c}`)
     : `Couldn’t sync: ${m.slice(0, 140)}${c}`);
 }
 function syncErr(msg){ const e = $('#sync-err'); e.hidden = !msg; e.textContent = msg || ''; }
@@ -3353,21 +3424,21 @@ function renderSync(){
   if(REMOTE) $('#unpaired-note').hidden = on || !ready; // skipped pairing: say so, and offer it again
   $('#sync-off').hidden = on; $('#sync-on').hidden = !on;
   $('#sync-get').hidden = !ready;
-  if(!ready){ $('#sync-why').textContent = 'The phone app isn’t set up in this copy yet.'; setSyncState('', 'Off'); return; }
+  if(!ready){ $('#sync-why').textContent = L('The phone app isn’t set up in this copy yet.', '这个版本还没有设置手机 App。'); setSyncState('', 'Off'); return; }
   if(on){
     const phones = [...devices.values()].filter(d => d && d.type === 'phone').length, comps = [...devices.values()].filter(d => d && d.type !== 'phone').length;
-    $('#sync-who').textContent = REMOTE ? 'Connected to your computer. Changes show up on both.' : phones ? `Connected to ${phones === 1 ? 'your phone' : phones + ' phones'}. Changes show up on both.` : 'Ready. Scan the code with your phone to connect it.';
+    $('#sync-who').textContent = REMOTE ? L('Connected to your computer. Changes show up on both.', '已连接到你的电脑。两边的修改会同步。') : phones ? L(`Connected to ${phones === 1 ? 'your phone' : phones + ' phones'}. Changes show up on both.`, `已连接${phones === 1 ? '你的手机' : ` ${phones} 台手机`}。两边的修改会同步。`) : L('Ready. Scan the code with your phone to connect it.', '准备好了。用手机扫码就能连接。');
     $('#sync-show').hidden = REMOTE || !store.get('pairCred');
   } else {
     setSyncState('', REMOTE ? 'Not connected' : 'Off');
-    $('#sync-why').textContent = REMOTE ? 'On your computer, open TODOPOP, then the third O → Get the phone app, and scan the code.' : 'Use TODOPOP on your phone too. Your list stays the same on both.';
-    $('#sync-get').textContent = REMOTE ? 'Scan code' : 'Get the phone app';
+    $('#sync-why').textContent = REMOTE ? L('On your computer, open TODOPOP, then the third O → Get the phone app, and scan the code.', '在电脑上打开 TODOPOP，点第三个 O → 获取手机 App，然后扫码。') : L('Use TODOPOP on your phone too. Your list stays the same on both.', '在手机上也用 TODOPOP。两边的清单保持一致。');
+    $('#sync-get').textContent = REMOTE ? T('Scan code') : L('Get the phone app', '获取手机 App');
   }
 }
 // computer: make the account (first time) and show its code
 async function showPairCode(){
   syncErr('');
-  if(!phoneBase()){ syncErr('The phone app doesn’t have a web address yet, so there’s nothing for the code to open.'); return; }
+  if(!phoneBase()){ syncErr(L('The phone app doesn’t have a web address yet, so there’s nothing for the code to open.', '手机 App 还没有网址，二维码没有可以打开的地方。')); return; }
   try{
     if(!sync.user){
       let c = store.get('pairCred');
@@ -3381,11 +3452,11 @@ async function showPairCode(){
     await loadLib('qrcode');
     const qr = window.qrcode(0, 'M'); qr.addData(pairLink()); qr.make();
     $('#pair-qr').innerHTML = qr.createSvgTag({cellSize:4, margin:0, scalable:true}).replace(/fill="black"|fill="#000000"/g, `fill="${INK}"`);
-    $('#pair-title').textContent = 'Scan with your phone'; $('#pair-qr').hidden = false; $('#pair-cam').hidden = true; $('#pair-copy').hidden = false;
-    $('#pair-how').textContent = 'Point your phone’s camera at the code: TODOPOP opens already connected. To keep it on your home screen, add it there, open it, and tap Scan code once more.';
+    $('#pair-title').textContent = T('Scan with your phone'); $('#pair-qr').hidden = false; $('#pair-cam').hidden = true; $('#pair-copy').hidden = false;
+    $('#pair-how').textContent = L('Point your phone’s camera at the code: TODOPOP opens already connected. To keep it on your home screen, add it there, open it, and tap Scan code once more.', '用手机相机对准二维码：TODOPOP 打开时就已经连好了。想把它放在主屏幕上的话，添加到主屏幕后打开它，再点一次“扫码”。');
     $('#pair-ok').hidden = ![...devices.values()].some(d => d && d.type === 'phone');
     $('#pair').hidden = false; updateInteractive();
-  }catch(e){ syncErr(e.message || 'Couldn’t set up the phone app. Check your connection.'); console.warn('pair', e); }
+  }catch(e){ syncErr(e.message || L('Couldn’t set up the phone app. Check your connection.', '没能设置手机 App。请检查网络连接。')); console.warn('pair', e); }
 }
 // phone: join with a code (from the link that opened the app, or from the camera)
 async function joinWithCode(text){
@@ -3395,8 +3466,8 @@ async function joinWithCode(text){
   if(sync.user && sync.user.email === e) return true;
   if(sync.user){ if(sync.chan) sync.sb.removeChannel(sync.chan); await sync.sb.auth.signOut(); sync.user = null; store.set('syncJoined', null); }
   const { error } = await sync.sb.auth.signInWithPassword({email:e, password:p});
-  if(error){ syncErr('That code didn’t work. Show it again on your computer and rescan.'); return false; }
-  await syncStart(false); showToast('Connected to your computer', false); return true;
+  if(error){ syncErr(L('That code didn’t work. Show it again on your computer and rescan.', '这个二维码不管用。在电脑上重新显示一次再扫。')); return false; }
+  await syncStart(false); showToast(L('Connected to your computer', '已连接到你的电脑'), false); return true;
 }
 let camStream = null, camTimer = null;
 async function scanCode(){
@@ -3404,10 +3475,10 @@ async function scanCode(){
   try{
     await loadLib('jsqr');
     camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
-  }catch(e){ syncErr('TODOPOP needs the camera to scan. You can also scan the code with your camera app.'); return; }
+  }catch(e){ syncErr(L('TODOPOP needs the camera to scan. You can also scan the code with your camera app.', 'TODOPOP 需要用相机扫码。你也可以用手机自带的相机扫。')); return; }
   const v = $('#pair-cam'); v.srcObject = camStream; v.hidden = false; await v.play().catch(() => {});
-  $('#pair-title').textContent = 'Scan the code on your computer'; $('#pair-qr').hidden = true; $('#pair-copy').hidden = true; $('#pair-ok').hidden = true;
-  $('#pair-how').textContent = 'On your computer: TODOPOP → third O → Get the phone app.';
+  $('#pair-title').textContent = L('Scan the code on your computer', '扫电脑上的二维码'); $('#pair-qr').hidden = true; $('#pair-copy').hidden = true; $('#pair-ok').hidden = true;
+  $('#pair-how').textContent = L('On your computer: TODOPOP → third O → Get the phone app.', '在电脑上：TODOPOP → 第三个 O → 获取手机 App。');
   $('#pair').hidden = false;
   const cv = document.createElement('canvas'), cx = cv.getContext('2d', {willReadFrequently:true});
   camTimer = setInterval(async () => {
@@ -3424,12 +3495,12 @@ function closePair(){
 $('#pair-done').addEventListener('click', closePair);
 $('#pair').addEventListener('pointerdown', e => { if(e.target === $('#pair')) closePair(); });
 $('#pair').addEventListener('keydown', e => { e.stopPropagation(); if(e.key === 'Escape') closePair(); });
-$('#pair-copy').addEventListener('click', async () => { try{ await navigator.clipboard.writeText(pairLink()); showToast('Link copied. Send it to your phone and open it there.', false); }catch(e){} });
+$('#pair-copy').addEventListener('click', async () => { try{ await navigator.clipboard.writeText(pairLink()); showToast(L('Link copied. Send it to your phone and open it there.', '链接已复制。发到手机上打开就行。'), false); }catch(e){} });
 $('#sync-get').addEventListener('click', () => REMOTE ? scanCode() : showPairCode());
 $('#unpaired-note').addEventListener('click', () => scanCode());
 $('#sync-show').addEventListener('click', showPairCode);
 $('#sync-out').addEventListener('click', async () => {
-  if(!(await ask(REMOTE ? 'Unpair this phone? Your computer keeps the list.' : 'Unpair? Your list stays on this computer, but stops syncing with your phone.', 'Unpair', 'Keep'))) return;
+  if(!(await ask(REMOTE ? L('Unpair this phone? Your computer keeps the list.', '要解除这台手机的配对吗？清单会留在电脑上。') : L('Unpair? Your list stays on this computer, but stops syncing with your phone.', '要解除配对吗？清单会留在这台电脑上，但不再和手机同步。'), T('Unpair'), L('Keep', '保留')))) return;
   if(sync.chan) sync.sb.removeChannel(sync.chan); sync.chan = null; sync.on = false;
   try{ await sync.sb.from('items').upsert({user_id:sync.user.id, kind:'settings', id:'device:' + DEVICE_ID, data:{}, deleted:true}, {onConflict:'user_id,kind,id'}); }catch(e){}
   await sync.sb.auth.signOut(); sync.user = null; store.set('syncJoined', null); devices.clear(); renderSync();
@@ -3458,12 +3529,12 @@ if(REMOTE){
   $('.panel > .pz').appendChild($('#rsheet-back')); // same layer as the sheets, so it dims the list but not the sheet
   // Pause gets its own sheet, built around the same pause controls the computer uses
   const ps = document.createElement('section'); ps.className = 'acc'; ps.id = 'acc-pause';
-  ps.innerHTML = '<button class="acc-head" type="button" aria-expanded="true"><span>Pause growing</span><span class="chev"></span></button><div class="acc-wrap"><div class="acc-body"><div class="acc-inner"></div></div></div>';
+  ps.innerHTML = `<button class="acc-head" type="button" aria-expanded="true"><span>${T('Pause growing')}</span><span class="chev"></span></button><div class="acc-wrap"><div class="acc-body"><div class="acc-inner"></div></div></div>`;
   $('.panel > .pz').insertBefore(ps, $('#acc-arch')); ps.querySelector('.acc-inner').appendChild($('#pause'));
   $('#pause').addEventListener('click', e => { if(e.target.closest('[data-p], #resume')) setTimeout(() => { closeSheet(); syncPauseBar(); }, 150); });
   // Groups get their own sheet too: rename, recolor or delete (the phone has no right-click)
   const gs = document.createElement('section'); gs.className = 'acc'; gs.id = 'acc-groups';
-  gs.innerHTML = '<button class="acc-head" type="button" aria-expanded="true"><span>Groups</span><span class="chev"></span></button><div class="acc-wrap"><div class="acc-body"><div class="acc-inner"><p class="note gsheet-note">Tap a color dot to change it.</p></div></div></div>';
+  gs.innerHTML = `<button class="acc-head" type="button" aria-expanded="true"><span>${L('Groups', '分组')}</span><span class="chev"></span></button><div class="acc-wrap"><div class="acc-body"><div class="acc-inner"><p class="note gsheet-note">${L('Tap a color dot to change it.', '点颜色圆点就能换颜色。')}</p></div></div></div>`;
   $('.panel > .pz').insertBefore(gs, $('#acc-arch')); gs.querySelector('.acc-inner').appendChild($('#gedit')); $('#grp-edit-btn').hidden = true;
   $('#rbar-new').addEventListener('click', () => openSheet('acc-new'));
   $('#rbar-pause').addEventListener('click', () => setTimeout(() => openSheet('acc-pause'), 190)); // a beat, so you see the tap land
@@ -3480,7 +3551,7 @@ if(REMOTE){
   $('#unpair-phone').addEventListener('click', () => $('#sync-out').click());
   syncLanding(); syncPauseBar();
 }
-function syncPauseBar(){ if(!REMOTE) return; const on = isPaused(); $('#rbar-pause').textContent = on ? 'Paused' : 'Pause'; $('#rbar-pause').setAttribute('aria-pressed', on); }
+function syncPauseBar(){ if(!REMOTE) return; const on = isPaused(); $('#rbar-pause').textContent = on ? T('Paused') : T('Pause'); $('#rbar-pause').setAttribute('aria-pressed', on); }
 async function syncInit(){
   if(REMOTE) $('.panel > .pz').insertBefore($('#sync'), $('#acc-new'));
   renderSync(); if(!SYNC_READY) return;
@@ -3488,7 +3559,7 @@ async function syncInit(){
     if(!window.__supabaseStub) await loadLib('supabase');
     const { createClient } = window.__supabaseStub || window.supabase;
     sync.sb = createClient(SYNC_URL, SYNC_KEY, {auth:{persistSession:true, autoRefreshToken:true, storageKey:'todopop:auth'}});
-  }catch(e){ setSyncState('off', 'Offline'); syncErr('Couldn’t reach the sync service. Check your connection.'); return; }
+  }catch(e){ setSyncState('off', 'Offline'); syncErr(L('Couldn’t reach the sync service. Check your connection.', '连不上同步服务。请检查网络连接。')); return; }
   sync.sb.auth.onAuthStateChange((ev) => { if(ev === 'SIGNED_OUT'){ sync.on = false; sync.user = null; renderSync(); } });
   // opened from the code on the computer: join right away, then tidy the address
   if(/[#&]pair=/.test(location.hash)){ const h = location.hash; history.replaceState(null, '', location.pathname + location.search); await joinWithCode(h); }
@@ -3527,7 +3598,7 @@ const newerThan = (a, b) => { const x = String(a).split('.').map(n => parseInt(n
   for(let i = 0; i < 3; i++){ if((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
 function showUpdate(version, label, go){
   if(store.get('updateLater') === version) return; // you said "not now" to this one
-  $('#update-msg').textContent = `TODOPOP ${version} is out.`; $('#update-go').textContent = label;
+  $('#update-msg').textContent = L(`TODOPOP ${version} is out.`, `TODOPOP ${version} 发布了。`); $('#update-go').textContent = label;
   $('#update-go').onclick = go; $('#update-note').hidden = false; updateInteractive();
 }
 $('#update-x').addEventListener('click', () => { const v = ($('#update-msg').textContent.match(/[\d.]+\d/) || [''])[0]; store.set('updateLater', v); $('#update-note').hidden = true; updateInteractive(); });
@@ -3535,11 +3606,11 @@ async function checkRelease(current, file){
   try{
     const r = await fetch('https://api.github.com/repos/nosugarlessice/todopop/releases/latest', {headers:{Accept:'application/vnd.github+json'}, cache:'no-store'});
     if(!r.ok) return; const v = String((await r.json()).tag_name || '').replace(/^v/, '');
-    if(/^\d+\.\d+/.test(v) && newerThan(v, current)) showUpdate(v, 'Download', () => { if(NATIVE) location.href = RELEASES + file; else window.open(RELEASES + file, '_blank'); });
+    if(/^\d+\.\d+/.test(v) && newerThan(v, current)) showUpdate(v, L('Download', '下载'), () => { if(NATIVE) location.href = RELEASES + file; else window.open(RELEASES + file, '_blank'); });
   }catch(e){} // offline: try again later
 }
 if(DESKTOP && window.todopop.getVersion){
-  window.todopop.onUpdate?.(info => showUpdate(info.version, 'Restart to update', () => window.todopop.installUpdate()));
+  window.todopop.onUpdate?.(info => showUpdate(info.version, L('Restart to update', '重启以更新'), () => window.todopop.installUpdate()));
   if(window.todopop.platform === 'darwin') window.todopop.getVersion().then(cur => { const c = () => checkRelease(cur, 'TODOPOP-mac.dmg'); setTimeout(c, 15000); setInterval(c, 6*3600e3); });
 }
 if(NATIVE){
@@ -3549,13 +3620,17 @@ if(NATIVE){
 // the phone web app on an Android phone: point to the real app
 if(REMOTE && !NATIVE && /Android/i.test(navigator.userAgent) && !DESKTOP){
   const a = document.createElement('a'); a.className = 'get-android'; a.href = 'https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk';
-  a.textContent = 'Get the Android app'; $('#sync')?.appendChild(a);
+  a.textContent = L('Get the Android app', '下载安卓 App'); $('#sync')?.appendChild(a);
 }
 // the phone web app in iPhone Safari: show how to keep it on the home screen like an app
 if(REMOTE && !NATIVE && !DESKTOP && /iPhone|iPad|iPod/i.test(navigator.userAgent) && !navigator.standalone && !matchMedia('(display-mode: standalone)').matches){
   const share = '<svg viewBox="0 0 24 24"><path d="M12 3v12M8 7l4-4 4 4M6 11H5v10h14V11h-1"/></svg>';
   const d = document.createElement('details'); d.className = 'get-ios';
-  d.innerHTML = `<summary>Put TODOPOP on your home screen</summary><ol>
+  d.innerHTML = ZH_ON ? `<summary>把 TODOPOP 放到主屏幕上</summary><ol>
+    <li>用 <b>Safari</b> 打开这个页面。</li>
+    <li>点工具栏里的分享按钮 ${share}（新款 iPhone 上可能在 <b>•••</b> 按钮里面）。</li>
+    <li>往下滑，点<b>添加到主屏幕</b>，再点<b>添加</b>。</li>
+    <li>从新图标打开 TODOPOP，在那里配对。它会像 App 一样全屏运行（配对和 Safari 里是分开的）。</li></ol>` : `<summary>Put TODOPOP on your home screen</summary><ol>
     <li>Open this page in <b>Safari</b>.</li>
     <li>Tap the Share button ${share} in the toolbar (on newer iPhones it may be behind the <b>•••</b> button).</li>
     <li>Scroll down and tap <b>Add to Home Screen</b>, then <b>Add</b>.</li>

@@ -49,8 +49,8 @@
     ['.remote p:not(.lead)', '把任务清单随时带在身边，用手机添加新任务。<br>回家打开电脑，新任务已经飘在你的屏幕上了。'],
     ['.tut h3', '安装 + 配对教程：'],
     ['.tut .btns a', ['在 iPhone 上使用', '下载安卓版 <small>.apk</small>']],
-    ['.tut li:nth-child(2) > span:last-child', '在电脑上打开 TODOPOP，点第三个 O，再点 <b>[Get the phone app]</b>，屏幕上就会出现一个二维码'],
-    ['.tut li:nth-child(3) > span:last-child', '在手机上打开 TODOPOP，点 <b>[Scan code]</b>，对准电脑屏幕扫一下。'],
+    ['.tut li:nth-child(2) > span:last-child', '在电脑上打开 TODOPOP，点第三个 O，再点 <b>[获取手机 App]</b>，屏幕上就会出现一个二维码'],
+    ['.tut li:nth-child(3) > span:last-child', '在手机上打开 TODOPOP，点 <b>[扫码]</b>，对准电脑屏幕扫一下。'],
     ['.tut .fine', '*配对不需要注册账号，也不用留邮箱或手机号。想知道是怎么做到的，请看本站底部的 <a href="#privacy"><b>[隐私]</b></a> 部分'],
 
     ['#dl-title', `获取 <span class="logo" aria-label="TODOPOP">${LOGO}</span>`],

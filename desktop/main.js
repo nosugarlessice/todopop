@@ -104,36 +104,38 @@ function trayIcon() {
 }
 
 let paused = false;
+let lang = 'en'; // the page tells us which language it's in; the tray menu follows
+const tr = (en, zh) => lang === 'zh' ? zh : en;
 const sendPause = (mode) => win && win.webContents.send('pause', mode);
 
 function buildTrayMenu() {
   const shortcutLabel = isMac ? '⌘⇧Space' : 'Ctrl+Shift+Space';
   trayMenu = Menu.buildFromTemplate([
-      { label: `Show / hide control panel (${shortcutLabel})`, click: togglePanel },
+      { label: tr(`Show / hide control panel (${shortcutLabel})`, `显示 / 隐藏控制面板（${shortcutLabel}）`), click: togglePanel },
       { type: 'separator' },
       paused
-        ? { label: 'Resume growing', click: () => sendPause('resume') }
+        ? { label: tr('Resume growing', '恢复生长'), click: () => sendPause('resume') }
         : {
-            label: 'Pause growing',
+            label: tr('Pause growing', '暂停生长'),
             submenu: [
-              { label: 'For 30 minutes', click: () => sendPause('30') },
-              { label: 'For 1 hour', click: () => sendPause('60') },
-              { label: 'Until tomorrow morning', click: () => sendPause('tomorrow') },
-              { label: 'Until I resume', click: () => sendPause('off') },
+              { label: tr('For 30 minutes', '30 分钟'), click: () => sendPause('30') },
+              { label: tr('For 1 hour', '1 小时'), click: () => sendPause('60') },
+              { label: tr('Until tomorrow morning', '到明天早上'), click: () => sendPause('tomorrow') },
+              { label: tr('Until I resume', '直到我恢复'), click: () => sendPause('off') },
             ],
           },
       { type: 'separator' },
       {
-        label: 'Start at login',
+        label: tr('Start at login', '开机时启动'),
         type: 'checkbox',
         checked: app.getLoginItemSettings().openAtLogin,
         click: (item) => app.setLoginItemSettings({ openAtLogin: item.checked }),
       },
       { type: 'separator' },
-      { label: 'Quit TODOPOP', role: 'quit' },
+      { label: tr('Quit TODOPOP', '退出 TODOPOP'), role: 'quit' },
   ]);
   if (isMac) tray.setContextMenu(trayMenu); // Windows opens it on right-click below
-  tray.setToolTip(paused ? 'TODOPOP (paused)' : 'TODOPOP');
+  tray.setToolTip(paused ? tr('TODOPOP (paused)', 'TODOPOP（已暂停）') : 'TODOPOP');
 }
 
 function createTray() {
@@ -145,6 +147,7 @@ function createTray() {
   }
 }
 
+ipcMain.on('lang', (_event, l) => { lang = l === 'zh' ? 'zh' : 'en'; if (tray) buildTrayMenu(); });
 ipcMain.on('paused', (_event, on) => {
   paused = !!on;
   if (tray) buildTrayMenu();

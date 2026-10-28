@@ -64,3 +64,7 @@ The builds are not code-signed. On a Mac the first time you open the app, right-
 - `preload.js`: the small bridge the page uses to turn mouse capture on and off
 - `openwin.js`: opens task links in a new window of your default browser
 - `app/index.html`: the TODOPOP interface (the same page as the web demo)
+
+## Language
+
+TODOPOP speaks English and 简体中文. Pick one in the third O (under your color); the app reloads in that language and remembers it. A computer set to Chinese starts in Chinese. The tray menu follows the app's language.
