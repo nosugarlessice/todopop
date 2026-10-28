@@ -20,6 +20,9 @@
     $('#hero-meta').textContent = 'Free · No Sign-up · No ads · The bubbles float on your computer; your phone is the remote.';
   }
 
+  scrollTo({top:0, behavior:'instant'}); // a fresh start every time
+  $('#foot-logo')?.addEventListener('click', e => { e.preventDefault(); scrollTo({top:0, behavior:'instant'}); location.reload(); });
+
   /* ---------- reveal things as you scroll to them ---------- */
   const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting){ e.target.classList.add('in'); io.unobserve(e.target); } }), {rootMargin:'0px 0px -8% 0px', threshold:.12});
   $$('.rv, .pop-in, .arrows').forEach(el => REDUCED ? el.classList.add('in') : io.observe(el));
@@ -41,41 +44,54 @@
   big.querySelectorAll('.o').forEach((o, k) => { const hot = on => notes.forEach(n => +n.dataset.o === k && n.classList.toggle('hot', on));
     o.addEventListener('pointerenter', () => hot(true)); o.addEventListener('pointerleave', () => hot(false)); o.addEventListener('focus', () => hot(true)); o.addEventListener('blur', () => hot(false)); });
 
-  /* dotted circles: perfectly round at rest, but the skin ripples when your cursor passes through, like a bubble's in the app */
+  /* dotted circles: perfectly round at rest; the skin reacts to your cursor exactly as a bubble's does in the app
+     (same springs, same push and drag from the cursor, same jiggle when you cross it) */
   $$('.doodle').forEach(el => {
     const NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), path = document.createElementNS(NS, 'path');
     svg.setAttribute('class', 'wob'); svg.setAttribute('viewBox', '-1.1 -1.1 2.2 2.2'); svg.setAttribute('aria-hidden', 'true');
     path.setAttribute('vector-effect', 'non-scaling-stroke'); svg.appendChild(path); el.prepend(svg);
-    const M = 64, d = new Float32Array(M), v = new Float32Array(M), C = [], S2 = [];
-    for(let i = 0; i < M; i++){ C.push(Math.cos(i/M*6.2832)); S2.push(Math.sin(i/M*6.2832)); }
-    const shape = () => { let p = ''; for(let i = 0; i <= M; i++){ const k = i % M, r = 1 + d[k]; p += (i ? 'L' : 'M') + (C[k]*r).toFixed(4) + ' ' + (S2[k]*r).toFixed(4); } path.setAttribute('d', p + 'Z'); };
+    // GAIN: the app's numbers move a thin dashed line only ~1px, which reads as nothing, so the push is tripled to look like a bubble does on screen
+    const GAIN = 3, N = 40, JELLY = .55, k = 420, Ls = 300, c = 9 + (1 - JELLY)*30, d = new Float32Array(N), v = new Float32Array(N), C = [], Sn = [];
+    for(let i = 0; i < N; i++){ C.push(Math.cos(i/N*6.2832)); Sn.push(Math.sin(i/N*6.2832)); }
+    let R = 100;
+    const shape = () => { // the app's smooth outline through the points
+      const P = []; for(let i = 0; i < N; i++){ const r = 1 + d[i]/R; P.push([C[i]*r, Sn[i]*r]); }
+      let p = `M${((P[N-1][0] + P[0][0])/2).toFixed(4)} ${((P[N-1][1] + P[0][1])/2).toFixed(4)}`;
+      for(let i = 0; i < N; i++){ const a = P[i], b = P[(i + 1) % N]; p += `Q${a[0].toFixed(4)} ${a[1].toFixed(4)} ${((a[0] + b[0])/2).toFixed(4)} ${((a[1] + b[1])/2).toFixed(4)}`; }
+      path.setAttribute('d', p + 'Z'); };
     shape();
     if(REDUCED) return;
-    let running = false, last = 0, px = null, py = null, pt = 0, inside = null;
+    const m = {x:-999, y:-999, vx:0, vy:0, t:0}; let running = false, last = 0, inside = null;
     function run(now){
-      const dt = Math.min(1/30, (now - last)/1000 || 1/60); last = now; let e = 0;
-      for(let i = 0; i < M; i++){ // a spring per point, tied to its neighbours so a dent travels round the skin
-        const L = d[(i + M - 1) % M], R = d[(i + 1) % M];
-        v[i] += (-170*d[i] + 60*(L + R - 2*d[i]) - 5*v[i])*dt;
+      const dt = Math.min(1/30, (now - last)/1000 || 1/60); last = now;
+      const r = el.getBoundingClientRect(), cx = r.left + r.width/2, cy = r.top + r.height/2; R = r.width/2;
+      if(Math.hypot(m.x - cx, m.y - cy) < R + 90){
+        for(let i = 0; i < N; i++){
+          const px = cx + C[i]*(R + d[i]), py = cy + Sn[i]*(R + d[i]), q = (px - m.x)**2 + (py - m.y)**2, w = Math.exp(-q/(2*55*55));
+          v[i] += (C[i]*m.vx + Sn[i]*m.vy)*w*0.045*JELLY*GAIN; // drags the skin along
+          if(q < 26*26) v[i] += -(1 - Math.sqrt(q)/26)*40*JELLY*GAIN; // presses into it
+        }
       }
-      for(let i = 0; i < M; i++){ d[i] += v[i]*dt; e += Math.abs(d[i]) + Math.abs(v[i])*.05; }
+      m.vx *= .82; m.vy *= .82;
+      const h = dt/3; let e = 0;
+      for(let s = 0; s < 3; s++){
+        for(let i = 0; i < N; i++) v[i] += (k*(0 - d[i]) + Ls*(d[(i + N - 1) % N] + d[(i + 1) % N] - 2*d[i]) - c*v[i])*h;
+        for(let i = 0; i < N; i++) d[i] += v[i]*h;
+      }
+      for(let i = 0; i < N; i++) e += Math.abs(d[i]) + Math.abs(v[i])*.02;
       shape();
-      if(e > .002){ requestAnimationFrame(run); } else { d.fill(0); v.fill(0); shape(); running = false; }
+      const near = Math.hypot(m.x - cx, m.y - cy) < R + 90;
+      if(e > .05 || near){ requestAnimationFrame(run); } else { d.fill(0); v.fill(0); shape(); running = false; }
     }
-    const kick = () => { if(!running){ running = true; last = performance.now(); requestAnimationFrame(run); } };
     addEventListener('pointermove', e => {
+      const t = performance.now(), dt = Math.max(8, t - m.t);
+      m.vx = (e.clientX - m.x)/dt*1000; m.vy = (e.clientY - m.y)/dt*1000; if(Math.abs(m.vx) > 6000) m.vx = 0; if(Math.abs(m.vy) > 6000) m.vy = 0;
+      m.x = e.clientX; m.y = e.clientY; m.t = t;
       const r = el.getBoundingClientRect(); if(r.bottom < 0 || r.top > innerHeight) return;
-      const cx = r.left + r.width/2, cy = r.top + r.height/2, R = r.width/2, x = e.clientX, y = e.clientY, t = performance.now();
-      const vx = px === null ? 0 : (x - px)/Math.max(8, t - pt)*1000, vy = py === null ? 0 : (y - py)/Math.max(8, t - pt)*1000; px = x; py = y; pt = t;
-      const D = Math.hypot(x - cx, y - cy), now = D < R;
-      if(Math.abs(D - R) < 26 || (inside !== null && now !== inside)){ // the cursor is passing through the skin: it gives way where it's touched
-        const a = Math.atan2(y - cy, x - cx), push = Math.max(-1, Math.min(1, ((x - cx)*vx + (y - cy)*vy)/D/1400));
-        for(let i = 0; i < M; i++){ let da = Math.abs(i/M*6.2832 - (a < 0 ? a + 6.2832 : a)); da = Math.min(da, 6.2832 - da);
-          const f = Math.exp(-da*da/.16); v[i] += push*f*6.5; }
-        kick();
-      }
-      if(inside !== null && now !== inside){ for(let i = 0; i < M; i++) v[i] += (C[i]*vx + S2[i]*vy)/R*-.08; } // the whole bubble jiggles as you cross
+      const cx = r.left + r.width/2, cy = r.top + r.height/2, now = Math.hypot(m.x - cx, m.y - cy) < r.width/2;
+      if(inside !== null && now !== inside) for(let i = 0; i < N; i++) v[i] += (C[i]*m.vx + Sn[i]*m.vy)*-0.03*GAIN; // the jiggle as you cross into it
       inside = now;
+      if(!running && Math.hypot(m.x - cx, m.y - cy) < r.width/2 + 90){ running = true; last = t; requestAnimationFrame(run); }
     }, {passive:true});
   });
 

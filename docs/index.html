@@ -108,7 +108,7 @@ section{padding:clamp(70px, 9vw, 120px) 0}
 .hero{position:relative; min-height:calc(100svh + 80px); box-sizing:border-box; display:grid; align-content:center; margin-top:-80px; padding:250px 0 270px} /* the landing is the bar and the logo, nothing else until you scroll */
 .hero .wrap{position:relative; display:grid; justify-items:center; text-align:center; gap:22px}
 .o-notes{position:relative; width:100%; height:92px; margin-bottom:-6px; pointer-events:none}
-.o-notes .hint{position:absolute; left:-30px; top:-118px; width:220px; aspect-ratio:1; display:grid; place-items:center; text-align:center; font-size:14px; line-height:1.45; color:var(--ink-mid); rotate:-6deg; margin:0}
+.o-notes .hint{position:absolute; left:-40px; top:-128px; width:250px; aspect-ratio:1; display:grid; place-items:center; text-align:center; font-size:14px; line-height:1.45; color:var(--ink-mid); rotate:-6deg; margin:0}
 .doodle{position:relative} .doodle > svg.wob{position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none}
 .wob path{fill:none; stroke:var(--ink); stroke-width:1.6; stroke-dasharray:4 6; stroke-linecap:round; opacity:.8}
 .o-note{font-weight:300} .o-note.hot{font-weight:600; color:var(--ink)}
@@ -139,7 +139,7 @@ section{padding:clamp(70px, 9vw, 120px) 0}
   .o-notes .hint{position:static; width:auto; text-align:center; margin-bottom:6px}
   .o-notes{height:auto; display:grid; justify-items:center; padding-bottom:58px}
   .o-note{font-size:10.5px; white-space:normal; width:5.6em; text-align:center} .o-note svg{height:30px}
-  .o-notes .hint{position:relative; left:auto; top:auto; width:200px; margin:0 auto 4px; rotate:-3deg; font-size:12px; padding:0 18px; box-sizing:border-box}
+  .o-notes .hint{position:relative; left:auto; top:auto; width:220px; margin:0 auto 4px; rotate:-3deg; font-size:11.5px; padding:0 12px; box-sizing:border-box}
   .bubble-hint{position:relative; right:auto; bottom:auto; width:300px; margin-top:10px; justify-self:center; rotate:2deg}
 }
 /* the logo's popups: they grow out of the O you pressed, like the app's sticker panel */
@@ -387,6 +387,11 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 
 @media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none !important; transition:none !important} html{scroll-behavior:auto} .rv, .pop-in{opacity:1; transform:none} }
 </style>
+<script>
+  try{ history.scrollRestoration = 'manual'; }catch(e){}
+  if(location.hash) history.replaceState(null, '', location.pathname + location.search);
+  addEventListener('load', () => scrollTo({top:0, behavior:'instant'}));
+</script>
 </head>
 <body>
 
@@ -419,7 +424,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     <div class="wrap">
       <h1 id="hero-title" class="sr">TODOPOP: a todo list that just can't be ignored</h1>
       <div class="o-notes" id="o-notes" aria-hidden="true">
-        <p class="hint doodle">*Interact with the three<br>O’s on this logo!</p>
+        <p class="hint doodle"><span>*Interact with<br><span style="white-space:nowrap">the three O’s on this logo!</span></span></p>
         <span class="o-note" data-o="0">Create task<svg viewBox="0 0 30 44"><path d="M15 2 C 6 14, 24 24, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
         <span class="o-note" data-o="1">See your progress<svg viewBox="0 0 30 44"><path d="M15 2 C 24 14, 6 24, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
         <span class="o-note" data-o="2">Customize<svg viewBox="0 0 30 44"><path d="M15 2 C 4 10, 26 26, 15 40"/><path d="M9 34 L15 41 L21 34" style="stroke-dasharray:none"/></svg></span>
@@ -607,7 +612,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 
 <footer>
   <div class="wrap">
-    <span class="logo" style="--s:18px">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</span>
+    <a class="logo" id="foot-logo" href="./" style="--s:18px; text-decoration:none" aria-label="TODOPOP, start over">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</a>
     <nav aria-label="Footer">
       <a href="#download">Download</a>
       <a href="#phone">Phone app</a>
