@@ -810,6 +810,7 @@ html.dock .launcher .kbd-hint{display:flex}
 .sync-links{display:flex; gap:14px}
 .pair-qr{justify-self:center; width:220px; height:220px; display:grid; place-items:center; background:#fff; border-radius:18px; box-shadow:inset 0 0 0 1px var(--rule)}
 .pair-qr svg{width:196px; height:196px; display:block}
+.pair-paste{font-size:13px !important; min-width:250px}
 .pair-cam{width:100%; aspect-ratio:1; object-fit:cover; border-radius:18px; background:#000}
 .pair-ok{color:#1f8f55 !important}
 .sync-err{color:#c0392b !important}
@@ -1044,11 +1045,12 @@ input.has-cjk{line-height:1.5}
       </div>
       <span class="note">Outlines and text follow your color.</span>
       <div class="sync" id="sync">
-        <div class="sync-top"><span class="field-label">Phone app</span><span class="sync-state" id="sync-state"></span></div>
+        <div class="sync-top"><span class="field-label" id="sync-label">Phone app</span><span class="sync-state" id="sync-state"></span></div>
         <div class="sync-step" id="sync-off">
           <p class="note" id="sync-why"></p>
           <button type="button" class="btn small solid" id="sync-get"></button>
           <button type="button" class="link" id="sync-skip" hidden>Not now</button>
+          <button type="button" class="link" id="sync-join" hidden>Join another computer’s list</button>
         </div>
         <div class="sync-step" id="sync-on" hidden>
           <p class="note" id="sync-who"></p>
@@ -1139,9 +1141,10 @@ input.has-cjk{line-height:1.5}
   <span class="gnew-head" id="pair-title">Scan with your phone</span>
   <div class="pair-qr" id="pair-qr" aria-label="Pairing code"></div>
   <video class="pair-cam" id="pair-cam" playsinline muted hidden></video>
+  <input class="text-in pair-paste" id="pair-paste" type="text" placeholder="Paste the link here" autocomplete="off" spellcheck="false" hidden>
   <p class="note" id="pair-how"></p>
   <p class="note pair-ok" id="pair-ok" hidden>Phone connected. You can close this.</p>
-  <div class="gnew-btns"><button type="button" class="btn small" id="pair-copy">Copy link</button><button type="button" class="btn small solid" id="pair-done">Done</button></div>
+  <div class="gnew-btns"><button type="button" class="btn small" id="pair-copy">Copy link</button><button type="button" class="btn small solid" id="pair-join" hidden>Join</button><button type="button" class="btn small solid" id="pair-done">Done</button></div>
 </div></div>
 <div class="rsheet-back" id="rsheet-back" hidden></div>
 <nav class="rbar" id="rbar" aria-label="Phone controls" hidden>
@@ -1193,7 +1196,7 @@ const ZH = { // fixed words, English → Chinese
   'Pause growing':'暂停生长', '30 min':'30 分钟', '1 hour':'1 小时', 'Till tomorrow':'到明天', 'Until I resume':'直到我恢复', 'Paused':'已暂停', 'Resume':'恢复', 'Show one group':'只看一个分组',
   'Popped':'已戳破', 'Week':'周', 'Month':'月', 'Previous':'往前', 'Next':'往后', 'Days before today include sample history.':'今天之前的记录包含示例数据。',
   'Tint':'主题色', 'Tint hue':'主题色色相', 'Tint saturation':'主题色饱和度', 'Outlines and text follow your color.':'轮廓和文字都会跟着你的颜色变。', 'Language':'语言',
-  'Phone app':'手机 App', 'Not now':'以后再说', 'Show the code again':'再显示一次二维码', 'Unpair':'解除配对',
+  'Phone app':'手机 App', 'Your devices':'设备同步', 'Join another computer’s list':'加入另一台电脑的清单', 'Paste the link here':'把链接粘贴到这里', 'Join':'加入', 'Not now':'以后再说', 'Show the code again':'再显示一次二维码', 'Unpair':'解除配对',
   'Now':'当前', 'Focus mode':'专注模式', 'Drag to move the bar':'拖动来移动这个栏', 'Time in focus':'专注时长', 'Where the steps live':'步骤放在哪里',
   '+ Step':'+ 步骤', 'Break it into steps':'拆成小步骤', 'Next step, then Enter':'输入下一步，按回车', 'New step':'新步骤', 'Done, pop it!':'完成，戳破！',
   'Leave focus mode without popping':'离开专注模式（不戳破）', 'Leave focus mode':'离开专注模式', 'Open TODOPOP':'打开 TODOPOP',
@@ -1310,6 +1313,8 @@ function freeSpot(R){
 }
 
 const saved = store.get('tasks');
+const SAMPLE_NAMES = ['Problem set 4','Reply to emails','Figma critique','Book dentist','Laundry','Water the pothos','Drink water'].flatMap(n => [n, T(n)]);
+const isSample = b => SAMPLE_NAMES.includes(b.name) && !b.group && !b.url && !b.due && !(b.steps || []).length; // the starter bubbles, untouched
 function seedTasks(){
   // spread around the centred control panel
   const narrow = sizeOK() && W()<700, ah = narrow ? H()*.45 : H(); // a zero-size start is not a phone
@@ -3298,6 +3303,7 @@ function applyRow(row){
   if(row.kind === 'settings' && row.id !== 'me'){ if(!row.deleted) deviceHello(row); return; } // a device saying hello, not part of the list
   const c = canon(row.data); if(sync.snap[key] === c) return; // our own change coming back
   sync.snap[key] = c; sync.volAt[key] = Date.now(); applyLocal(row.kind, row.id, row.data); // just heard it: no need to echo small drifts back for a minute
+  if(row.kind === 'task' && !REMOTE){ const b = findTask(row.id); if(b) sync.snap[key] = canon(taskData(b)); } // each computer keeps its own layout: don't send ours back just because theirs differs
 }
 const findTask = id => tasks().find(b => String(b.id) === String(id));
 function localHas(row){
@@ -3310,6 +3316,9 @@ function applyLocal(kind, id, d){
   if(kind === 'task'){
     const b = findTask(id);
     if(b){
+      if(!REMOTE && steady(taskData(b)) === steady(d)){ // only sizes or another screen's layout moved: nothing to show here
+        if(Number.isFinite(d.R)) b.R = Math.max(b.R, d.R); b.focusTotal = Math.max(b.focusTotal || 0, d.focusTotal || 0); return;
+      }
       const levelChanged = b.level !== d.level;
       Object.assign(b, {name:d.name, level:d.level, group:d.group || null, stepSide:d.stepSide || null, url:d.url || null, order:d.order ?? b.order, due:d.due || null, dueBase:d.dueBase ?? null, dueSkip:!!d.dueSkip});
       if(!(focus && focus.b === b)){ // don't reshuffle the steps you're looking at
@@ -3324,7 +3333,8 @@ function applyLocal(kind, id, d){
       const R = Number.isFinite(d.R) ? d.R : (d.level === 1 ? 34 : 42);
       // a task made on the phone has no place on this screen yet: find it one
       const useXY = d.src !== 'phone' && Number.isFinite(d.fx) && Number.isFinite(d.fy) && d.fx > -.1 && d.fx < 1.1 && d.fy > -.1 && d.fy < 1.1;
-      const p = useXY ? {x:d.fx*W(), y:d.fy*H()} : freeSpot(R);
+      const roomAt = (x, y) => tasks().every(o => Math.hypot(o.hx - x, o.hy - y) > o.R + R + 8);
+      const p = useXY && (REMOTE || roomAt(d.fx*W(), d.fy*H())) ? {x:d.fx*W(), y:d.fy*H()} : freeSpot(R); // another computer's spot, if it's free on this screen
       const nb = makeBubble({...d, id:Number(id), R, hx:p.x, hy:p.y, spawn:0});
       nb.src = d.src; (stash || bubbles).push(nb);
       if(sideOf(nb)) dockNew(nb, 0);
@@ -3389,7 +3399,8 @@ const rand = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); retu
 const phoneBase = () => PHONE_URL || (/^https?:/.test(location.protocol) ? location.origin + location.pathname : '');
 function pairLink(){ const c = store.get('pairCred'); return c ? phoneBase() + '?remote#pair=' + b64u(c.e + '\n' + c.p) : ''; }
 // the device that makes the account keeps its list; a phone joining it starts from the account
-function joinAs(keep){
+function joinAs(keep, dropSamples){
+  if(keep && dropSamples) for(const b of [...tasks()]) if(isSample(b)){ const i = bubbles.indexOf(b); if(i >= 0) bubbles.splice(i, 1); } // only your own tasks come along
   if(keep){
     for(const b of tasks()) if(b.id < 1e12){ b.id = Date.now()*1000 + Math.floor(Math.random()*1000); } // old ids were only unique here
     for(let i = archive.length - 1; i >= 0; i--){ const e = archive[i]; if(e.demo || (!e.id && !e.tid && !e.g && !e.url && DEMO_POPS.includes(e.name))) archive.splice(i, 1); } // sample history stays out
@@ -3405,7 +3416,7 @@ async function syncStart(keep){
   const { data:{ session } } = await sync.sb.auth.getSession();
   sync.user = session?.user || null; renderSync();
   if(!sync.user){ sync.on = false; return; }
-  if(store.get('syncJoined') !== sync.user.id) joinAs(keep ?? !REMOTE);
+  if(store.get('syncJoined') !== sync.user.id) joinAs(keep ?? !REMOTE, sync.joining);
   sync.on = true; setSyncState('busy', 'Syncing');
   try{ await syncPull(!sync.lastPull); syncListen(); await syncPush(); sayHello(); }
   catch(e){ setSyncState('off', 'Offline'); syncFail(e); console.warn('sync start', e); }
@@ -3417,7 +3428,7 @@ function sayHello(){ sync.sb.from('items').upsert({user_id:sync.user.id, kind:'s
 function deviceHello(row){
   if(row.id === 'device:' + DEVICE_ID) return;
   devices.set(row.id, row.data); renderSync();
-  if(!$('#pair').hidden && row.data && row.data.type === 'phone'){ $('#pair-ok').hidden = false; $('#pair-done').focus(); }
+  if(!$('#pair').hidden && pairMode === 'show' && row.data && row.data.type){ pairOk(row.data.type); $('#pair-done').focus(); }
 }
 async function loadDevices(){ try{ const { data } = await sync.sb.from('items').select('kind,id,data,deleted').eq('kind', 'settings').neq('id', 'me'); for(const r of data || []) if(!r.deleted) deviceHello(r); }catch(e){} }
 function renderSync(){
@@ -3427,14 +3438,18 @@ function renderSync(){
   if(REMOTE) $('#unpaired-note').hidden = on || !ready; // skipped pairing: say so, and offer it again
   $('#sync-off').hidden = on; $('#sync-on').hidden = !on;
   $('#sync-get').hidden = !ready;
+  $('#sync-join').hidden = REMOTE || !ready || on;
+  if(!REMOTE) $('#sync-label').textContent = T('Your devices');
   if(!ready){ $('#sync-why').textContent = L('The phone app isn’t set up in this copy yet.', '这个版本还没有设置手机 App。'); setSyncState('', 'Off'); return; }
   if(on){
-    const phones = [...devices.values()].filter(d => d && d.type === 'phone').length, comps = [...devices.values()].filter(d => d && d.type !== 'phone').length;
-    $('#sync-who').textContent = REMOTE ? L('Connected to your computer. Changes show up on both.', '已连接到你的电脑。两边的修改会同步。') : phones ? L(`Connected to ${phones === 1 ? 'your phone' : phones + ' phones'}. Changes show up on both.`, `已连接${phones === 1 ? '你的手机' : ` ${phones} 台手机`}。两边的修改会同步。`) : L('Ready. Scan the code with your phone to connect it.', '准备好了。用手机扫码就能连接。');
+    const live = [...devices.values()].filter(d => d && d.type), phones = live.filter(d => d.type === 'phone').length, comps = live.length - phones;
+    const en = [phones && (phones === 1 ? 'your phone' : phones + ' phones'), comps && (comps === 1 ? 'another computer' : comps + ' other computers')].filter(Boolean).join(' and ');
+    const zh = [phones && (phones === 1 ? '你的手机' : `${phones} 台手机`), comps && (comps === 1 ? '另一台电脑' : `另外 ${comps} 台电脑`)].filter(Boolean).join('和');
+    $('#sync-who').textContent = REMOTE ? L('Connected to your computer. Changes show up on both.', '已连接到你的电脑。两边的修改会同步。') : en ? L(`Connected to ${en}. Tasks stay the same everywhere; each computer keeps its own layout.`, `已连接${zh}。任务处处一致，每台电脑保留自己的摆放位置。`) : L('Ready. Scan the code with your phone, or add another computer.', '准备好了。用手机扫码，或者添加另一台电脑。');
     $('#sync-show').hidden = REMOTE || !store.get('pairCred');
   } else {
     setSyncState('', REMOTE ? 'Not connected' : 'Off');
-    $('#sync-why').textContent = REMOTE ? L('On your computer, open TODOPOP, then the third O → Get the phone app, and scan the code.', '在电脑上打开 TODOPOP，点第三个 O → 获取手机 App，然后扫码。') : L('Use TODOPOP on your phone too. Your list stays the same on both.', '在手机上也用 TODOPOP。两边的清单保持一致。');
+    $('#sync-why').textContent = REMOTE ? L('On your computer, open TODOPOP, then the third O → Get the phone app, and scan the code.', '在电脑上打开 TODOPOP，点第三个 O → 获取手机 App，然后扫码。') : L('Use TODOPOP on your phone or another computer too. Your tasks stay the same everywhere.', '在手机或另一台电脑上也用 TODOPOP。任务处处保持一致。');
     $('#sync-get').textContent = REMOTE ? T('Scan code') : L('Get the phone app', '获取手机 App');
   }
 }
@@ -3455,22 +3470,45 @@ async function showPairCode(){
     await loadLib('qrcode');
     const qr = window.qrcode(0, 'M'); qr.addData(pairLink()); qr.make();
     $('#pair-qr').innerHTML = qr.createSvgTag({cellSize:4, margin:0, scalable:true}).replace(/fill="black"|fill="#000000"/g, `fill="${INK}"`);
+    pairMode = 'show'; $('#pair-paste').hidden = true; $('#pair-join').hidden = true; $('#pair-done').textContent = T('Done'); $('#pair-done').classList.add('solid');
     $('#pair-title').textContent = T('Scan with your phone'); $('#pair-qr').hidden = false; $('#pair-cam').hidden = true; $('#pair-copy').hidden = false;
-    $('#pair-how').textContent = L('Point your phone’s camera at the code: TODOPOP opens already connected. To keep it on your home screen, add it there, open it, and tap Scan code once more.', '用手机相机对准二维码：TODOPOP 打开时就已经连好了。想把它放在主屏幕上的话，添加到主屏幕后打开它，再点一次“扫码”。');
-    $('#pair-ok').hidden = ![...devices.values()].some(d => d && d.type === 'phone');
+    $('#pair-how').textContent = L('Phone: point the camera at the code and TODOPOP opens already connected (to keep it on your home screen, add it there, open it, and tap Scan code once more). Another computer: Copy link, then on that computer open the third O → Join another computer’s list, and paste it.', '手机：用相机对准二维码，TODOPOP 打开时就已经连好了（想放在主屏幕上，添加后打开它，再点一次“扫码”）。另一台电脑：点“复制链接”，然后在那台电脑上点第三个 O → 加入另一台电脑的清单，粘贴进去。');
+    $('#pair-ok').hidden = true; const seen = [...devices.values()].find(d => d && d.type); if(seen) pairOk(seen.type);
     $('#pair').hidden = false; updateInteractive();
   }catch(e){ syncErr(e.message || L('Couldn’t set up the phone app. Check your connection.', '没能设置手机 App。请检查网络连接。')); console.warn('pair', e); }
 }
-// phone: join with a code (from the link that opened the app, or from the camera)
-async function joinWithCode(text){
+let pairMode = '';
+function pairOk(type){ const el = $('#pair-ok'); el.hidden = false; el.textContent = type === 'phone' ? T('Phone connected. You can close this.') : L('Another computer is connected. You can close this.', '另一台电脑已连接，可以关掉这个窗口了。'); }
+// a second computer: paste the link the first one copied
+function showJoin(){
+  syncErr(''); pairMode = 'join';
+  $('#pair-title').textContent = T('Join another computer’s list'); $('#pair-qr').hidden = true; $('#pair-cam').hidden = true; $('#pair-copy').hidden = true; $('#pair-ok').hidden = true;
+  $('#pair-how').textContent = L('On the computer that has your list: third O → Show the code again (or Get the phone app) → Copy link. Then paste it here.', '在有清单的那台电脑上：第三个 O → 再显示一次二维码（或 获取手机 App）→ 复制链接。然后粘贴到这里。');
+  const inp = $('#pair-paste'); inp.value = ''; inp.hidden = false; $('#pair-join').hidden = false;
+  $('#pair-done').textContent = T('Cancel'); $('#pair-done').classList.remove('solid');
+  $('#pair').hidden = false; updateInteractive(); setTimeout(() => inp.focus(), 50);
+}
+async function doJoin(){
+  let text = $('#pair-paste').value.trim();
+  if(!text){ try{ text = (await navigator.clipboard.readText()).trim(); $('#pair-paste').value = text; }catch(e){} }
+  if(!/[#&]pair=[\w-]+/.test(text)){ $('#pair-how').textContent = L('That doesn’t look like a TODOPOP link. Copy it again on the other computer and paste it here.', '这看起来不是 TODOPOP 的链接。在另一台电脑上重新复制一次，再粘贴到这里。'); return; }
+  const n = tasks().filter(b => !isSample(b)).length;
+  closePair();
+  const keep = n ? await ask(L(`Bring this computer’s ${n} task${n === 1 ? '' : 's'} into the shared list?`, `要把这台电脑上的 ${n} 个任务也加进共享清单吗？`), L('Bring them', '加进去'), L('Start fresh', '不用了')) : false;
+  sync.joining = true; try{ await joinWithCode(text, keep); } finally{ sync.joining = false; }
+}
+// phone or another computer: join with a code (from the link that opened the app, the camera, or a pasted link)
+async function joinWithCode(text, keep = false){
   const m = /[#&]pair=([\w-]+)/.exec(text || ''); if(!m) return false;
   let e, p; try{ [e, p] = unb64u(m[1]).split('\n'); }catch(err){ return false; }
   if(!e || !p) return false;
   if(sync.user && sync.user.email === e) return true;
   if(sync.user){ if(sync.chan) sync.sb.removeChannel(sync.chan); await sync.sb.auth.signOut(); sync.user = null; store.set('syncJoined', null); }
   const { error } = await sync.sb.auth.signInWithPassword({email:e, password:p});
-  if(error){ syncErr(L('That code didn’t work. Show it again on your computer and rescan.', '这个二维码不管用。在电脑上重新显示一次再扫。')); return false; }
-  await syncStart(false); showToast(L('Connected to your computer', '已连接到你的电脑'), false); return true;
+  if(error){ syncErr(REMOTE ? L('That code didn’t work. Show it again on your computer and rescan.', '这个二维码不管用。在电脑上重新显示一次再扫。') : L('That link didn’t work. Copy it again on the other computer.', '这个链接不管用。在另一台电脑上重新复制一次。')); return false; }
+  if(!REMOTE){ store.set('pairCred', {e, p}); store.set('syncJoined', null); } // this computer can show the code to the next device too
+  await syncStart(keep); if(!REMOTE) loadDevices();
+  showToast(REMOTE ? L('Connected to your computer', '已连接到你的电脑') : L('Joined. Your tasks now sync with the other computer.', '已加入。任务会和另一台电脑同步。'), false); return true;
 }
 let camStream = null, camTimer = null;
 async function scanCode(){
@@ -3480,6 +3518,7 @@ async function scanCode(){
     camStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}, audio:false});
   }catch(e){ syncErr(L('TODOPOP needs the camera to scan. You can also scan the code with your camera app.', 'TODOPOP 需要用相机扫码。你也可以用手机自带的相机扫。')); return; }
   const v = $('#pair-cam'); v.srcObject = camStream; v.hidden = false; await v.play().catch(() => {});
+  pairMode = 'scan'; $('#pair-paste').hidden = true; $('#pair-join').hidden = true; $('#pair-done').textContent = T('Done'); $('#pair-done').classList.add('solid');
   $('#pair-title').textContent = L('Scan the code on your computer', '扫电脑上的二维码'); $('#pair-qr').hidden = true; $('#pair-copy').hidden = true; $('#pair-ok').hidden = true;
   $('#pair-how').textContent = L('On your computer: TODOPOP → third O → Get the phone app.', '在电脑上：TODOPOP → 第三个 O → 获取手机 App。');
   $('#pair').hidden = false;
@@ -3501,9 +3540,12 @@ $('#pair').addEventListener('keydown', e => { e.stopPropagation(); if(e.key === 
 $('#pair-copy').addEventListener('click', async () => { try{ await navigator.clipboard.writeText(pairLink()); showToast(L('Link copied. Send it to your phone and open it there.', '链接已复制。发到手机上打开就行。'), false); }catch(e){} });
 $('#sync-get').addEventListener('click', () => REMOTE ? scanCode() : showPairCode());
 $('#unpaired-note').addEventListener('click', () => scanCode());
+$('#sync-join').addEventListener('click', showJoin);
+$('#pair-join').addEventListener('click', doJoin);
+$('#pair-paste').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); doJoin(); } });
 $('#sync-show').addEventListener('click', showPairCode);
 $('#sync-out').addEventListener('click', async () => {
-  if(!(await ask(REMOTE ? L('Unpair this phone? Your computer keeps the list.', '要解除这台手机的配对吗？清单会留在电脑上。') : L('Unpair? Your list stays on this computer, but stops syncing with your phone.', '要解除配对吗？清单会留在这台电脑上，但不再和手机同步。'), T('Unpair'), L('Keep', '保留')))) return;
+  if(!(await ask(REMOTE ? L('Unpair this phone? Your computer keeps the list.', '要解除这台手机的配对吗？清单会留在电脑上。') : L('Unpair? Your list stays on this computer, but stops syncing with your other devices.', '要解除配对吗？清单会留在这台电脑上，但不再和其他设备同步。'), T('Unpair'), L('Keep', '保留')))) return;
   if(sync.chan) sync.sb.removeChannel(sync.chan); sync.chan = null; sync.on = false;
   try{ await sync.sb.from('items').upsert({user_id:sync.user.id, kind:'settings', id:'device:' + DEVICE_ID, data:{}, deleted:true}, {onConflict:'user_id,kind,id'}); }catch(e){}
   await sync.sb.auth.signOut(); sync.user = null; store.set('syncJoined', null); devices.clear(); renderSync();
