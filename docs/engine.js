@@ -45,7 +45,7 @@
   const easeOut = t => { const c = 1.7; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); };
   const effR = b => b.R * easeOut(Math.min(1, b.spawn)) + SWELL*Math.pow(b.holdP || 0, 1.6);
   // on a website they stop growing before they cover what you're reading (the app lets them fill the screen)
-  const K = () => SMALL() ? 1.5 : 3; // big enough that you can't ignore them
+  const K = () => SMALL() ? .75 : 1.5; // big enough that you can't ignore them
   const maxFor = level => K()*[0, 34, 52, 66, 82][level];
 
   function makeBubble(o){

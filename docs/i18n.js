@@ -19,6 +19,7 @@
     ['.bubble-hint > b', '*与这些任务泡泡交互'],
     ['.bubble-hint li', ['可<b>拖拽</b>', '<b>右键</b>编辑', '<b>单击</b>进入专注模式', '<b>双击</b>戳破 标记完成']],
 
+    ['.eyebrow', '<span>痛点</span> TODOPOP 想解决的问题'],
     ['#story-title', `<span class="bk">(</span>${CZ}<span class="bk">)</span> 的作品`],
     ['.collab', '*与 <span class="bk">(</span><span class="md">Melody Chen</span><span class="bk">)</span><br>合作完成'],
     ['.who .tx', '她：'],

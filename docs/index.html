@@ -249,6 +249,9 @@ html.focusing .focus-bar{opacity:1; scale:1; pointer-events:auto}
 
 /* ---------- 2. the creation story ---------- */
 .story{position:relative}
+.eyebrow{margin:0 0 18px; font-size:15px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-soft); display:flex; align-items:center; gap:12px}
+.eyebrow span{color:var(--ink); font-weight:500}
+.eyebrow::before{content:""; width:34px; border-top:2px dashed var(--ink)}
 .story-head{display:flex; flex-wrap:wrap; align-items:flex-start; justify-content:space-between; gap:6px 18px}
 .collab{margin:0; text-align:right; font-size:clamp(16px, 1.7vw, 21px); line-height:1.3; font-weight:400; padding-top:.3em}
 .collab .bk{font-weight:900} .collab .md{font-weight:600}
@@ -463,6 +466,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
   <section id="how" class="story" aria-labelledby="story-title">
     <div class="wrap" style="position:relative">
       <svg class="arrows" id="arrows" aria-hidden="true"></svg>
+      <p class="eyebrow rv"><span>The problem</span> TODOPOP was made to solve</p>
       <div class="story-head rv">
         <h2 class="pill" id="story-title" data-solid>A <span class="bk">(</span><a class="md cz" href="https://cindyzhao.design" target="_blank" rel="noopener">Cindy Zhao</a><span class="bk">)</span> creation</h2>
         <p class="collab">*Made in Collaboration<br>with <span class="bk">(</span><span class="md">Melody Chen</span><span class="bk">)</span></p>
