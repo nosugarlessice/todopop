@@ -848,6 +848,9 @@ html.remote .panel > .pz > .sync{margin:0 16px 10px; padding:14px 16px; border:1
 .steps-edit li span{flex:1; min-width:0}
 .steps-edit .st-x{all:unset; cursor:pointer; width:26px; height:26px; display:grid; place-items:center; border-radius:50%; color:var(--ink-soft); flex:none}
 .steps-edit .st-x:hover{background:var(--ink-wash); color:var(--ink)}
+html.remote button{touch-action:manipulation; -webkit-tap-highlight-color:transparent}
+html.remote .st-x:active, html.remote .st-check:active, html.remote .pop-btn:active, html.remote .gx:active, html.remote .grip:active{scale:.82; background:var(--ink-wash); transition:scale .06s}
+html.remote .task .name:active{opacity:.6}
 .steps-edit .st-x svg{width:10px; height:10px; stroke:currentColor; stroke-width:1.6; fill:none}
 .st-check{all:unset; cursor:pointer; width:18px; height:18px; border-radius:50%; border:1.2px solid var(--ink); flex:none; display:grid; place-items:center}
 .st-check[aria-pressed="true"]{background:var(--ink)}
@@ -1243,7 +1246,8 @@ let speed = 'demo';
 /* ---------- state ---------- */
 const store = {
   get(k){ try{ return JSON.parse(localStorage.getItem('todopop:'+k)); }catch(e){ return null; } },
-  set(k,v){ try{ localStorage.setItem('todopop:'+k, JSON.stringify(v)); }catch(e){} }
+  _last: {},
+  set(k,v){ try{ const j = JSON.stringify(v); if(this._last[k] === j) return; this._last[k] = j; localStorage.setItem('todopop:'+k, j); }catch(e){} } // unchanged: skip the (slow, on phones) write
 };
 const dayKey = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 const DEMO_POPS = ['Laundry','Reading response','Email TA','Groceries','Gym','Studio crit prep','Call mom','Pay rent','Problem set','Water plants','Clean desk','Return library book','Print posters'].map(T);
@@ -2610,12 +2614,21 @@ function draw(){
 
 
 let last = performance.now(), frameN = 0;
+function growOnly(growDt){
+  const growing = !focus && !isPaused(), rate = RATE[speed], maxR = Math.max(W(),H())*0.62;
+  for(const b of bubbles){
+    b.spawn = 1; b.pulse = 0;
+    if(b.toR != null){ b.R = b.toR; b.toR = null; }
+    else if(b.level > 1 && growing) b.R = Math.min(maxR, b.R + rate[b.level]*growDt);
+  }
+}
 function frame(now){
   const real = (now-last)/1000; last = now;
   // physics steps stay small; growth follows the real clock, so a slow frame rate never slows growth
   // (capped so a sleeping computer doesn't cause a jump on wake)
   let dt = Math.min(1/30, real); const growDt = Math.min(5, Math.max(0, real));
   if(!sizeOK()){ requestAnimationFrame(frame); return; } // wait for a real size before simulating
+  if(REMOTE){ growOnly(growDt); setTimeout(() => requestAnimationFrame(frame), 1000); return; } // the phone shows a list, not the bubbles: just keep them growing, once a second
   step(dt, growDt); draw(); if((++frameN % 6)===0) updateInteractive(); requestAnimationFrame(frame);
 }
 /* ---------- control panel show / hide ---------- */
@@ -3212,6 +3225,7 @@ addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; u
 
 renderGroups(); syncPause(); renderTasks(); renderArchive();
 requestAnimationFrame(frame);
+if(REMOTE) document.addEventListener('touchstart', () => {}, {passive:true}); // lets iOS show the pressed state on buttons
 /* ---------- sync: your computer and your phone share one list ----------
    Everything lives in one Supabase table (`items`): each task, group, popped task and your settings is
    a row. This device pushes what changed every couple of seconds and hears other devices' changes live.
@@ -3310,8 +3324,10 @@ function applyLocal(kind, id, d){
   if(kind === 'task'){
     const b = findTask(id);
     if(b){
-      if(!REMOTE && steady(taskData(b)) === steady(d)){ // only sizes or another screen's layout moved: nothing to show here
-        if(Number.isFinite(d.R)) b.R = Math.max(b.R, d.R); b.focusTotal = Math.max(b.focusTotal || 0, d.focusTotal || 0); return;
+      if(steady(taskData(b)) === steady(d)){ // only sizes or a screen layout moved: nothing to redraw in the list
+        if(Number.isFinite(d.R)) b.R = Math.max(b.R, d.R); b.focusTotal = Math.max(b.focusTotal || 0, d.focusTotal || 0);
+        if(REMOTE && Number.isFinite(d.fx)){ b.fx = d.fx; b.fy = d.fy; }
+        return;
       }
       const levelChanged = b.level !== d.level;
       Object.assign(b, {name:d.name, level:d.level, group:d.group || null, stepSide:d.stepSide || null, url:d.url || null, order:d.order ?? b.order, due:d.due || null, dueBase:d.dueBase ?? null, dueSkip:!!d.dueSkip});
