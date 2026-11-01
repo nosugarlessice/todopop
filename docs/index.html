@@ -65,7 +65,9 @@ b, strong{font-weight:600}
 html[lang="en"] .lang [data-l="en"], html[lang="zh-CN"] .lang [data-l="zh"]{background:var(--ink); color:var(--paper)}
 .lang:hover{border-color:var(--ink)} .lang:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
 /* Chinese reads better a touch looser */
-html[lang="zh-CN"] body{line-height:1.7} html[lang="zh-CN"] .why .card, html[lang="zh-CN"] .q{line-height:1.5}
+html[lang="zh-CN"] body{line-height:1.7} html[lang="zh-CN"] #solves{line-height:1.45} html[lang="zh-CN"] .feat .card{gap:10px}
+html[lang="zh-CN"] .o-notes .hint{font-size:21px} html[lang="zh-CN"] .bubble-hint{font-size:19.5px}
+@media (max-width:700px){ html[lang="zh-CN"] .o-notes .hint{font-size:17px} } html[lang="zh-CN"] .why .card, html[lang="zh-CN"] .q{line-height:1.5}
 .nav .get{background:var(--ink); color:var(--paper); padding:11px 18px}
 @media (max-width:700px){ .nav .hide-s{display:none} .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} }
 
@@ -565,6 +567,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
             </div></li>
             <li><span class="badge pop-in" style="--i:1">2.</span><span>On your computer, open TODOPOP, click on the third O, then <b>[Get the phone app]</b>, a QR code shows up on your screen</span></li>
             <li><span class="badge pop-in" style="--i:2">3.</span><span>Open TODOPOP on your phone, tap <b>[Scan code]</b>, and point it at your computer's screen.</span></li>
+            <li><span class="badge pop-in" style="--i:3">4.</span><span>Second computer? On your first one: third O → <b>[Show the code again]</b> → <b>[Copy link]</b>. On the second one: third O → <b>[Join another computer’s list]</b>, and paste it. Tasks sync; each screen keeps its own layout.</span></li>
           </ol>
           <p class="fine">*No need to create an account providing your email/phone for this pairing process, refer to <a href="#privacy"><b>[Privacy]</b></a> section at bottom of this site to understand how this works</p>
         </div>

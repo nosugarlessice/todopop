@@ -9,10 +9,10 @@
     ['.nav a[href="#how"]', '怎么用'],
     ['.nav a[href="#phone"]', '手机'],
     ['.nav a.get', '下载'],
-    ['#hero-title', 'TODOPOP：一个让你根本没法忽视的待办清单'],
+    ['#hero-title', 'TODOPOP：一个让你没有借口拖延的待办清单'],
     ['.o-notes .hint > span', '*点点看<br><span style="white-space:nowrap">logo 上的三个 O！</span>'],
     ['.o-note .tx', ['新建任务', '查看进度', '个性化']],
-    ['.tagline', '一个让你根本没法忽视的待办清单'],
+    ['.tagline', '一个让你没有借口拖延的待办清单'],
     ['#hero-btns [data-os="mac"] .tx', '下载 Mac 版'],
     ['#hero-btns [data-os="win"] .tx', '下载 Windows 版'],
     ['#hero-meta', '免费 · 无需注册 · 无广告'],
@@ -23,17 +23,17 @@
     ['#story-title', `<span class="bk">(</span>${CZ}<span class="bk">)</span> 的作品`],
     ['.collab', '*与 <span class="bk">(</span><span class="md">Melody Chen</span><span class="bk">)</span><br>合作完成'],
     ['.who .tx', '她：'],
-    ['#why1', '眼不见为净'],
-    ['#why2', '<span class="ph">死线临近</span> <span class="ph">还大心脏</span>'],
-    ['#why3', '<span class="ph">明日复明日</span> <span class="ph">明日何其多</span>'],
+    ['#why1', '<span><span class="ph">看不见一个待办，</span><br><span class="ph">她就会忘记。</span></span>'],
+    ['#why2', '<span><span class="ph">昨天的 deadline 了，</span><br><span class="ph">她甚至今天还没开始。</span></span>'],
+    ['#why3', '<span><span class="ph">明日复明日，</span><br><span class="ph">她的字典里就没有今天。</span></span>'],
     ['#solves', '为了解决这些问题<br>我创建了 <span class="md">TODOPOP</span>：'],
     ['.feat h3', ['永远浮在最上层', '随时间长大', '绝不清空任务']],
-    ['.feat .card > p', ['<span class="ph">一直浮在你正在用的窗口上方</span><br><span class="ph">不会藏在关掉的 App 里</span>',
+    ['.feat .card > p', ['<span class="ph">一直浮在你正在用的窗口上方</span><br><span class="ph">不会藏在关掉的软件里</span>',
       '<span class="ph">截止日期越近 泡泡越大</span><br><span class="ph">温柔地制造视觉压力</span>',
       '<span class="ph">没戳破的泡泡会一直留在屏幕上</span><br><span class="ph">没有“过了午夜就清零”这种借口</span>']],
     ['#feat1 .fb', ['数学作业<small>马上！</small>', '回邮件<small>今天</small>', '洗衣服<small>快了</small>']],
 
-    ['#q-title', 'Cindy<br>可是我要 lock in 了<br>任务泡泡们却已经霸占了整个屏幕呢？'],
+    ['#q-title', 'Cindy，Cindy，<br>可是我要开始专心学习了<br>任务泡泡们却已经霸占了整个屏幕呢？'],
     ['#focus .a .tx', '点这里'],
     ['#get-in', '钻进泡泡'],
     ['#screen .scr-win .bar', '<i></i><i></i><i></i>&nbsp;论文草稿 — Docs'],
@@ -41,7 +41,7 @@
     ['#scr-step', '+ 步骤'],
     ['#scr-done', '完成，戳破！'],
     ['#focus .body p', ['<b>单击泡泡，进入专注模式。</b>所有的任务泡泡都会消失在屏幕上，专注计时器开启，你还可以把大项目拆成一个个好消化的小步骤。',
-      '我的初衷是这样故意给你带来不便的设计，能够打断拖延循环，倒逼你关掉所有多余的标签页，给我 lock tf in。']],
+      '我的初衷是这样故意给你带来不便的设计，能够打断拖延循环，倒逼你关掉所有多余的标签页。求求你了，开始学吧。']],
 
     ['#more-title', '更多功能'],
     ['.feats li span', ['颜色分组', '贴到屏幕边缘', '附加链接', '暂停生长', '恢复初始大小']],
@@ -52,6 +52,7 @@
     ['.tut .btns a', ['在 iPhone 上使用', '下载安卓版 <small>.apk</small>']],
     ['.tut li:nth-child(2) > span:last-child', '在电脑上打开 TODOPOP，点第三个 O，再点 <b>[获取手机 App]</b>，屏幕上就会出现一个二维码'],
     ['.tut li:nth-child(3) > span:last-child', '在手机上打开 TODOPOP，点 <b>[扫码]</b>，对准电脑屏幕扫一下。'],
+    ['.tut li:nth-child(4) > span:last-child', '第二台电脑？在第一台电脑上点第三个 O → <b>[再显示一次二维码]</b> → <b>[复制链接]</b>。然后在第二台电脑上点第三个 O → <b>[加入另一台电脑的清单]</b>，粘贴进去。任务两边同步，泡泡各自摆放。'],
     ['.tut .fine', '*配对不需要注册账号，也不用留邮箱或手机号。想知道是怎么做到的，请看本站底部的 <a href="#privacy"><b>[隐私]</b></a> 部分'],
 
     ['#dl-title', `获取 <span class="logo" aria-label="TODOPOP">${LOGO}</span>`],
@@ -137,7 +138,7 @@
     for(const [sel, attr, zh] of ATTRS){
       document.querySelectorAll(sel).forEach(el => { const k = 'en' + attr.replace(/[^a-z]/gi, ''); if(el.dataset[k] == null) el.dataset[k] = el.getAttribute(attr) || ''; el.setAttribute(attr, lang === 'zh' ? zh : el.dataset[k]); });
     }
-    document.title = lang === 'zh' ? 'TODOPOP · 一个让你根本没法忽视的待办清单' : 'TODOPOP · A todo list that just can’t be ignored';
+    document.title = lang === 'zh' ? 'TODOPOP · 一个让你没有借口拖延的待办清单' : 'TODOPOP · A todo list that just can’t be ignored';
     listeners.forEach(f => f(lang));
   }
   window.I18N = { T, get lang(){ return lang; }, onChange: f => listeners.push(f),
