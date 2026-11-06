@@ -358,7 +358,7 @@ html.focusing .focus-bar{opacity:1; scale:1; pointer-events:auto}
 .feats{list-style:none; margin:0; padding:0 0 0 clamp(4px, 1vw, 14px); display:flex; flex-wrap:wrap; gap:6px 0; font-size:14.5px; line-height:1.65; color:var(--ink-mid)}
 .feats li{display:inline-flex; align-items:center}
 .feats li + li::before{content:"·"; margin:0 .6em; color:var(--ink-soft)}
-.feats li.brk{display:none} html[lang="zh-CN"] .feats li.brk{display:block; flex-basis:100%; height:0} .feats li.brk::before, .feats li.brk + li::before{content:none}
+.feats li.brk{display:none} html[lang="zh-CN"] .feats li.brk{display:block; flex-basis:100%; height:0} .feats li.brk::before, html[lang="zh-CN"] .feats li.brk + li::before{content:none}
 .ph{white-space:nowrap} /* a short Chinese phrase stays on one line */
 .pill.over{position:relative; z-index:2; margin-bottom:calc(-1*clamp(42px, 4.6vw, 52px))}
 .card.under{padding-top:clamp(52px, 6vw, 70px)}
