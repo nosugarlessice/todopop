@@ -14,5 +14,6 @@ contextBridge.exposeInMainWorld('todopop', {
   installUpdate: () => ipcRenderer.send('install-update'),
   getInsets: () => ipcRenderer.invoke('insets'), // menu bar / Dock / taskbar: the strips to keep controls clear of
   onInsets: (cb) => ipcRenderer.on('insets', (_e, i) => cb(i)),
+  onPower: (cb) => ipcRenderer.on('power', (_e, state) => cb(state)), // 'sleep' or 'wake'
   setLang: (l) => ipcRenderer.send('lang', l === 'zh' ? 'zh' : 'en'), // so the tray menu speaks the same language
 });

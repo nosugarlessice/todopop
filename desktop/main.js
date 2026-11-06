@@ -3,7 +3,7 @@
 // takes the mouse while the cursor is over a bubble or the control panel; everywhere
 // else, clicks pass straight through to whatever is underneath.
 
-const { app, BrowserWindow, screen, ipcMain, Tray, Menu, globalShortcut, nativeImage, shell } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, Tray, Menu, globalShortcut, nativeImage, shell, powerMonitor } = require('electron');
 const path = require('path');
 const { openInNewWindow } = require('./openwin');
 // Windows updates itself from the GitHub releases (it downloads in the background and installs when TODOPOP restarts).
@@ -190,6 +190,13 @@ app.on('second-instance', showPanel);
 if (!isMac) app.setAppUserModelId('app.todopop.desktop'); // the taskbar shows TODOPOP's name and icon
 
 app.whenReady().then(() => {
+  // the focus timer only counts time you could actually be working: it pauses while the computer sleeps, locks or shuts down
+  const power = (state) => { if (win && !win.isDestroyed()) win.webContents.send('power', state); };
+  powerMonitor.on('suspend', () => power('sleep'));
+  powerMonitor.on('lock-screen', () => power('sleep'));
+  powerMonitor.on('shutdown', () => power('sleep'));
+  powerMonitor.on('resume', () => power('wake'));
+  powerMonitor.on('unlock-screen', () => power('wake'));
   if (isMac && app.dock) app.dock.hide(); // a floating layer, not a regular windowed app
   createOverlay();
   createTray();

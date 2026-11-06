@@ -2984,7 +2984,16 @@ $('#edit-form').addEventListener('submit', e => {
 let focusTimer = null;
 const fmtClock = s => { s = Math.floor(s); const h = Math.floor(s/3600), m = Math.floor(s/60)%60, ss = String(s%60).padStart(2,'0'); return h ? `${h}:${String(m).padStart(2,'0')}:${ss}` : `${m}:${ss}`; };
 function fmtDur(s){ const m = Math.round(s/60); return ZH_ON ? (m < 1 ? '不到 1 分钟' : m < 60 ? `${m} 分钟` : `${Math.floor(m/60)} 小时 ${m%60} 分钟`) : m < 1 ? '<1 min' : m < 60 ? `${m} min` : `${Math.floor(m/60)} h ${m%60} min`; }
-const focusSoFar = b => (b.focusTotal || 0) + (focus && focus.b === b ? (Date.now() - focus.start)/1000 : 0); // total time inside, including right now
+const focusClock = () => (focus && focus.sleptAt) || Date.now(); // the timer stands still while the computer sleeps
+const focusSoFar = b => (b.focusTotal || 0) + (focus && focus.b === b ? (focusClock() - focus.start)/1000 : 0); // total time inside, including right now
+/* the computer sleeping, locking or shutting down pauses the focus timer; waking resumes it where it stopped */
+function focusSleep(){ if(focus && !focus.sleptAt){ focus.sleptAt = Date.now(); save(); } }
+let focusBeat = Date.now();
+function focusWake(){ focusBeat = Date.now(); if(focus && focus.sleptAt){ focus.start += Date.now() - focus.sleptAt; focus.sleptAt = null; tickFocus(); } }
+if(DESKTOP) window.todopop.onPower?.(state => state === 'sleep' ? focusSleep() : focusWake());
+// backup for anything the app didn't hear about: if this page itself was frozen for over a minute, that time wasn't focus
+setInterval(() => { const now = Date.now(), gap = now - focusBeat; focusBeat = now;
+  if(focus && !focus.sleptAt && gap > 60e3) focus.start += gap - 5e3; }, 5e3);
 function tickFocus(){ if(focus) $('#focus-time').textContent = fmtClock(focusSoFar(focus.b)); }
 // "Get in the bubble": the bubble swells from where it floats until it wraps the screen, then you're inside
 function normUrl(v){ // accept "canvas.brown.edu/…" as well as full links
@@ -3212,7 +3221,7 @@ applyDock();
 if(POP_GESTURE === 'hold' && $('#pop-how')) $('#pop-how').textContent = T('Press and hold');
 function endFocus(popIt){
   if(!focus) return;
-  const {b, start, panelWasOpen} = focus;
+  const {b, start, sleptAt, panelWasOpen} = focus;
   if(stash){ // remember where the steps were left, then bring the tasks back
     for(const sb of bubbles) if(sb.isStep && sizeOK()){ sb.step.fx = sb.hx/W(); sb.step.fy = sb.hy/H(); }
     bubbles.splice(0, bubbles.length, ...stash); stash = null;
@@ -3223,7 +3232,7 @@ function endFocus(popIt){
   clearInterval(focusTimer); $('#focus').hidden = true; $('#focus').style.animation = '';
   if(panel.hidden && $('#launcher').hidden && panelWasOpen) panel.hidden = false; // untouched while inside: back as it was
   $('#launcher').hidden = !panel.hidden; // opened or tucked away while inside: it stays that way
-  b.focusTotal = (b.focusTotal || 0) + (Date.now()-start)/1000;
+  b.focusTotal = (b.focusTotal || 0) + ((sleptAt || Date.now()) - start)/1000;
   if(popIt) pop(b, true, b.focusTotal); else save();
   updateInteractive();
 }
