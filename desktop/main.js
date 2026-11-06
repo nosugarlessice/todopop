@@ -20,8 +20,10 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
 
-// Windows: stay above the taskbar instead of over it, so the taskbar, its icons and the tray menu stay reachable.
-const overlayBounds = () => { const d = screen.getPrimaryDisplay(); return isMac ? d.bounds : d.workArea; };
+// Stay inside the usable part of the screen on every system: above the Windows taskbar, and on a Mac below the menu bar
+// and above the Dock. (macOS won't let a normal window sit over the menu bar anyway: it pushes it down, which left the
+// bottom of the window, and any panel there, hanging off the screen.)
+const overlayBounds = () => screen.getPrimaryDisplay().workArea;
 let trayMenu = null;
 let selfFocus = 0; // when we bring the window forward ourselves
 let interactive = false; // true while the cursor is over a bubble or the panel
@@ -29,7 +31,7 @@ let interactive = false; // true while the cursor is over a bubble or the panel
 // which strips of the window the system uses (Mac: menu bar and Dock; Windows: none, the window already avoids the taskbar),
 // so the page keeps its controls clear of them on any screen
 function insets() {
-  const d = screen.getPrimaryDisplay(), b = overlayBounds(), w = d.workArea;
+  const d = screen.getPrimaryDisplay(), w = d.workArea, b = win ? win.getContentBounds() : overlayBounds(); // where the window really is
   return { t: Math.max(0, w.y - b.y), l: Math.max(0, w.x - b.x), r: Math.max(0, (b.x + b.width) - (w.x + w.width)), b: Math.max(0, (b.y + b.height) - (w.y + w.height)) };
 }
 function fitToDisplay() {
@@ -74,6 +76,9 @@ function createOverlay() {
   // task links open in a new window of your normal browser
   win.webContents.setWindowOpenHandler(({ url }) => { if (/^(https?|mailto|file):/i.test(url)) openInNewWindow(url, screen.getDisplayNearestPoint(screen.getCursorScreenPoint()).workArea); return { action: 'deny' }; });
   win.loadFile(path.join(__dirname, 'app', 'index.html'));
+  // if the system moves or resizes the window (a new screen, the Dock appearing), tell the page so its panels stay clear
+  const sendInsets = () => { if (win && !win.isDestroyed()) win.webContents.send('insets', insets()); };
+  win.on('move', sendInsets); win.on('resize', sendInsets); win.webContents.on('did-finish-load', sendInsets);
   if (!isMac) {
     // Clicking the taskbar icon never hides the bubbles: it brings up the control panel instead.
     win.on('minimize', () => { win.restore(); selfFocus = Date.now(); win.focus(); win.webContents.send('show-panel'); });

@@ -364,6 +364,7 @@ html.remote .shrink-back{font-size:10px; padding-top:14px}
 .edit-actions .link:focus-visible{outline:2px solid var(--ink); outline-offset:2px; border-radius:4px}
 .btn.small{padding:8px 16px; font-size:13px}
 .btn.solid{background:var(--ink); color:var(--paper)}
+.ver{font-size:12px; color:var(--ink); font-variant-numeric:tabular-nums}
 /* first-run guide: a spotlight on one thing at a time, with a small card */
 .coach{position:fixed; inset:0; z-index:60}
 .coach-spot{position:fixed; border-radius:999px; box-shadow:0 0 0 2.5px var(--ink), 0 0 0 9999px rgba(18,28,64,.42); pointer-events:none; transition:left .35s cubic-bezier(.3,1.2,.5,1), top .35s cubic-bezier(.3,1.2,.5,1), width .35s cubic-bezier(.3,1.2,.5,1), height .35s cubic-bezier(.3,1.2,.5,1)}
@@ -616,14 +617,14 @@ html.remote .gedit input{font-size:16px; padding:8px 0}
 html.remote .info-pop{text-align:left; justify-self:stretch}
 #gcolor-note:empty{display:none}
 /* a new version is out: a small note in the corner (Windows: ready to restart; Mac and Android: download it) */
-.update-note{position:fixed; z-index:8; left:max(20px, var(--sa-l)); bottom:calc(20px + var(--sa-b)); display:flex; align-items:center; gap:12px;
-  padding:8px 8px 8px 18px; background:var(--paper); border:1px solid var(--rule); border-radius:999px; box-shadow:0 14px 40px -18px rgba(16,24,48,.35);
+.update-note{position:fixed; z-index:8; /* centred on the usable screen (clear of menu bar, Dock, taskbar) */
+  top:var(--sa-t); bottom:var(--sa-b); left:var(--sa-l); right:var(--sa-r); margin:auto; width:fit-content; height:fit-content; display:flex; align-items:center; gap:12px;
+  padding:10px 10px 10px 22px; background:var(--paper); border:2px solid var(--ink); border-radius:999px; box-shadow:0 30px 70px -24px rgba(16,24,48,.45);
   font-size:13px; color:var(--ink); animation:pop-in .4s cubic-bezier(.3,1.6,.5,1); max-width:calc(100% - 40px)}
 .update-note .btn{white-space:nowrap}
 .update-x{all:unset; cursor:pointer; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; color:var(--ink-soft); font-size:17px; flex:none}
 .update-x:hover{background:var(--ink-wash); color:var(--ink)} .update-x:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
-html.remote .update-note{left:12px; right:12px; bottom:calc(92px + var(--sa-b)); justify-content:space-between; max-width:none}
-html.remote.landing .update-note{bottom:calc(16px + var(--sa-b))}
+html.remote .update-note{left:calc(12px + var(--sa-l)); right:calc(12px + var(--sa-r)); width:auto; justify-content:space-between; max-width:none}
 .get-android{display:none}
 .get-ios{display:none}
 html.remote.landing .get-ios{display:block; margin:14px auto 0; max-width:300px; text-align:left; color:var(--ink)}
@@ -1078,6 +1079,7 @@ input.has-cjk{line-height:1.5}
       </div>
       <div class="lang-row"><span class="field-label">Growth speed</span><div class="seg lang-seg" id="speed-seg" role="group" aria-label="Growth speed"><button type="button" data-speed="real">Real time</button><button type="button" data-speed="demo">Demo (fast)</button></div></div>
       <div class="lang-row"><span class="field-label">Pop sound</span><div class="seg lang-seg" id="sound-seg" role="group" aria-label="Pop sound"><button type="button" data-sound="on">On</button><button type="button" data-sound="off">Off</button></div></div>
+      <div class="lang-row"><span class="field-label">Version</span><span class="ver" id="app-ver">Phone app · always up to date</span></div>
       <div class="lang-row"><span class="field-label">Guide</span><div class="seg lang-seg"><button type="button" id="guide-again">Show the tour again</button></div></div>
       <div class="lang-row"><span class="field-label">Language</span><div class="seg lang-seg" id="lang-seg" role="group" aria-label="Language"><button type="button" data-lang="en">English</button><button type="button" data-lang="zh">中文</button></div></div>
     </div></div>
@@ -1203,11 +1205,19 @@ if(REMOTE) document.documentElement.classList.add('remote');
 const DOCK = !REMOTE;
 const SA = {t:0, r:0, b:0, l:0}; // px kept clear on each side (desktop: menu bar, Dock, taskbar)
 const TOP = () => SA.t, BOT = () => H() - SA.b, LEFT = () => SA.l, RIGHT = () => W() - SA.r; // the part of the screen not under the menu bar / Dock / taskbar
+let shellInsets = {t:0, r:0, b:0, l:0};
+// backup: measure where this window sits against the screen's usable area (catches a system that moved the window)
+function screenInsets(){
+  const sc = window.screen || {}, at = sc.availTop || 0, al = sc.availLeft || 0, sx = window.screenX || 0, sy = window.screenY || 0;
+  if(!sc.availHeight || !sc.availWidth) return {t:0, r:0, b:0, l:0};
+  return {t:Math.max(0, at - sy), l:Math.max(0, al - sx), b:Math.max(0, (sy + innerHeight) - (at + sc.availHeight)), r:Math.max(0, (sx + innerWidth) - (al + sc.availWidth))};
+}
 function setInsets(i){
-  if(!i) return; for(const k of ['t','r','b','l']){ SA[k] = Math.max(0, Math.round(+i[k] || 0)); document.documentElement.style.setProperty('--sa-' + k, SA[k] + 'px'); }
+  if(i) shellInsets = i; const m = screenInsets(); i = {t:Math.max(+shellInsets.t || 0, m.t), r:Math.max(+shellInsets.r || 0, m.r), b:Math.max(+shellInsets.b || 0, m.b), l:Math.max(+shellInsets.l || 0, m.l)};
+  for(const k of ['t','r','b','l']){ SA[k] = Math.max(0, Math.min(k === 't' || k === 'b' ? 200 : 300, Math.round(+i[k] || 0))); document.documentElement.style.setProperty('--sa-' + k, SA[k] + 'px'); }
   if(typeof keepPanelOnScreen === 'function') requestAnimationFrame(keepPanelOnScreen);
 }
-if(DESKTOP){ window.todopop.onInsets?.(setInsets); window.todopop.getInsets?.().then(setInsets).catch(() => {}); }
+if(DESKTOP){ window.todopop.onInsets?.(setInsets); window.todopop.getInsets?.().then(setInsets).catch(() => {}); setInsets(null); addEventListener('resize', () => setInsets(null)); }
 if(DOCK) document.documentElement.classList.add('dock');
 
 /* ---------- language: English or 简体中文. Picked in the third O; switching reloads the app in the new language. ---------- */
@@ -1239,7 +1249,7 @@ const ZH = { // fixed words, English → Chinese
   'New group':'新分组', 'Name':'名称', 'e.g. School':'比如：学校', 'Make group':'创建分组',
   'Scan with your phone':'用手机扫一扫', 'Pairing code':'配对二维码', 'Phone connected. You can close this.':'手机已连接，可以关掉这个窗口了。', 'Copy link':'复制链接', 'Done':'完成',
   'Phone controls':'手机控制', 'Pause':'暂停', 'Not yet':'还没', 'Pop it!':'戳破！', 'Undo':'撤销',
-  'Press and hold':'长按', 'Double-click':'双击', 'Growth speed':'生长速度', 'Guide':'引导', 'Show the tour again':'再看一遍引导', 'Skip':'跳过', 'Real time':'实时', 'Demo (fast)':'演示（快速）', 'Pop sound':'戳破音效', 'On':'打开',
+  'Press and hold':'长按', 'Double-click':'双击', 'Growth speed':'生长速度', 'Guide':'引导', 'Version':'版本', 'Phone app · always up to date':'手机 App · 自动保持最新', 'Show the tour again':'再看一遍引导', 'Skip':'跳过', 'Real time':'实时', 'Demo (fast)':'演示（快速）', 'Pop sound':'戳破音效', 'On':'打开',
   'Off':'关闭', 'Synced':'已同步', 'Syncing':'同步中', 'Offline':'离线', 'Reconnecting':'重新连接中', 'Not connected':'未连接',
   // starter tasks and the sample history
   'Problem set 4':'数学作业', 'Reply to emails':'回邮件', 'Figma critique':'改设计稿', 'Book dentist':'约牙医', 'Laundry':'洗衣服', 'Water the pothos':'给绿萝浇水', 'Drink water':'喝水',
@@ -2311,7 +2321,7 @@ addEventListener('pointermove', e => {
   if(h !== hover){ if(h){ for(let i=0;i<N;i++) h.v[i] += (COS[i]*mouse.vx + SIN[i]*mouse.vy)*-0.03; } hover = h; }
   document.documentElement.classList.toggle('over-bubble', !!h);
 }, {passive:true});
-const UI = '.panel, .launcher, .update-note, .pop-edit, .focus-bar, .toast, .tint-pop, .gcolor, .ask, .focus-note, .gnew-pop, .pair-pop, .rbar';
+const UI = '.coach, .panel, .launcher, .update-note, .pop-edit, .focus-bar, .toast, .tint-pop, .gcolor, .ask, .focus-note, .gnew-pop, .pair-pop, .rbar';
 const onUI = e => !!(e.target && e.target.closest && e.target.closest(UI));
 addEventListener('pointerdown', e => {
   if(!ed.hidden && !ed.contains(e.target) && !e.target.closest?.('.gcolor, .gnew-pop')) closeEdit();
@@ -3790,6 +3800,7 @@ async function checkRelease(current, file){
     if(/^\d+\.\d+/.test(v) && newerThan(v, current)) showUpdate(v, L('Download', '下载'), () => { if(NATIVE) location.href = RELEASES + file; else window.open(RELEASES + file, '_blank'); });
   }catch(e){} // offline: try again later
 }
+if(DESKTOP && window.todopop.getVersion) window.todopop.getVersion().then(v => { $('#app-ver').textContent = 'TODOPOP ' + v; }).catch(() => {});
 if(DESKTOP && window.todopop.getVersion){
   window.todopop.onUpdate?.(info => showUpdate(info.version, L('Restart to update', '重启以更新'), () => window.todopop.installUpdate()));
   if(window.todopop.platform === 'darwin') window.todopop.getVersion().then(cur => { const c = () => checkRelease(cur, 'TODOPOP-mac.dmg'); setTimeout(c, 15000); setInterval(c, 6*3600e3); });
