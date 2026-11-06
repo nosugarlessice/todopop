@@ -12,5 +12,7 @@ contextBridge.exposeInMainWorld('todopop', {
   getVersion: () => ipcRenderer.invoke('app-version'),
   onUpdate: (cb) => ipcRenderer.on('update', (_e, info) => cb(info)), // Windows: a new version is downloaded and ready
   installUpdate: () => ipcRenderer.send('install-update'),
+  getInsets: () => ipcRenderer.invoke('insets'), // menu bar / Dock / taskbar: the strips to keep controls clear of
+  onInsets: (cb) => ipcRenderer.on('insets', (_e, i) => cb(i)),
   setLang: (l) => ipcRenderer.send('lang', l === 'zh' ? 'zh' : 'en'), // so the tray menu speaks the same language
 });

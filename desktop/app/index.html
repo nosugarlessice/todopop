@@ -10,6 +10,8 @@
 /* Layout: full-bleed bubble field behind (and on top of) one floating instrument panel at left.
    Deliberately single-theme: the background stays off-white so any user-picked ink reads cleanly. */
 :root{
+  /* the edges to keep clear: a phone's notch and home bar, or on a computer the menu bar and Dock / taskbar (set by the app) */
+  --sa-t:env(safe-area-inset-top, 0px); --sa-r:env(safe-area-inset-right, 0px); --sa-b:env(safe-area-inset-bottom, 0px); --sa-l:env(safe-area-inset-left, 0px);
   --bg:#F7F7F5;
   --paper:#FFFFFF;
   --ink:#1A419E;
@@ -30,8 +32,8 @@ html,body{height:100%; margin:0}
 body{
   background:var(--bg); color:var(--ink); font-family:var(--f-body); font-size:14px;
   overflow:hidden;
-  padding-left:max(16px, env(safe-area-inset-left, 0px));
-  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-left:max(16px, var(--sa-l));
+  padding-right:max(16px, var(--sa-r));
   background-image:radial-gradient(var(--ink-faint) 1px, transparent 1.2px);
   background-size:28px 28px;
 }
@@ -45,7 +47,7 @@ html.desktop, html.desktop body{background:transparent !important; background-im
 .panel{
   position:fixed; z-index:6; /* above the bubbles: the panel is never buried */
   top:40%; left:50%; transform:translate(-50%,-50%); /* centred left to right, its middle 3/5 of the way up the screen */
-  width:348px; max-height:calc(80% - 32px - env(safe-area-inset-top,0px)); /* tall enough to grow, never past the top edge */
+  width:348px; max-height:calc(80% - 32px - var(--sa-t)); /* tall enough to grow, never past the top edge */
   overflow-y:auto; overscroll-behavior:contain;
   background:color-mix(in srgb, var(--paper) 92%, transparent);
   border:1px solid var(--rule); border-radius:28px;
@@ -273,7 +275,7 @@ html[lang="zh-CN"] .wday .d, html[lang="zh-CN"] .month .h{line-height:1.7; paddi
 .info-pop b{font-weight:400; font-style:italic; color:var(--ink)}
 .launcher{
   all:unset; cursor:pointer; position:fixed; z-index:6;
-  right:max(20px, calc(env(safe-area-inset-right,0px) + 12px)); bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  right:max(20px, calc(var(--sa-r) + 12px)); bottom:calc(20px + var(--sa-b));
   color:var(--ink); background:var(--paper); border:1px solid var(--rule); border-radius:999px; padding:11px 18px 10px;
   box-shadow:0 14px 40px -18px rgba(16,24,48,.35);
   transition:transform .3s cubic-bezier(.3,1.7,.5,1), box-shadow .2s;
@@ -294,7 +296,7 @@ html[lang="zh-CN"] .wday .d, html[lang="zh-CN"] .month .h{line-height:1.7; paddi
 .focus-ring{width:12px; height:12px; border-radius:50%; border:1.4px solid currentColor; flex:none; animation:breathe 3.2s ease-in-out infinite}
 @keyframes breathe{50%{transform:scale(.7)}}
 .focus-bar{
-  position:fixed; z-index:9; left:50%; bottom:calc(22px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%);
+  position:fixed; z-index:9; left:50%; bottom:calc(22px + var(--sa-b)); transform:translateX(-50%);
   display:flex; align-items:center; gap:14px; max-width:calc(100% - 32px);
   background:var(--paper); border:1px solid var(--rule); border-radius:999px; padding-block:7px; padding-inline:20px 7px;
   box-shadow:0 18px 50px -22px rgba(16,24,48,.4); animation:bar-in .4s cubic-bezier(.3,1.6,.5,1);
@@ -306,11 +308,11 @@ html[lang="zh-CN"] .wday .d, html[lang="zh-CN"] .month .h{line-height:1.7; paddi
 .focus-bar.can-drag{cursor:grab; touch-action:none}
 .focus-bar.can-drag :is(button, input){cursor:pointer}
 .focus-bar.dragging{cursor:grabbing; animation:none; transition:none !important; box-shadow:0 26px 60px -20px rgba(16,24,48,.5); scale:1.03}
-.focus-bar.dock-bl{left:22px; transform:none}
-.focus-bar.dock-br{left:calc(100% - 22px); transform:translateX(-100%)}
+.focus-bar.dock-bl{left:calc(22px + var(--sa-l)); transform:none}
+.focus-bar.dock-br{left:calc(100% - 22px - var(--sa-r)); transform:translateX(-100%)}
 .focus-bar.dock-l, .focus-bar.dock-r{writing-mode:vertical-rl; text-orientation:sideways; bottom:auto; top:50%; max-width:none; max-height:calc(100% - 40px)}
-.focus-bar.dock-r{left:calc(100% - 22px); transform:translate(-100%, -50%)}
-.focus-bar.dock-l{left:22px; transform:translateY(-50%) rotate(180deg)} /* reads bottom to top on the left edge */
+.focus-bar.dock-r{left:calc(100% - 22px - var(--sa-r)); transform:translate(-100%, -50%)}
+.focus-bar.dock-l{left:calc(22px + var(--sa-l)); transform:translateY(-50%) rotate(180deg)} /* reads bottom to top on the left edge */
 .focus-bar:is(.dock-l, .dock-r) .focus-name{max-inline-size:min(36ch, 46vh)}
 .focus-bar:is(.dock-l, .dock-r) .focus-time{writing-mode:horizontal-tb; font-size:14px} /* the clock stays upright */
 .focus-bar.dock-l :is(.focus-time, #step-side, .close){transform:rotate(180deg)}
@@ -370,7 +372,7 @@ html.remote .shrink-back{font-size:10px; padding-top:14px}
 @media (prefers-reduced-motion: reduce){ .coach-spot, .coach-card{transition:none} }
 .btn.solid:hover{background:color-mix(in srgb, var(--ink) 85%, #000)}
 .toast{
-  position:fixed; z-index:8; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translate(-50%, 20px);
+  position:fixed; z-index:8; left:50%; bottom:calc(24px + var(--sa-b)); transform:translate(-50%, 20px);
   opacity:0; pointer-events:none; transition:opacity .25s, transform .35s cubic-bezier(.3,1.6,.5,1);
   background:var(--ink); color:var(--paper); border-radius:999px; padding:10px 10px 10px 18px; display:flex; gap:14px; align-items:center; font-size:13px; font-weight:500;
   max-width:calc(100% - 32px);
@@ -381,7 +383,7 @@ html.remote .shrink-back{font-size:10px; padding-top:14px}
 .toast button:focus-visible{outline:2px solid var(--paper)}
 
 @media (max-width:700px){
-  .panel{width:auto; transform:none; right:max(16px, env(safe-area-inset-right,0px)); left:max(16px, env(safe-area-inset-left,0px)); top:auto; bottom:calc(16px + env(safe-area-inset-bottom,0px)); max-height:56%}
+  .panel{width:auto; transform:none; right:max(16px, var(--sa-r)); left:max(16px, var(--sa-l)); top:auto; bottom:calc(16px + var(--sa-b)); max-height:56%}
   .logo{font-size:36px}
   .theme{grid-template-columns:1fr; justify-items:start}
 }
@@ -501,7 +503,7 @@ kbd{font-family:var(--f-mono); font-weight:400; font-size:10px; letter-spacing:.
 .panel{width:auto; border-radius:calc(28px * var(--ui))}
 .panel > .pz{zoom:var(--ui); width:348px}
 .pop-edit{max-height:calc(100vh - 24px); max-height:calc(100dvh - 24px); overflow-y:auto; overscroll-behavior:contain}
-html.remote .pop-edit{max-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px))}
+html.remote .pop-edit{max-height:calc(100dvh - 24px - var(--sa-t) - var(--sa-b))}
 .pop-edit{width:auto; padding:calc(16px * var(--ui)) calc(20px * var(--ui)) calc(18px * var(--ui)); border-radius:calc(22px * var(--ui))}
 .pop-edit > .pz{zoom:var(--ui); width:260px}
 @media (max-width:700px){ .panel > .pz{width:auto} }
@@ -525,7 +527,7 @@ html.remote{--ui:1}
 html.remote body{overflow:auto; background-image:none; padding:0}
 html.remote #field, html.remote .launcher, html.remote #close-panel, html.remote .veil, html.remote .veil-ring{display:none !important}
 html.remote .panel{position:relative; inset:auto; transform:none; left:auto; right:auto; top:auto; bottom:auto; max-height:none; overflow:visible;
-  width:auto; max-width:520px; margin:calc(12px + env(safe-area-inset-top,0px)) auto calc(24px + env(safe-area-inset-bottom,0px)); margin-inline:max(12px, env(safe-area-inset-left,0px)); border-radius:24px}
+  width:auto; max-width:520px; margin:calc(12px + var(--sa-t)) auto calc(24px + var(--sa-b)); margin-inline:max(12px, var(--sa-l)); border-radius:24px}
 @media (min-width:545px){ html.remote .panel{margin-inline:auto} }
 html.remote .panel > .pz{width:auto; zoom:1}
 html.remote .brand{cursor:default}
@@ -552,18 +554,18 @@ html.remote .tool svg{width:15px; height:15px}
 html.remote .chips button{padding:9px 13px; font-size:9px}
 html.remote .task{padding:10px 0}
 html.remote .pop-btn{width:36px; height:36px}
-html.remote .pop-edit{left:12px !important; right:12px; top:auto !important; bottom:calc(12px + env(safe-area-inset-bottom,0px)); width:auto; max-width:none; border-radius:24px; padding:18px 20px 20px}
+html.remote .pop-edit{left:12px !important; right:12px; top:auto !important; bottom:calc(12px + var(--sa-b)); width:auto; max-width:none; border-radius:24px; padding:18px 20px 20px}
 html.remote .pop-edit > .pz{zoom:1; width:auto}
 html.remote .tint-pop > .pz, html.remote .gcolor > .pz{zoom:1}
 html.remote .focus-frame{inset:6px; border-radius:14px}
 /* phone: Floating is the page; Blow a bubble and Popped open as sheets from the bar at the bottom */
-html.remote .panel{margin-bottom:calc(120px + env(safe-area-inset-bottom,0px)); backdrop-filter:none; -webkit-backdrop-filter:none} /* so the sheets sit on the screen, not inside the panel */
+html.remote .panel{margin-bottom:calc(120px + var(--sa-b)); backdrop-filter:none; -webkit-backdrop-filter:none} /* so the sheets sit on the screen, not inside the panel */
 html.remote #acc-new, html.remote #acc-arch{display:none}
 html.remote #acc-cur .acc-head{pointer-events:none; cursor:default}
 html.remote #acc-cur .acc-head .chev{display:none}
 html.remote #acc-cur .acc-wrap{grid-template-rows:1fr; transition:none}
 html.remote .acc.sheet, html.remote #acc-new.sheet, html.remote #acc-arch.sheet, html.remote #acc-pause.sheet, html.remote #acc-groups.sheet{display:block; position:fixed; z-index:22; left:0; right:0; bottom:0; max-height:86vh; overflow:auto; overscroll-behavior:contain;
-  background:var(--paper); border-radius:28px 28px 0 0; box-shadow:0 -20px 60px -30px rgba(16,24,48,.45); padding-bottom:env(safe-area-inset-bottom,0px);
+  background:var(--paper); border-radius:28px 28px 0 0; box-shadow:0 -20px 60px -30px rgba(16,24,48,.45); padding-bottom:var(--sa-b);
   animation:sheet-up .38s cubic-bezier(.2,.9,.3,1)}
 html.remote .acc.sheet .acc-wrap{grid-template-rows:1fr; transition:none}
 html.remote .acc.sheet .acc-head{position:sticky; top:0; z-index:1; background:var(--paper)}
@@ -588,7 +590,7 @@ html.remote #acc-pause.sheet .pause-pick > .field-label{display:none}
 html.remote #acc-pause.sheet .acc-inner{padding-bottom:22px}
 /* the header stays put; only the task list scrolls */
 html.remote:not(.landing) body{overflow:hidden}
-html.remote:not(.landing) .panel{position:fixed; top:calc(12px + env(safe-area-inset-top,0px)); bottom:calc(96px + env(safe-area-inset-bottom,0px)); left:max(12px, env(safe-area-inset-left,0px)); right:max(12px, env(safe-area-inset-right,0px));
+html.remote:not(.landing) .panel{position:fixed; top:calc(12px + var(--sa-t)); bottom:calc(96px + var(--sa-b)); left:max(12px, var(--sa-l)); right:max(12px, var(--sa-r));
   margin:0; display:flex; flex-direction:column; overflow:hidden}
 @media (min-width:545px){ html.remote:not(.landing) .panel{left:50%; right:auto; width:520px; transform:translateX(-50%)} }
 html.remote:not(.landing) .panel > .pz{display:flex; flex-direction:column; flex:1; min-height:0}
@@ -607,14 +609,14 @@ html.remote .gedit input{font-size:16px; padding:8px 0}
 html.remote .info-pop{text-align:left; justify-self:stretch}
 #gcolor-note:empty{display:none}
 /* a new version is out: a small note in the corner (Windows: ready to restart; Mac and Android: download it) */
-.update-note{position:fixed; z-index:8; left:max(20px, env(safe-area-inset-left,0px)); bottom:calc(20px + env(safe-area-inset-bottom,0px)); display:flex; align-items:center; gap:12px;
+.update-note{position:fixed; z-index:8; left:max(20px, var(--sa-l)); bottom:calc(20px + var(--sa-b)); display:flex; align-items:center; gap:12px;
   padding:8px 8px 8px 18px; background:var(--paper); border:1px solid var(--rule); border-radius:999px; box-shadow:0 14px 40px -18px rgba(16,24,48,.35);
   font-size:13px; color:var(--ink); animation:pop-in .4s cubic-bezier(.3,1.6,.5,1); max-width:calc(100% - 40px)}
 .update-note .btn{white-space:nowrap}
 .update-x{all:unset; cursor:pointer; width:28px; height:28px; border-radius:50%; display:grid; place-items:center; color:var(--ink-soft); font-size:17px; flex:none}
 .update-x:hover{background:var(--ink-wash); color:var(--ink)} .update-x:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
-html.remote .update-note{left:12px; right:12px; bottom:calc(92px + env(safe-area-inset-bottom,0px)); justify-content:space-between; max-width:none}
-html.remote.landing .update-note{bottom:calc(16px + env(safe-area-inset-bottom,0px))}
+html.remote .update-note{left:12px; right:12px; bottom:calc(92px + var(--sa-b)); justify-content:space-between; max-width:none}
+html.remote.landing .update-note{bottom:calc(16px + var(--sa-b))}
 .get-android{display:none}
 .get-ios{display:none}
 html.remote.landing .get-ios{display:block; margin:14px auto 0; max-width:300px; text-align:left; color:var(--ink)}
@@ -640,13 +642,13 @@ html.remote body{transition:background .45s}
 html.remote.focusing body{background:var(--ink)}
 html.remote.focusing .focus-frame{display:none !important}
 html.remote .panel{background:var(--paper)} /* solid, so in focus mode only the space around it turns your color */
-html.remote .focus-bar{bottom:calc(88px + env(safe-area-inset-bottom,0px))} /* sits just above the bar */
-html.remote.focusing:not(.landing) .panel{bottom:calc(158px + env(safe-area-inset-bottom,0px))}
+html.remote .focus-bar{bottom:calc(88px + var(--sa-b))} /* sits just above the bar */
+html.remote.focusing:not(.landing) .panel{bottom:calc(158px + var(--sa-b))}
 html.remote.focusing .rbar{box-shadow:0 14px 40px -20px rgba(0,0,0,.4)}
 html.remote.focusing .rbar-new{box-shadow:0 0 0 5px var(--ink), 0 12px 28px -12px rgba(0,0,0,.5)}
 @keyframes sheet-up{from{transform:translateY(100%)}}
 .rsheet-back{position:fixed; inset:0; z-index:21; background:color-mix(in srgb, var(--ink) 18%, transparent); animation:fade-in .25s ease}
-.rbar{position:fixed; z-index:20; left:50%; bottom:calc(16px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); width:min(300px, calc(100% - 48px)); height:56px;
+.rbar{position:fixed; z-index:20; left:50%; bottom:calc(16px + var(--sa-b)); transform:translateX(-50%); width:min(300px, calc(100% - 48px)); height:56px;
   display:grid; grid-template-columns:1fr 84px 1fr; align-items:center; background:var(--paper); border-radius:999px; box-shadow:inset 0 0 0 1px var(--rule), 0 14px 40px -20px rgba(16,24,48,.4)}
 .rbar[hidden]{display:none}
 .rbar-side{all:unset; cursor:pointer; text-align:center; font-family:var(--f-mono); font-size:11px; letter-spacing:.06em; color:var(--ink); padding:18px 0; -webkit-tap-highlight-color:transparent}
@@ -661,13 +663,13 @@ html.remote.focusing .rbar-new{box-shadow:0 0 0 5px var(--ink), 0 12px 28px -12p
 .rbar-new:active{transform:scale(.92)} .rbar-new svg{width:30px; height:30px}
 .rbar-side:focus-visible, .rbar-new:focus-visible{outline:2px solid var(--ink); outline-offset:3px}
 /* first open, not connected yet: just the logo and how to connect */
-html.remote.landing .panel{min-height:calc(100dvh - 24px - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px)); margin-bottom:12px; display:flex; flex-direction:column; justify-content:center; background:transparent; border-color:transparent; box-shadow:none}
+html.remote.landing .panel{min-height:calc(100dvh - 24px - var(--sa-t) - var(--sa-b)); margin-bottom:12px; display:flex; flex-direction:column; justify-content:center; background:transparent; border-color:transparent; box-shadow:none}
 html.remote.landing .acc, html.remote.landing .remote-chip{display:none !important}
 html.remote.landing .brand{text-align:center; justify-items:center}
 html.remote.landing .panel > .pz > .sync{margin:18px 16px 0}
 html.remote:not(.landing) .panel > .pz > .sync{display:none}
-html.remote:not(.landing) .toast{bottom:calc(96px + env(safe-area-inset-bottom,0px))}
-html.remote:not(.landing) .ask{bottom:calc(100px + env(safe-area-inset-bottom,0px))}
+html.remote:not(.landing) .toast{bottom:calc(96px + var(--sa-b))}
+html.remote:not(.landing) .ask{bottom:calc(100px + var(--sa-b))}
 html.remote .pop-edit{z-index:23}
 #info-unpair .link{all:unset; cursor:pointer; text-decoration:underline; text-underline-offset:3px; color:var(--ink-soft)}
 /* ---------- bigger section titles (+2 px on screen), tighter line spacing throughout ---------- */
@@ -800,7 +802,7 @@ html.dock .launcher .kbd-hint{display:flex}
 @media (prefers-reduced-motion:reduce){ html.dock .brand::after{animation:none} }
 /* ---------- steps (sub-bubbles) ---------- */
 /* inside a bubble with no link: the task's name sits quietly at the bottom, just above the focus bar, out of your way */
-.focus-note{position:fixed; z-index:9; left:50%; bottom:calc(96px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); max-width:min(60vw, 560px); box-sizing:border-box;
+.focus-note{position:fixed; z-index:9; left:50%; bottom:calc(96px + var(--sa-b)); transform:translateX(-50%); max-width:min(60vw, 560px); box-sizing:border-box;
   padding:9px 22px 11px; border-radius:22px; background:color-mix(in srgb, var(--paper) 88%, transparent); box-shadow:inset 0 0 0 1px var(--rule), 0 10px 30px -22px rgba(16,24,48,.25);
   display:grid; gap:2px; justify-items:center; text-align:center; animation:pop-in .45s cubic-bezier(.3,1.6,.5,1)}
 .focus-note .field-label{font-size:8.5px}
@@ -868,7 +870,7 @@ html.remote .task .name:active{opacity:.6}
 .st-check{all:unset; cursor:pointer; width:18px; height:18px; border-radius:50%; border:1.2px solid var(--ink); flex:none; display:grid; place-items:center}
 .st-check[aria-pressed="true"]{background:var(--ink)}
 .st-check[aria-pressed="true"] + span{text-decoration:line-through; color:var(--ink-soft)}
-.ask{position:fixed; z-index:11; left:50%; bottom:calc(84px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); display:flex; align-items:center; gap:10px;
+.ask{position:fixed; z-index:11; left:50%; bottom:calc(84px + var(--sa-b)); transform:translateX(-50%); display:flex; align-items:center; gap:10px;
   max-width:calc(100% - 32px); background:var(--paper); border:1px solid var(--ink); border-radius:999px; padding:7px 7px 7px 18px; font-size:12.5px;
   box-shadow:0 18px 50px -22px rgba(16,24,48,.45); animation:pop-in .32s cubic-bezier(.3,1.6,.5,1)}
 .ask span{min-width:0}
@@ -1193,6 +1195,12 @@ const REMOTE = !DESKTOP && (matchMedia('(max-width: 700px) and (pointer: coarse)
 if(REMOTE) document.documentElement.classList.add('remote');
 // On a computer the control panel is the logo itself: each filled O opens one part. The phone keeps the full panel.
 const DOCK = !REMOTE;
+const SA = {t:0, r:0, b:0, l:0}; // px kept clear on each side (desktop: menu bar, Dock, taskbar)
+function setInsets(i){
+  if(!i) return; for(const k of ['t','r','b','l']){ SA[k] = Math.max(0, Math.round(+i[k] || 0)); document.documentElement.style.setProperty('--sa-' + k, SA[k] + 'px'); }
+  if(typeof keepPanelOnScreen === 'function') requestAnimationFrame(keepPanelOnScreen);
+}
+if(DESKTOP){ window.todopop.onInsets?.(setInsets); window.todopop.getInsets?.().then(setInsets).catch(() => {}); }
 if(DOCK) document.documentElement.classList.add('dock');
 
 /* ---------- language: English or 简体中文. Picked in the third O; switching reloads the app in the new language. ---------- */
@@ -2787,12 +2795,15 @@ addEventListener('pointerdown', e => { if(!tintPop.hidden && !tintPop.contains(e
 const brand = panel.querySelector('.brand');
 let pdrag = null;
 function placePanel(x, y){
-  const w = panel.offsetWidth, h = panel.offsetHeight;
-  x = Math.max(8 - w*.6, Math.min(W() - w*.4, x));      // may tuck partly off-screen, never lost
-  y = Math.max(8, Math.min(H() - 64, y));
+  const w = panel.offsetWidth, h = Math.min(panel.offsetHeight, H()), m = 10; // never cut off: it stays whole, clear of the menu bar, Dock and screen edges
+  const x0 = SA.l + m, x1 = W() - SA.r - w - m, y0 = SA.t + m, y1 = H() - SA.b - Math.min(h, 120) - m;
+  x = x1 < x0 ? (x0 + x1)/2 : Math.max(x0, Math.min(x1, x));
+  y = y1 < y0 ? y0 : Math.max(y0, Math.min(y1, y));
   panel.classList.add('moved'); panel.style.left = x+'px'; panel.style.top = y+'px';
   panel.style.maxHeight = Math.max(160, H() - y - 16) + 'px'; // a moved panel scrolls within the space below it
 }
+function keepPanelOnScreen(){ if(panel.classList.contains('moved')) placePanel(parseFloat(panel.style.left) || 0, parseFloat(panel.style.top) || 0); }
+addEventListener('resize', () => requestAnimationFrame(keepPanelOnScreen));
 function centrePanel(){ panel.classList.remove('moved'); panel.style.left = panel.style.top = panel.style.maxHeight = ''; store.set('panelPos', null); }
 function startPanelDrag(e, el){
   const r = panel.getBoundingClientRect();
@@ -3282,8 +3293,8 @@ const GUIDE = REMOTE ? [
 ] : [
   {t:L('Meet your control panel', '这就是控制面板'), p:L('The logo is all the controls there are. Your tasks float on top of every window as bubbles, so you can’t forget them.', 'Logo 就是全部的控制面板。任务化作泡泡浮在所有窗口上面，想忘都忘不掉。'), at:() => elRect('.panel h1.logo')},
   {t:L('Blow a new bubble', '吹一个新泡泡'), p:L('<b>Click +</b> to add a task. Give it a name and say how urgent it is.', '<b>点 +</b> 添加任务，起个名字，选好紧急程度。'), at:() => elRect(logoO(0)), round:true},
-  {t:L('Move it, focus on it, pop it', '拖动、专注、戳破'), p:L('<b>Drag</b> a bubble to move it. <b>Click</b> it to get in and focus. <b>Press and hold</b> to pop it when it’s done.', '<b>拖拽</b>泡泡挪位置。<b>单击</b>钻进去专注。做完了就<b>长按</b>戳破它。'), at:() => bubRect(bigBubble()), live:true, round:true},
-  {t:L('Bubbles grow with time', '泡泡会随时间长大'), p:L('The more urgent a task, the faster its bubble grows. Pop them before they fill your screen.', '越紧急的任务，泡泡长得越快。在它们占满屏幕之前戳破它们。'), at:() => bubRect(bigBubble()), live:true, round:true},
+  {t:L('Move it, focus on it, pop it', '拖动、专注、戳破'), p:L('<b>Drag</b> a bubble to move it. <b>Click</b> it to get in and focus. <b>Press and hold</b> to pop it when it’s done.', '<b>拖拽</b>泡泡挪位置。<b>单击</b>钻进去专注。做完了就<b>长按</b>戳破它。'), at:() => elRect(logoO(0)), round:true}, // keeps the + lit: that's where your first bubble comes from
+  {t:L('Bubbles grow with time', '泡泡会随时间长大'), p:L('The more urgent a task, the faster its bubble grows. Pop them before they fill your screen.', '越紧急的任务，泡泡长得越快。在它们占满屏幕之前戳破它们。'), at:() => elRect(logoO(0)), round:true}, // keeps the + lit: that's where your first bubble comes from
   {t:L('See what you’ve done', '看看你完成了什么'), p:L('<b>Click ✓</b> for everything you’ve popped, by week or month.', '<b>点 ✓</b> 按周或按月查看戳破过的泡泡。'), at:() => elRect(logoO(1)), round:true},
   {t:L('Make it yours', '按你的习惯来'), p:L('The <b>third O</b> holds colours, your phone, sound, growth speed and language.', '<b>第三个 O</b> 里有颜色、手机连接、音效、生长速度和语言。'), at:() => elRect(logoO(2)), round:true},
 ];

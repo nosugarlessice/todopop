@@ -26,9 +26,16 @@ let trayMenu = null;
 let selfFocus = 0; // when we bring the window forward ourselves
 let interactive = false; // true while the cursor is over a bubble or the panel
 
+// which strips of the window the system uses (Mac: menu bar and Dock; Windows: none, the window already avoids the taskbar),
+// so the page keeps its controls clear of them on any screen
+function insets() {
+  const d = screen.getPrimaryDisplay(), b = overlayBounds(), w = d.workArea;
+  return { t: Math.max(0, w.y - b.y), l: Math.max(0, w.x - b.x), r: Math.max(0, (b.x + b.width) - (w.x + w.width)), b: Math.max(0, (b.y + b.height) - (w.y + w.height)) };
+}
 function fitToDisplay() {
   if (!win) return;
   win.setBounds(overlayBounds());
+  win.webContents.send('insets', insets());
 }
 
 function createOverlay() {
@@ -154,6 +161,7 @@ ipcMain.on('paused', (_event, on) => {
 });
 
 ipcMain.handle('app-version', () => app.getVersion());
+ipcMain.handle('insets', () => insets());
 ipcMain.on('install-update', () => { if (autoUpdater) setImmediate(() => autoUpdater.quitAndInstall(true, true)); });
 function setupUpdates() {
   if (isMac || !autoUpdater || !app.isPackaged) return;
