@@ -69,7 +69,14 @@ html[lang="zh-CN"] body{line-height:1.7} html[lang="zh-CN"] #solves{line-height:
 html[lang="zh-CN"] .o-notes .hint{font-size:21px} html[lang="zh-CN"] .bubble-hint{font-size:19.5px}
 @media (max-width:700px){ html[lang="zh-CN"] .o-notes .hint{font-size:17px} } html[lang="zh-CN"] .why .card, html[lang="zh-CN"] .q{line-height:1.5}
 .nav .get{background:var(--ink); color:var(--paper); padding:11px 18px}
-@media (max-width:700px){ .nav .hide-s{display:none} .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} }
+@media (max-width:700px){ .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} .nav ul{gap:0} .nav ul a{padding:8px 6px; font-size:11.5px; letter-spacing:0; text-transform:none} .nav li:has(> .get){display:none} }
+@media (max-width:420px){ .logo.navlogo{--s:17px} .nav .wrap{gap:6px; padding-left:14px; padding-right:8px} .nav ul a{padding:8px 4px; font-size:11px} .lang span{padding:4px 6px} }
+@media (max-width:370px){ .logo.navlogo{--s:15px} .nav ul a{padding:8px 3px; font-size:10.5px} }
+.nav ul a{white-space:nowrap}
+.nav ul a[aria-current="page"]{background:var(--wash)}
+/* pages without the landing frame start below the bar */
+body:not(.page-home) main{padding-top:72px}
+.more-solo{grid-template-columns:1fr !important}
 
 /* bubbles sit on top of the screen like in the app: the page scrolls underneath, clicks pass through everywhere but a bubble */
 #field{position:fixed; inset:0; width:100vw; height:100vh; z-index:15; pointer-events:none}
@@ -409,11 +416,13 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 </style>
 <script>
   try{ history.scrollRestoration = 'manual'; }catch(e){}
-  if(location.hash) history.replaceState(null, '', location.pathname + location.search);
-  addEventListener('load', () => scrollTo({top:0, behavior:'instant'}));
+  // a reload always starts at the top; arriving from another page's link (?to=download, #privacy) jumps there once
+  const goTo = new URLSearchParams(location.search).get('to') || location.hash.slice(1) || null;
+  if(location.hash || goTo) history.replaceState(null, '', location.pathname + location.search.replace(/([?&])to=[^&]*&?/, '$1').replace(/[?&]$/, ''));
+  addEventListener('load', () => { const el = goTo && document.getElementById(goTo); if(el) el.scrollIntoView({behavior:'instant', block:'start'}); else scrollTo({top:0, behavior:'instant'}); });
 </script>
 </head>
-<body>
+<body class="page-home">
 
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
   <defs><path id="bub" d="M861.493 505.384C859.761 535.528 852.482 566.375 842.518 594.411C832.528 622.447 817.921 649.353 801.631 673.599C785.342 697.845 765.79 720.208 744.782 739.886C723.774 759.589 700.356 777.309 675.583 791.716C650.835 806.148 623.854 818.346 596.295 826.403C568.736 834.46 539.119 839.455 510.28 840.057C481.441 840.634 451.347 837.196 423.311 829.967C395.275 822.714 367.315 811.042 342.14 796.635C316.941 782.203 293.071 763.781 272.164 743.5C251.281 723.195 232.381 699.702 216.82 674.804C201.284 649.931 188.006 622.422 178.92 594.16C169.834 565.924 163.585 535.328 162.305 505.384C161.024 475.441 163.735 443.69 171.29 414.55C178.82 385.41 191.47 355.893 207.533 330.594C223.572 305.268 244.931 281.725 267.571 262.675C290.21 243.625 316.916 228.164 343.345 216.242C369.749 204.319 398.262 196.539 426.072 191.142C453.907 185.746 482.244 183.738 510.28 183.889C538.316 184.014 566.502 186.499 594.237 192.021C621.996 197.518 650.283 205.223 676.813 216.944C703.318 228.666 730.299 243.575 753.341 262.324C776.407 281.048 798.544 304.164 815.135 329.389C831.7 354.588 845.128 384.256 852.834 413.597C860.564 442.938 863.225 475.24 861.493 505.384Z"/></defs>
@@ -421,10 +430,10 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 
 <header class="nav">
   <div class="wrap">
-    <a class="logo navlogo" href="#top" aria-label="TODOPOP, back to top">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</a>
+    <a class="logo navlogo" href="#top" aria-label="TODOPOP, home">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</a>
     <ul>
-      <li class="hide-s"><a href="#how">How it works</a></li>
-      <li class="hide-s"><a href="#phone">Phone</a></li>
+      <li><a href="how.html">How it works</a></li>
+      <li><a href="phone.html">Phone</a></li>
       <li><button type="button" class="lang" id="lang" aria-label="Switch language / 切换语言"><span data-l="en">EN</span><span data-l="zh">中</span></button></li>
       <li><a class="get" href="#download">Download</a></li>
     </ul>
@@ -440,7 +449,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 </div>
 
 <main id="top">
-  <!-- 1. the landing -->
+
   <section class="hero" aria-labelledby="hero-title">
     <div class="wrap">
       <h1 id="hero-title" class="sr">TODOPOP: a todo list that just can't be ignored</h1>
@@ -462,29 +471,15 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
       <p class="meta" id="hero-meta">Free · No Sign-up · No ads</p>
       <div class="bubble-hint doodle">
         <b>*Interact with these task bubbles!</b>
-        <ul><li><b>drag</b> to reposition</li><li><b>right click</b> to edit</li><li><b>click once</b> to get into focus mode</li><li><b>double click</b> to pop and mark done</li></ul>
+        <ul><li><b>drag</b> to reposition</li><li><b>right click</b> to edit</li><li><b>click once</b> to get into focus mode</li><li><b>press and hold</b> to pop and mark done</li></ul>
       </div>
     </div>
   </section>
-
   <hr class="sep">
 
-  <!-- 2. the creation story, and the three things the bubbles do -->
-  <section id="how" class="story" aria-labelledby="story-title">
-    <div class="wrap" style="position:relative">
-      <svg class="arrows" id="arrows" aria-hidden="true"></svg>
-      <p class="eyebrow rv"><span>The problem</span> TODOPOP was made to solve</p>
-      <div class="story-head rv">
-        <h2 class="pill" id="story-title" data-solid>A <span class="bk">(</span><a class="md cz" href="https://cindyzhao.design" target="_blank" rel="noopener">Cindy Zhao</a><span class="bk">)</span> creation</h2>
-        <p class="collab">*Made in Collaboration<br>with <span class="bk">(</span><span class="md">Melody Chen</span><span class="bk">)</span></p>
-      </div>
-      <p class="who rv" style="--i:1"><svg viewBox="0 0 34 36" aria-hidden="true"><path d="M5 2 C 4 18, 10 26, 30 27"/><path d="M23 20 L30 27 L23 33"/></svg><span class="tx">who:</span></p>
-      <div class="trio why">
-        <div class="rv" style="--i:1"><span class="badge pop-in" style="--i:1">1.</span><div class="card" id="why1">If she can’t see it,<br>she won’t do it</div></div>
-        <div class="rv" style="--i:2"><span class="badge pop-in" style="--i:2">2.</span><div class="card" id="why2">way too comfortable ignoring deadlines</div></div>
-        <div class="rv" style="--i:3"><span class="badge pop-in" style="--i:3">3.</span><div class="card" id="why3">let unfinished tasks slide</div></div>
-      </div>
-      <div class="solves rv"><h2 class="pill" id="solves" data-solid><span class="md">TODOPOP</span> solves my problem<br>because its task bubbles:</h2></div>
+  <section id="features" aria-labelledby="key-title">
+    <div class="wrap">
+      <div class="solves rv" style="margin-top:0"><h2 class="pill" id="key-title" data-solid>Key Features</h2></div>
       <div class="trio feat" style="margin-top:clamp(36px, 4vw, 48px)">
         <div class="rv" style="--i:1"><span class="badge pop-in" style="--i:1">1.</span><div class="card" id="feat1">
           <h3>Floats on top</h3>
@@ -514,73 +509,8 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
       </div>
     </div>
   </section>
-
   <hr class="sep">
 
-  <!-- 3. focus mode -->
-  <section id="focus" aria-labelledby="q-title">
-    <div class="wrap qa">
-      <span class="badge pop-in">Q:</span>
-      <h2 class="q rv" id="q-title">Cindy, Cindy,<br>What if I need to lock-in<br>But my task bubbles took over my screen?</h2>
-      <span class="badge pop-in" style="--i:2">A:</span>
-      <p class="a rv" style="--i:2"><span class="tx">Click to</span> <button type="button" class="btn bubble-btn" id="get-in">Get in the bubble</button></p>
-      <div class="screen rv" id="screen" style="--i:3" role="img" aria-label="Focus mode, shown on a computer screen: clicking a bubble opens it, a focus timer starts at the bottom, steps float in and pop, and the task is popped when it's done.">
-        <div class="scr-win"><div class="bar"><i></i><i></i><i></i>&nbsp;Essay draft — Docs</div><div class="ln t"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
-        <div id="scr-bubbles"></div>
-        <div class="scr-frame"></div>
-        <div class="scr-bar"><span class="ring" style="width:.8em;height:.8em;border-radius:50%;border:1.5px solid var(--ink)"></span><em>Essay draft</em><span class="t" id="scr-t">0:00</span><span class="b" id="scr-step">+ Step</span><span class="b s" id="scr-done">Done, pop it!</span><span class="x">×</span></div>
-        <svg class="cursor" id="cursor" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 2 L4 19 L8.6 14.8 L11.8 21.6 L14.9 20.2 L11.8 13.6 L18 13.4 Z" fill="#fff" stroke="#111" stroke-width="1.5" stroke-linejoin="round"/></svg>
-      </div>
-      <div class="body rv" style="--i:2">
-        <p><b>Click a bubble to enter focus mode.</b> Everything else vanishes, the focus timer ticks down, and you can split giant projects into small, digestible steps.</p>
-        <p>Designed intentionally to bring just enough inconvenience to stop the procrastination loop. Close your tabs and lock tf in.</p>
-      </div>
-    </div>
-  </section>
-
-  <hr class="sep">
-
-  <!-- 4. more features, and the phone -->
-  <section id="phone" aria-labelledby="more-title">
-    <div class="wrap more">
-      <div class="more-left">
-        <h2 class="pill rv" id="more-title" style="justify-self:start">Additional Features</h2>
-        <ul class="feats">
-          <li class="rv" style="--i:1"><span>Color Grouping</span></li>
-          <li class="rv" style="--i:2"><span>Send to Edge</span></li>
-          <li class="rv" style="--i:3"><span>Attach a Link</span></li>
-          <li class="brk" aria-hidden="true"></li>
-          <li class="rv" style="--i:4"><span>Pause Growth</span></li>
-          <li class="rv" style="--i:5"><span>Reset Size</span></li>
-        </ul>
-        <h2 class="pill rv over" style="justify-self:start; margin-top:10px">Phone as Remote!</h2>
-        <div class="card remote rv under">
-          <p class="lead">Thought of a task on the bus away from your keyboard?</p>
-          <p>Carry the task list with you 24/7 and add a task through your phone. Your new task now floats on your laptop before you walk into your room.</p>
-        </div>
-        <div class="card tut rv">
-          <h3>Installation+Pairing Tutorial:</h3>
-          <ol>
-            <li><span class="badge pop-in">1.</span><div class="btns">
-              <a class="btn solid" href="app/">Get on iPhone</a>
-              <a class="btn solid" href="https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk">Download for Android <small>.apk</small></a>
-            </div></li>
-            <li><span class="badge pop-in" style="--i:1">2.</span><span>On your computer, open TODOPOP, click on the third O, then <b>[Get the phone app]</b>, a QR code shows up on your screen</span></li>
-            <li><span class="badge pop-in" style="--i:2">3.</span><span>Open TODOPOP on your phone, tap <b>[Scan code]</b>, and point it at your computer's screen.</span></li>
-            <li><span class="badge pop-in" style="--i:3">4.</span><span>Second computer? On your first one: third O → <b>[Show the code again]</b> → <b>[Copy link]</b>. On the second one: third O → <b>[Join another computer’s list]</b>, and paste it. Tasks sync; each screen keeps its own layout.</span></li>
-          </ol>
-          <p class="fine">*No need to create an account providing your email/phone for this pairing process, refer to <a href="#privacy"><b>[Privacy]</b></a> section at bottom of this site to understand how this works</p>
-        </div>
-      </div>
-      <div class="phone-col rv">
-        <figure class="device" id="device" data-solid><div class="scr"><img src="phone-app.png" width="780" height="1688" alt="The TODOPOP phone app: your floating tasks in a list, with Pause, a big plus button and Popped along the bottom."><span class="glare"></span></div></figure>
-      </div>
-    </div>
-  </section>
-
-  <hr class="sep">
-
-  <!-- 5. download, and privacy -->
   <section id="download" aria-labelledby="dl-title">
     <div class="wrap">
       <div class="dl rv">
@@ -622,16 +552,6 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     </div>
   </section>
 
-  <section id="privacy" aria-labelledby="priv-title" style="padding-top:0">
-    <div class="wrap">
-      <div class="priv-head rv"><h2 class="pill" id="priv-title">Privacy</h2><span>Your list is yours.</span></div>
-      <div class="card priv rv">
-        <div><h3>No account</h3><p>No sign-up, no email, no password.<br>Open the app and start blowing bubbles.</p></div>
-        <div><h3>Stays on your computer</h3><p>Without a phone, your tasks never leave your computer.</p></div>
-        <div><h3>Private Sync</h3><p>Connect a phone and your list syncs through Supabase, locked to a private code that only your own devices know. This product and site have no ads and no tracking.</p></div>
-      </div>
-    </div>
-  </section>
 </main>
 
 <footer>
@@ -639,8 +559,8 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     <a class="logo" id="foot-logo" href="./" style="--s:18px; text-decoration:none" aria-label="TODOPOP, start over">T<span class="o"></span>D<span class="o"></span>P<span class="o"></span>P</a>
     <nav aria-label="Footer">
       <a href="#download">Download</a>
-      <a href="#phone">Phone app</a>
-      <a href="https://github.com/nosugarlessice/todopop">GitHub</a>
+      <a href="how.html">How it works</a>
+      <a href="phone.html">Phone app</a>
     </nav>
     <span>© 2026 TODOPOP</span>
   </div>

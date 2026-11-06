@@ -362,6 +362,19 @@ html.remote .shrink-back{font-size:10px; padding-top:14px}
 .edit-actions .link:focus-visible{outline:2px solid var(--ink); outline-offset:2px; border-radius:4px}
 .btn.small{padding:8px 16px; font-size:13px}
 .btn.solid{background:var(--ink); color:var(--paper)}
+/* first-run guide: a spotlight on one thing at a time, with a small card */
+.coach{position:fixed; inset:0; z-index:60}
+.coach-spot{position:fixed; border-radius:999px; box-shadow:0 0 0 2.5px var(--ink), 0 0 0 9999px rgba(18,28,64,.42); pointer-events:none; transition:left .35s cubic-bezier(.3,1.2,.5,1), top .35s cubic-bezier(.3,1.2,.5,1), width .35s cubic-bezier(.3,1.2,.5,1), height .35s cubic-bezier(.3,1.2,.5,1)}
+.coach-card{position:fixed; width:min(320px, calc(100vw - 32px)); box-sizing:border-box; background:var(--paper); color:var(--ink); border:2px solid var(--ink); border-radius:24px; padding:16px 18px 14px; box-shadow:0 24px 50px -24px rgba(16,24,60,.5); display:grid; gap:8px;
+  transition:left .35s cubic-bezier(.3,1.2,.5,1), top .35s cubic-bezier(.3,1.2,.5,1)}
+.coach-card h3{margin:0; font-size:15px; font-weight:500}
+.coach-card p{margin:0; font-size:12.5px; line-height:1.55; font-weight:300}
+.coach-card p b{font-weight:500}
+.coach-foot{display:flex; align-items:center; gap:8px; margin-top:4px}
+.coach-foot .n{font-size:10.5px; letter-spacing:.1em; color:var(--ink-soft); margin-right:auto; font-variant-numeric:tabular-nums}
+.coach-foot .link{all:unset; cursor:pointer; font-size:12px; color:var(--ink-soft); text-decoration:underline; text-underline-offset:3px; padding:4px 6px}
+.coach-foot .link:focus-visible{outline:2px solid var(--ink); border-radius:6px}
+@media (prefers-reduced-motion: reduce){ .coach-spot, .coach-card{transition:none} }
 .btn.solid:hover{background:color-mix(in srgb, var(--ink) 85%, #000)}
 .toast{
   position:fixed; z-index:8; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translate(-50%, 20px);
@@ -953,7 +966,7 @@ input.has-cjk{line-height:1.5}
       <span class="remote-chip" title="Your bubbles float on your computer. Everything you change here shows up there."><i></i>Remote</span>
     </div>
     <ul class="info-pop" id="info-pop" hidden>
-      <li><b>Click</b> a bubble to get in. <b id="pop-how">Double-click</b> to pop it.</li>
+      <li><b>Click</b> a bubble to get in. <b id="pop-how">Press and hold</b> to pop it.</li>
       <li>Give a task a <b>deadline</b> if it has one: in its last day the bubble goes up one urgency level by itself.</li>
       <li>Press <b>Space</b> to blow a new bubble. <b>Enter</b> steps through name, link, urgency and group (<b>← →</b> to choose), then blows it.</li>
       <li><b>Drag</b> a bubble to move it.</li>
@@ -1061,9 +1074,17 @@ input.has-cjk{line-height:1.5}
         </div>
         <p class="note sync-err" id="sync-err" hidden></p>
       </div>
+      <div class="lang-row"><span class="field-label">Growth speed</span><div class="seg lang-seg" id="speed-seg" role="group" aria-label="Growth speed"><button type="button" data-speed="real">Real time</button><button type="button" data-speed="demo">Demo (fast)</button></div></div>
+      <div class="lang-row"><span class="field-label">Pop sound</span><div class="seg lang-seg" id="sound-seg" role="group" aria-label="Pop sound"><button type="button" data-sound="on">On</button><button type="button" data-sound="off">Off</button></div></div>
+      <div class="lang-row"><span class="field-label">Guide</span><button type="button" class="link" id="guide-again">Show the tour again</button></div>
       <div class="lang-row"><span class="field-label">Language</span><div class="seg lang-seg" id="lang-seg" role="group" aria-label="Language"><button type="button" data-lang="en">English</button><button type="button" data-lang="zh">中文</button></div></div>
     </div></div>
 
+<div class="coach" id="coach" hidden role="dialog" aria-modal="true" aria-labelledby="coach-t">
+  <div class="coach-spot" id="coach-spot"></div>
+  <div class="coach-card" id="coach-card"><h3 id="coach-t"></h3><p id="coach-p"></p>
+    <div class="coach-foot"><span class="n" id="coach-n"></span><button type="button" class="link" id="coach-skip">Skip</button><button type="button" class="btn small solid" id="coach-next">Next</button></div></div>
+</div>
 <!-- getting in the bubble: the bubble's skin grows from the bubble until it wraps the whole screen -->
 <div class="veil" id="veil" aria-hidden="true" hidden></div>
 <div class="veil-ring" id="veil-ring" aria-hidden="true" hidden></div>
@@ -1209,7 +1230,7 @@ const ZH = { // fixed words, English → Chinese
   'New group':'新分组', 'Name':'名称', 'e.g. School':'比如：学校', 'Make group':'创建分组',
   'Scan with your phone':'用手机扫一扫', 'Pairing code':'配对二维码', 'Phone connected. You can close this.':'手机已连接，可以关掉这个窗口了。', 'Copy link':'复制链接', 'Done':'完成',
   'Phone controls':'手机控制', 'Pause':'暂停', 'Not yet':'还没', 'Pop it!':'戳破！', 'Undo':'撤销',
-  'Press and hold':'长按', 'Double-click':'双击',
+  'Press and hold':'长按', 'Double-click':'双击', 'Growth speed':'生长速度', 'Guide':'引导', 'Show the tour again':'再看一遍引导', 'Skip':'跳过', 'Real time':'实时', 'Demo (fast)':'演示（快速）', 'Pop sound':'戳破音效', 'On':'打开',
   'Off':'关闭', 'Synced':'已同步', 'Syncing':'同步中', 'Offline':'离线', 'Reconnecting':'重新连接中', 'Not connected':'未连接',
   // starter tasks and the sample history
   'Problem set 4':'数学作业', 'Reply to emails':'回邮件', 'Figma critique':'改设计稿', 'Book dentist':'约牙医', 'Laundry':'洗衣服', 'Water the pothos':'给绿萝浇水', 'Drink water':'喝水',
@@ -1220,7 +1241,7 @@ const T = s => ZH_ON && ZH[s] != null ? ZH[s] : s;
 
 /* the page's own words, in Chinese when that's the language */
 if(ZH_ON){
-  const INFO = ['<b>单击</b>泡泡钻进去，<b id="pop-how">双击</b>戳破它。', '有截止日期就设上<b>截止日期</b>：到最后一天，泡泡会自己升一级紧急程度。',
+  const INFO = ['<b>单击</b>泡泡钻进去，<b id="pop-how">长按</b>戳破它。', '有截止日期就设上<b>截止日期</b>：到最后一天，泡泡会自己升一级紧急程度。',
     '按<b>空格键</b>吹一个新泡泡。<b>回车</b>依次填写名称、链接、紧急程度和分组（用 <b>← →</b> 选），最后吹出来。',
     '<b>拖动</b>泡泡来移动它。', '<b>右键</b>泡泡可以编辑，或者钻进泡泡。', '按住面板顶部边缘可以<b>拖动面板</b>。'];
   document.querySelectorAll('#info-pop > li:not([id])').forEach((li, i) => { if(INFO[i]) li.innerHTML = INFO[i]; });
@@ -1841,6 +1862,7 @@ $('#gedit').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.
 function burstRow(li, b){
   if(!li || li.classList.contains('bursting')) return;
   li.classList.add('bursting');
+  popSound(60); b.sounded = true; // the sound goes with the burst you see, not the moment it's filed away
   const dot = li.querySelector('.dot i').getBoundingClientRect(), cx = dot.left + dot.width/2, cy = dot.top + dot.height/2, r = Math.max(8, dot.width/2);
   if(!REDUCED){
     const ring = document.createElement('i'); ring.className = 'burst-ring'; Object.assign(ring.style, {left:cx+'px', top:cy+'px', width:r*2+'px', height:r*2+'px'}); document.body.appendChild(ring);
@@ -2023,6 +2045,32 @@ function showToast(msg, undoable){
   $('#toast').classList.add('show'); clearTimeout(toastTimer);
   toastTimer = setTimeout(()=> $('#toast').classList.remove('show'), undoable ? 4200 : 2400);
 }
+/* ---------- pop sound: a short synthesized "bloop", lower for bigger bubbles ---------- */
+let soundOn = store.get('sound') !== 'off', actx = null;
+function audio(){ try{ if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); if(actx.state === 'suspended') actx.resume(); }catch(e){ actx = null; } return actx; }
+addEventListener('pointerdown', () => { if(soundOn) audio(); }, {capture:true, passive:true}); // browsers only allow sound after a touch or click
+function popSound(r = 40, small = false){
+  if(!soundOn) return; const ac = audio(); if(!ac) return;
+  const t = ac.currentTime + .005, size = Math.max(0, Math.min(1, (r - 20)/160));
+  const f0 = (small ? 700 : 520 - 260*size) * (0.94 + Math.random()*.12), f1 = f0*2.6;
+  const out = ac.createGain(); out.gain.value = small ? .16 : .24; out.connect(ac.destination);
+  // the bloop: a sine that slides up fast and dies quickly
+  const o = ac.createOscillator(), g = ac.createGain(); o.type = 'sine';
+  o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + .045);
+  g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(1, t + .004); g.gain.exponentialRampToValueAtTime(.001, t + .11);
+  o.connect(g).connect(out); o.start(t); o.stop(t + .13);
+  // the skin snapping: a tiny burst of filtered noise
+  const n = Math.round(ac.sampleRate*.03), buf = ac.createBuffer(1, n, ac.sampleRate), d = buf.getChannelData(0);
+  for(let i = 0; i < n; i++) d[i] = (Math.random()*2 - 1)*Math.pow(1 - i/n, 4);
+  const ns = ac.createBufferSource(), bp = ac.createBiquadFilter(), ng = ac.createGain();
+  ns.buffer = buf; bp.type = 'bandpass'; bp.frequency.value = small ? 3800 : 2600 - 900*size; bp.Q.value = 1.2; ng.gain.value = .5;
+  ns.connect(bp).connect(ng).connect(out); ns.start(t);
+}
+function paintSound(){ document.querySelectorAll('#sound-seg [data-sound]').forEach(b => b.classList.toggle('on', (b.dataset.sound === 'on') === soundOn)); }
+document.getElementById('sound-seg')?.addEventListener('click', e => { const b = e.target.closest('[data-sound]'); if(!b) return;
+  soundOn = b.dataset.sound === 'on'; store.set('sound', soundOn ? 'on' : 'off'); paintSound(); if(soundOn) popSound(40); });
+paintSound();
+
 function pop(b, complete=true, focusSecs=0, fromSync=false){
   if(stash && stash.includes(b)){ stash.splice(stash.indexOf(b), 1); renderTasks(); save(); return; } // it was waiting outside while you're in another bubble
   const i = bubbles.indexOf(b); if(i<0) return;
@@ -2032,6 +2080,7 @@ function pop(b, complete=true, focusSecs=0, fromSync=false){
   const r = b.R*Math.min(1,b.spawn);
   if(!complete){ deflating.push(b); b.deflate = true; } // deleted: it shrinks away quietly
   else { // done: it bursts
+  if(!fromSync && !b.sounded) popSound(r);
   rings.push({x:b.x, y:b.y, r, t:0});
   const n = 12 + Math.min(24, Math.round(r/6));
   for(let k=0;k<n;k++){
@@ -2138,7 +2187,13 @@ function smoothArch(fn){
 }
 
 /* ---------- speed ---------- */
-speed = 'real'; // bubbles always grow at their real rate
+// real time, or a sped-up demo for showing TODOPOP to someone (bubbles visibly grow within a minute)
+speed = store.get('speed') === 'demo' ? 'demo' : 'real';
+function paintSpeed(){ document.querySelectorAll('#speed-seg [data-speed]').forEach(b => b.classList.toggle('on', b.dataset.speed === speed)); }
+paintSpeed();
+document.getElementById('speed-seg')?.addEventListener('click', e => { const b = e.target.closest('[data-speed]'); if(!b) return;
+  speed = b.dataset.speed; store.set('speed', speed); paintSpeed();
+  showToast(speed === 'demo' ? L('Demo speed: bubbles grow in seconds. Switch back to Real time when you’re done showing it off.', '演示速度：泡泡几秒内就会长大。演示完记得切回“实时”。') : L('Real time: bubbles grow with the clock again.', '实时：泡泡重新按真实时间生长。'), false); });
 
 /* ---------- pause growing (panel + tray menu) and automatic stop when the screen is full ---------- */
 let pauseUntil = (() => { const v = store.get('pauseUntil'); return typeof v === 'number' ? v : null; })(); // ms timestamp, Infinity stored as -1
@@ -2367,8 +2422,8 @@ function outsideWall(b, x, y){ // nearest point to (x,y) that keeps this bubble'
 
 const HOLD_DELAY = .15, HOLD_TIME = .75; // seconds: when the swell starts, and how long until it pops
 /* how a task gets popped: 'double' = double-click it, 'hold' = press and hold until it bursts.
-   Trying out double-click; set this back to 'hold' to return to press-and-hold. */
-const POP_GESTURE = 'double', DBL_MS = 280;
+   Press-and-hold is back on; set this to 'double' to try double-click again. */
+const POP_GESTURE = 'hold', DBL_MS = 280;
 let pendingClick = null;
 function step(dt, growDt = dt){
   time += dt;
@@ -2793,12 +2848,12 @@ $('#launcher').addEventListener('click', () => setPanel(true));
 var popupClosedAt = -1e9; // a click that just closed a popup doesn't also tuck the panel away
 const anyPopup = () => !ed.hidden || (!DOCK && !tintPop.hidden) || !$('#gcolor').hidden || !$('#info-pop').hidden || performance.now() - popupClosedAt < 80;
 addEventListener('pointerdown', e => {
-  if(e.button !== 0 || entering || panel.hidden || anyPopup() || onUI(e) || hit(e.clientX, e.clientY)) return; // (in focus mode too)
+  if(e.button !== 0 || entering || panel.hidden || !$('#coach').hidden || anyPopup() || onUI(e) || hit(e.clientX, e.clientY)) return; // (in focus mode too; never during the guide)
   setPanel(false);
 }, {capture:true});
 // desktop: empty screen passes clicks to the app underneath, so "clicking away" shows up as the overlay losing focus
 if(DESKTOP) addEventListener('blur', () => {
-  if(entering || drag || pdrag) return;
+  if(entering || drag || pdrag || !$('#coach').hidden) return;
   if(!ed.hidden) closeEdit(); setTint(false); setGColor(null); setInfo(false);
   if(!panel.hidden) setPanel(false);
 });
@@ -3124,7 +3179,7 @@ function dropBar(e){
 $('#focus').addEventListener('pointerup', dropBar); $('#focus').addEventListener('pointercancel', dropBar);
 addEventListener('resize', () => { if(!barDrag) applyDock(); });
 applyDock();
-if(POP_GESTURE === 'hold') $('#pop-how').textContent = T('Press and hold');
+if(POP_GESTURE === 'hold' && $('#pop-how')) $('#pop-how').textContent = T('Press and hold');
 function endFocus(popIt){
   if(!focus) return;
   const {b, start, panelWasOpen} = focus;
@@ -3191,7 +3246,7 @@ async function popStep(sb){
   const i = bubbles.indexOf(sb); if(i < 0) return;
   bubbles.splice(i, 1); sb.step.done = true;
   if(sideOf(sb)) setTimeout(() => relayoutSide(sideOf(sb)), 250); // the line closes the gap
-  const r = effR(sb); rings.push({x:sb.x, y:sb.y, r, t:0});
+  const r = effR(sb); popSound(r, true); rings.push({x:sb.x, y:sb.y, r, t:0});
   for(let k=0;k<14;k++){ const a = Math.random()*6.283, sp = 120 + Math.random()*200; particles.push({x:sb.x+Math.cos(a)*r*.9, y:sb.y+Math.sin(a)*r*.9, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:1.5+Math.random()*3, t:0, life:.5+Math.random()*.4}); }
   const p = sb.parent, done = p.steps.length - stepsLeft(p);
   lastPopped = null; lastStep = sb;
@@ -3224,13 +3279,68 @@ function inRect(el, x, y){ if(!el || el.hidden) return false; const r = el.getBo
 function updateInteractive(){
   if(!DESKTOP) return;
   const x = mouse.x, y = mouse.y;
-  const on = !!drag || !!pdrag || !!barDrag || !ed.hidden || !gnew.hidden || !$('#pair').hidden || !$('#ask').hidden || inRect($('#ask'),x,y) || !tintPop.hidden || !$('#gcolor').hidden || !!hit(x,y) || inRect($('#focus'),x,y) || inRect(panel,x,y) || inRect($('#launcher'),x,y) || inRect($('#update-note'),x,y) || ($('#toast').classList.contains('show') && inRect($('#toast'),x,y));
+  const on = !$('#coach').hidden || !!drag || !!pdrag || !!barDrag || !ed.hidden || !gnew.hidden || !$('#pair').hidden || !$('#ask').hidden || inRect($('#ask'),x,y) || !tintPop.hidden || !$('#gcolor').hidden || !!hit(x,y) || inRect($('#focus'),x,y) || inRect(panel,x,y) || inRect($('#launcher'),x,y) || inRect($('#update-note'),x,y) || ($('#toast').classList.contains('show') && inRect($('#toast'),x,y));
   if(on !== interactive){ interactive = on; window.todopop.setInteractive(on); }
 }
 addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; updateInteractive(); }, {passive:true});
 
 renderGroups(); syncPause(); renderTasks(); renderArchive();
 requestAnimationFrame(frame);
+
+/* ---------- first-run guide ---------- */
+const FIRST_RUN = !saved && !store.get('guided');
+const bigBubble = () => tasks().filter(b => !b.isStep).sort((a, b) => b.R - a.R)[0];
+const bubRect = b => b && {left:b.x - b.R, top:b.y - b.R, width:2*b.R, height:2*b.R};
+const elRect = sel => { const e = typeof sel === 'string' ? document.querySelector(sel) : sel; if(!e || !e.offsetParent && e !== document.body) return null; return e.getBoundingClientRect(); };
+const logoO = i => document.querySelectorAll('.panel h1.logo .o')[i];
+const GUIDE = REMOTE ? [
+  {t:L('Your list, in your pocket', '口袋里的清单'), p:L('These are the same tasks that float on your computer. <b>Tap a task</b> to edit it.', '这里的任务和电脑上漂着的是同一份。<b>点任务</b>可以编辑。'), at:() => elRect('#tasks .task')},
+  {t:L('Done? Pop it', '做完了？戳破它'), p:L('<b>Tap the check</b> and the task bursts. On your computer, its bubble pops too.', '<b>点右边的勾</b>，任务就会戳破。电脑上的泡泡也会一起破。'), at:() => elRect('#tasks .task .pop-btn'), round:true},
+  {t:L('Blow a new bubble', '吹一个新泡泡'), p:L('<b>Tap +</b> to add a task from anywhere.', '随时随地<b>点 +</b> 添加任务。'), at:() => elRect('#rbar-new'), round:true},
+  {t:L('Pause and look back', '暂停和回顾'), p:L('<b>Pause</b> stops the bubbles growing for a while. <b>Popped</b> shows everything you’ve finished.', '<b>暂停</b>让泡泡先别长。<b>已戳破</b>里是你完成过的所有事。'), at:() => elRect('#rbar')},
+  {when:() => !sync.user, t:L('Connect your computer', '连上你的电脑'), p:L('On your computer, open TODOPOP’s third O and show the code. Then tap <b>Scan code</b> here.', '在电脑上点 TODOPOP 的第三个 O，显示二维码，然后在这里点<b>扫码</b>。'), at:() => elRect('#unpaired-note') || elRect(logoO(2)), round:true},
+] : [
+  {t:L('Meet your control panel', '这就是控制面板'), p:L('The logo is all the controls there are. Your tasks float on top of every window as bubbles, so you can’t forget them.', 'Logo 就是全部的控制面板。任务化作泡泡浮在所有窗口上面，想忘都忘不掉。'), at:() => elRect('.panel h1.logo')},
+  {t:L('Blow a new bubble', '吹一个新泡泡'), p:L('<b>Click +</b> to add a task. Give it a name and say how urgent it is.', '<b>点 +</b> 添加任务，起个名字，选好紧急程度。'), at:() => elRect(logoO(0)), round:true},
+  {t:L('Move it, focus on it, pop it', '拖动、专注、戳破'), p:L('<b>Drag</b> a bubble to move it. <b>Click</b> it to get in and focus. <b>Press and hold</b> to pop it when it’s done.', '<b>拖拽</b>泡泡挪位置。<b>单击</b>钻进去专注。做完了就<b>长按</b>戳破它。'), at:() => bubRect(bigBubble()), live:true, round:true},
+  {t:L('Bubbles grow with time', '泡泡会随时间长大'), p:L('The more urgent a task, the faster its bubble grows. Pop them before they fill your screen.', '越紧急的任务，泡泡长得越快。在它们占满屏幕之前戳破它们。'), at:() => bubRect(bigBubble()), live:true, round:true},
+  {t:L('See what you’ve done', '看看你完成了什么'), p:L('<b>Click ✓</b> for everything you’ve popped, by week or month.', '<b>点 ✓</b> 按周或按月查看戳破过的泡泡。'), at:() => elRect(logoO(1)), round:true},
+  {t:L('Make it yours', '按你的习惯来'), p:L('The <b>third O</b> holds colours, your phone, sound, growth speed and language.', '<b>第三个 O</b> 里有颜色、手机连接、音效、生长速度和语言。'), at:() => elRect(logoO(2)), round:true},
+];
+let gi = -1, glive = 0;
+function placeGuide(){
+  const g = GUIDE[gi]; if(!g) return; const r = g.at(); const spot = $('#coach-spot'), card = $('#coach-card');
+  const vw = innerWidth, vh = innerHeight, pad = 8;
+  if(r){ const w = r.width + 2*pad, h = r.height + 2*pad; Object.assign(spot.style, {left:(r.left - pad)+'px', top:(r.top - pad)+'px', width:w+'px', height:h+'px', borderRadius:g.round ? '999px' : '22px', opacity:1}); }
+  else Object.assign(spot.style, {left:vw/2+'px', top:vh/2+'px', width:'0px', height:'0px'});
+  const cw = card.offsetWidth, ch = card.offsetHeight, gap = 18;
+  let top = r ? (r.top + r.height + pad + gap + ch < vh - 12 ? r.top + r.height + pad + gap : r.top - pad - gap - ch) : vh/2 - ch/2;
+  top = Math.max(12, Math.min(vh - ch - 12, top));
+  let left = r ? r.left + r.width/2 - cw/2 : vw/2 - cw/2; left = Math.max(16, Math.min(vw - cw - 16, left));
+  card.style.left = left + 'px'; card.style.top = top + 'px';
+}
+function showGuideStep(i){
+  while(GUIDE[i] && GUIDE[i].when && !GUIDE[i].when()) i++; // skip steps that don't apply (already paired)
+  gi = i; const g = GUIDE[i]; if(!g) return endGuide();
+  $('#coach-t').textContent = g.t; $('#coach-p').innerHTML = g.p;
+  const live = GUIDE.filter(x => !x.when || x.when()), k = live.indexOf(g);
+  $('#coach-n').textContent = `${k + 1} / ${live.length}`;
+  $('#coach-next').textContent = k === live.length - 1 ? L('Start', '开始') : L('Next', '下一步');
+  placeGuide(); $('#coach-next').focus({preventScroll:true});
+}
+function startGuide(){
+  if(focus) return; setTint(false); if(DOCK) setDock(null); if(panel.hidden) setPanel(true);
+  $('#coach').hidden = false; if(DESKTOP) updateInteractive(); showGuideStep(0);
+  const tick = () => { if($('#coach').hidden) return; if(GUIDE[gi]?.live) placeGuide(); glive = requestAnimationFrame(tick); }; tick();
+}
+function endGuide(){ $('#coach').hidden = true; cancelAnimationFrame(glive); store.set('guided', 1); gi = -1; if(DESKTOP) updateInteractive(); }
+$('#coach-next').addEventListener('click', () => showGuideStep(gi + 1));
+$('#coach-skip').addEventListener('click', endGuide);
+$('#coach').addEventListener('keydown', e => { e.stopPropagation(); if(e.key === 'Escape') endGuide(); else if(e.key === 'ArrowRight') showGuideStep(gi + 1); else if(e.key === 'ArrowLeft' && gi > 0) showGuideStep(gi - 1); });
+$('#coach').addEventListener('pointerdown', e => e.stopPropagation()); // the guide is modal: no dragging bubbles behind it
+addEventListener('resize', () => { if(!$('#coach').hidden) placeGuide(); });
+$('#guide-again')?.addEventListener('click', () => { setTint(false); setTimeout(startGuide, 300); });
+if(FIRST_RUN) setTimeout(() => { if(!document.documentElement.classList.contains('landing') && $('#coach').hidden) startGuide(); }, 1400);
 if(REMOTE) document.addEventListener('touchstart', () => {}, {passive:true}); // lets iOS show the pressed state on buttons
 /* ---------- sync: your computer and your phone share one list ----------
    Everything lives in one Supabase table (`items`): each task, group, popped task and your settings is
@@ -3572,6 +3682,7 @@ function syncLanding(){ // the connect screen shows until the phone is paired (o
   const landing = !sync.user && !store.get('remoteSkip');
   document.documentElement.classList.toggle('landing', landing);
   $('#rbar').hidden = landing; $('#sync-skip').hidden = !landing; $('#info-unpair').hidden = !sync.user;
+  try{ if(!landing && FIRST_RUN && !store.get('guided') && $('#coach').hidden) setTimeout(() => { if($('#coach').hidden && !store.get('guided')) startGuide(); }, 700); }catch(e){} // the phone's tour waits until the connect screen is gone
 }
 let sheet = null;
 function openSheet(id, mode){

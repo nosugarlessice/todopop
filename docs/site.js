@@ -17,7 +17,7 @@
   if(mobile){
     const g = $('#hero-btns'), a = document.createElement('a'); a.className = 'btn solid';
     const fill = () => { if(android) a.innerHTML = `${T('Get the Android app')} <small>.apk</small>`; else a.textContent = T('Get on iPhone');
-      $('#hero-meta').textContent = T('Free · No Sign-up · No ads · The bubbles float on your computer; your phone is the remote.'); };
+      if($('#hero-meta')) $('#hero-meta').textContent = T('Free · No Sign-up · No ads · The bubbles float on your computer; your phone is the remote.'); };
     a.href = android ? 'https://github.com/nosugarlessice/todopop/releases/latest/download/TODOPOP-android.apk' : 'app/';
     g.querySelectorAll('[data-os]').forEach(b => b.classList.remove('solid')); g.prepend(a); fill(); I18N.onChange(fill);
   }
@@ -30,9 +30,9 @@
   $$('.rv, .pop-in, .arrows').forEach(el => REDUCED ? el.classList.add('in') : io.observe(el));
 
   /* ---------- the giant logo: its three O's work like the app's sticker panel ---------- */
-  const big = $('#big'), pop = $('#tp-pop'), notes = $$('.o-note');
+  const big = $('#big') || document.createElement('div'), pop = $('#tp-pop') || document.createElement('div'), notes = $$('.o-note'); // (the logo frame only lives on the home page)
   function placeNotes(){ // each label sits right above its O
-    const box = $('#o-notes').getBoundingClientRect();
+    const nb = $('#o-notes'); if(!nb) return; const box = nb.getBoundingClientRect();
     notes.forEach(n => { const o = big.querySelectorAll('.o')[+n.dataset.o].getBoundingClientRect(); n.style.left = (o.left + o.width/2 - box.left) + 'px'; });
   }
   addEventListener('resize', placeNotes); document.fonts?.ready.then(placeNotes); placeNotes();
@@ -189,7 +189,7 @@
       : zh() ? `${per}戳破了 <b>${total}</b> 个。最多的一天是 <b>${md(best.d)}</b>，戳破了 ${best.list.length} 个。${focus >= 1 ? `专注模式共 <b>${dur(focus)}</b>。` : ''}`
       : `<b>${total}</b> popped ${per}. Best day <b>${md(best.d)}</b> with ${best.list.length}.${focus >= 1 ? ` <b>${dur(focus)}</b> in focus mode.` : ''}`;
     pop.innerHTML = `<div class="row"><h3>${T('Popped')}</h3><button type="button" class="x" aria-label="${T('Close')}">×</button></div>` +
-      (popped.length ? '' : `<p class="empty">${T('Nothing popped on this page yet. Double-click a bubble to pop it, and it lands in today.')}</p>`) +
+      (popped.length ? '' : `<p class="empty">${T('Nothing popped on this page yet. Press and hold a bubble to pop it, and it lands in today.')}</p>`) +
       `<div class="arch-bar"><div class="seg${archMode === 'month' ? ' on-month' : ''}" role="group" aria-label="${T('View')}"><button type="button" data-m="week" class="${archMode === 'week' ? 'on' : ''}">${T('Week')}</button><button type="button" data-m="month" class="${archMode === 'month' ? 'on' : ''}">${T('Month')}</button></div>
         <div class="arch-nav"><button type="button" data-nav="-1" aria-label="${T('Earlier')}">‹</button><button type="button" data-nav="1" aria-label="${T('Later')}"${archOffset >= 0 ? ' disabled' : ''}>›</button></div></div>
       <div class="range">${range}</div>${cal}
@@ -328,10 +328,10 @@
     setTimeout(() => { bar.style.transition = ''; bar.style.translate = ''; }, 480);
   };
   bar.addEventListener('pointerup', drop); bar.addEventListener('pointercancel', drop); applyDock();
-  $('#fb-exit').addEventListener('click', () => leaveFocus(false));
-  $('#fb-done').addEventListener('click', () => leaveFocus(true));
+  $('#fb-exit')?.addEventListener('click', () => leaveFocus(false));
+  $('#fb-done')?.addEventListener('click', () => leaveFocus(true));
   addEventListener('keydown', e => { if(e.key !== 'Escape') return; if(editPop) closeEdit(); else if(inside) leaveFocus(false); else if(openO !== null) setO(null); });
-  $('#get-in').addEventListener('click', () => { // try it: the biggest bubble on screen
+  $('#get-in')?.addEventListener('click', () => { // try it: the biggest bubble on screen
     const list = (TP.list?.() || []).filter(b => b.x > 0 && b.x < innerWidth && b.y > 0 && b.y < innerHeight).sort((a, c) => c.R - a.R);
     const b = list[0] || TP.add?.({name:'Essay draft', key:'Essay draft', level:4}); if(b) enterFocus(b);
   });

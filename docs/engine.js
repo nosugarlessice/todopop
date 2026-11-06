@@ -40,7 +40,7 @@
   const RATE = [0, 0, 0.45, 1.1, 2.5]; // the app's demo growth speeds, radius px / s
   const OUT = .08, GAP = 2.5, SQUISH = 9, JELLY = 0.55, SWELL = 34, HOLD_DELAY = .15, HOLD_TIME = .75;
   const bubbles = [], particles = [], rings = [];
-  const POP_GESTURE = 'double', DBL_MS = 280; let pending = null; // trying double-click to pop; 'hold' = press and hold, as before
+  const POP_GESTURE = 'hold', DBL_MS = 280; let pending = null; // press and hold to pop; 'double' = double-click
   let time = 0, drawOrder = [], walls = [], ti = 0, dpr = 1, fieldAlpha = 1, fieldTarget = 1;
   const easeOut = t => { const c = 1.7; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); };
   const effR = b => b.R * easeOut(Math.min(1, b.spawn)) + SWELL*Math.pow(b.holdP || 0, 1.6);

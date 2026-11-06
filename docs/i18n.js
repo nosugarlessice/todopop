@@ -6,8 +6,9 @@
 
   // [selector, Chinese HTML (or a list, one per match)]
   const PAGE = [
-    ['.nav a[href="#how"]', '怎么用'],
-    ['.nav a[href="#phone"]', '手机'],
+    ['.nav a[href="how.html"]', '怎么用'],
+    ['.nav a[href="phone.html"]', '手机'],
+    ['#key-title', '核心功能'],
     ['.nav a.get', '下载'],
     ['#hero-title', 'TODOPOP：一个让你没有借口拖延的待办清单'],
     ['.o-notes .hint > span', '*点点看<br><span style="white-space:nowrap">logo 上的三个 O！</span>'],
@@ -17,11 +18,11 @@
     ['#hero-btns [data-os="win"] .tx', '下载 Windows 版'],
     ['#hero-meta', '免费 · 无需注册 · 无广告'],
     ['.bubble-hint > b', '*与这些任务泡泡交互'],
-    ['.bubble-hint li', ['可<b>拖拽</b>', '<b>右键</b>编辑', '<b>单击</b>进入专注模式', '<b>双击</b>戳破 标记完成']],
+    ['.bubble-hint li', ['可<b>拖拽</b>', '<b>右键</b>编辑', '<b>单击</b>进入专注模式', '<b>长按</b>戳破 标记完成']],
 
     ['.eyebrow', '<span>痛点</span> TODOPOP 想解决的问题'],
     ['#story-title', `<span class="bk">(</span>${CZ}<span class="bk">)</span> 的作品`],
-    ['.collab', '*与 <span class="bk">(</span><span class="md">Melody Chen</span><span class="bk">)</span><br>合作完成'],
+    ['.collab', '*与 <span class="bk">(</span><a class="md cz" href="https://www.linkedin.com/in/xiaoxiaomelody/" target="_blank" rel="noopener">Melody Chen</a><span class="bk">)</span><br>合作完成'],
     ['.who .tx', '她：'],
     ['#why1', '<span><span class="ph">看不见一个待办，</span><br><span class="ph">她就会忘记。</span></span>'],
     ['#why2', '<span><span class="ph">昨天的 deadline 了，</span><br><span class="ph">她甚至今天还没开始。</span></span>'],
@@ -53,7 +54,7 @@
     ['.tut li:nth-child(2) > span:last-child', '在电脑上打开 TODOPOP，点第三个 O，再点 <b>[获取手机 App]</b>，屏幕上就会出现一个二维码'],
     ['.tut li:nth-child(3) > span:last-child', '在手机上打开 TODOPOP，点 <b>[扫码]</b>，对准电脑屏幕扫一下。'],
     ['.tut li:nth-child(4) > span:last-child', '第二台电脑？在第一台电脑上点第三个 O → <b>[再显示一次二维码]</b> → <b>[复制链接]</b>。然后在第二台电脑上点第三个 O → <b>[加入另一台电脑的清单]</b>，粘贴进去。任务两边同步，泡泡各自摆放。'],
-    ['.tut .fine', '*配对不需要注册账号，也不用留邮箱或手机号。想知道是怎么做到的，请看本站底部的 <a href="#privacy"><b>[隐私]</b></a> 部分'],
+    ['.tut .fine', '*配对不需要注册账号，也不用留邮箱或手机号。想知道是怎么做到的，请看“怎么用”页面里的 <a href="how.html#privacy"><b>[隐私]</b></a> 部分'],
 
     ['#dl-title', `获取 <span class="logo" aria-label="TODOPOP">${LOGO}</span>`],
     ['.dl .btns a', ['下载 Windows 版 <small>.exe</small>', '下载 Mac 版 <small>.dmg</small>']],
@@ -81,7 +82,7 @@
       '<h3>只留在你的电脑上</h3><p>你的任务永远不会离开你的电脑。</p>',
       '<h3>私密同步</h3><p>连上手机后，清单通过 Supabase 同步，锁在一个只有你自己的设备才知道的私密代码上。本产品和本网站没有广告，也没有任何追踪。</p>']],
 
-    ['footer nav a', ['下载', '手机 App', 'GitHub']],
+    ['footer nav a', ['下载', '怎么用', '手机 App']],
     ['#fb-done', '完成，戳破！'],
   ];
   const ATTRS = [ // [selector, attribute, Chinese]
@@ -103,7 +104,7 @@
     'Blow a bubble': '吹一个泡泡', 'Task name': '任务名称', 'e.g. Send the team the Figma link': '比如：把 Figma 链接发给组员',
     'Urgency': '紧急程度', 'Group': '分组', 'Blow it': '吹出来', 'Close': '关闭',
     'Popped': '已戳破', 'Week': '周', 'Month': '月', 'Earlier': '往前', 'Later': '往后', 'View': '视图',
-    'Nothing popped on this page yet. Double-click a bubble to pop it, and it lands in today.': '这一页还没有戳破任何泡泡。双击一个泡泡把它戳破，它就会出现在今天。',
+    'Nothing popped on this page yet. Press and hold a bubble to pop it, and it lands in today.': '这一页还没有戳破任何泡泡。长按一个泡泡把它戳破，它就会出现在今天。',
     'Days before today are a sample history, to show what a few weeks of popping looks like.': '今天之前的记录是示例，让你看看用上几周之后是什么样子。',
     'Your color': '你的颜色',
     'The whole page and every bubble follow your color. In the app you can pick any color at all, and your groups’ colors shift to match it.': '整个页面和每个泡泡都会跟着你的颜色变。在 App 里你可以选任何颜色，分组的颜色也会跟着调整。',
