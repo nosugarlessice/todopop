@@ -1196,6 +1196,7 @@ if(REMOTE) document.documentElement.classList.add('remote');
 // On a computer the control panel is the logo itself: each filled O opens one part. The phone keeps the full panel.
 const DOCK = !REMOTE;
 const SA = {t:0, r:0, b:0, l:0}; // px kept clear on each side (desktop: menu bar, Dock, taskbar)
+const TOP = () => SA.t, BOT = () => H() - SA.b, LEFT = () => SA.l, RIGHT = () => W() - SA.r; // the part of the screen not under the menu bar / Dock / taskbar
 function setInsets(i){
   if(!i) return; for(const k of ['t','r','b','l']){ SA[k] = Math.max(0, Math.round(+i[k] || 0)); document.documentElement.style.setProperty('--sa-' + k, SA[k] + 'px'); }
   if(typeof keepPanelOnScreen === 'function') requestAnimationFrame(keepPanelOnScreen);
@@ -1349,6 +1350,12 @@ if(Array.isArray(saved) && saved.length){
     bubbles.push(makeBubble({...t, hx:t.fx*W(), hy:t.fy*H(), spawn:0}));
   });
 } // a fresh install starts with no bubbles: the first-run guide shows how to blow one
+// 0.1.4 and earlier started new users with sample bubbles and a sample history: clear the untouched ones out, once
+if(!store.get('samplesCleared')){
+  for(let i = bubbles.length - 1; i >= 0; i--) if(isSample(bubbles[i])) bubbles.splice(i, 1);
+  for(let i = archive.length - 1; i >= 0; i--){ const e = archive[i]; if(e.demo || (!e.id && !e.tid && !e.g && !e.url && DEMO_POPS.includes(e.name))) archive.splice(i, 1); }
+  store.set('samplesCleared', 1); store.set('archive', archive); // the list itself is saved by the regular save a moment later
+}
 // anything without a list position yet gets one: most urgent first
 [...bubbles].filter(b => b.order == null).sort((a,b)=> b.level-a.level || b.R-a.R).forEach((b,i) => b.order = 1000 + i);
 // inside a bubble, the field holds only its steps; the tasks wait in `stash` until you come back out
@@ -1753,8 +1760,8 @@ function showPick(open){
     $('#gring').animate([{transform:'scale(.6) rotate(-40deg)', opacity:0}, {transform:'none', opacity:1}], {duration:460, easing:'cubic-bezier(.3,1.5,.5,1)', fill:'backwards'});
     $('#gsat').animate([{transform:'scaleY(0)', opacity:0}, {transform:'none', opacity:1}], {duration:420, delay:60, easing:'cubic-bezier(.3,1.4,.5,1)', fill:'backwards'}); // the bar just grows tall from its middle
     // keep the whole popup on screen as it grows
-    if(gcol.contains(el) && !gcol.hidden){ const r = gcol.getBoundingClientRect(), over = r.top + r.height - (innerHeight - 8);
-      if(over > 0){ const t = Math.max(8, r.top - over); gcol.animate([{top:r.top+'px'}, {top:t+'px'}], {duration:380, easing:ez}); gcol.style.top = t + 'px'; } }
+    if(gcol.contains(el) && !gcol.hidden){ const r = gcol.getBoundingClientRect(), over = r.top + r.height - (BOT() - 8);
+      if(over > 0){ const t = Math.max(TOP() + 8, r.top - over); gcol.animate([{top:r.top+'px'}, {top:t+'px'}], {duration:380, easing:ez}); gcol.style.top = t + 'px'; } }
   } else {
     const h = el.offsetHeight; el._closing = true;
     el._anim = el.animate([{height:h+'px', marginTop:'0px', opacity:1, overflow:'hidden'}, {height:'0px', marginTop:-gap+'px', opacity:0, overflow:'hidden'}], {duration:260, easing:'cubic-bezier(.4,0,.2,1)'});
@@ -1817,8 +1824,8 @@ function setGColor(id, x, y){
   if(id){
     renderGColor();
     const w = gcol.offsetWidth, h = gcol.offsetHeight;
-    gcol.style.left = Math.max(8, Math.min(W() - w - 8, x + 6)) + 'px';
-    gcol.style.top = Math.max(8, Math.min(H() - h - 8, y + 6)) + 'px';
+    gcol.style.left = Math.max(LEFT() + 8, Math.min(RIGHT() - w - 8, x + 6)) + 'px';
+    gcol.style.top = Math.max(TOP() + 8, Math.min(BOT() - h - 8, y + 6)) + 'px';
     gcol.querySelector('[aria-pressed="true"]')?.focus();
   }
   updateInteractive();
@@ -2718,8 +2725,8 @@ function setTint(open){
   const lr = panelLogo.getBoundingClientRect(), tr = (DOCK ? panel.querySelector('.brand') : panel.querySelector('.tagrow')).getBoundingClientRect();
   const r = {left:lr.left, top:lr.top, bottom:tr.bottom}, w = tintPop.offsetWidth, h = tintPop.offsetHeight;
   const o3 = DOCK ? panelLogo.querySelectorAll('.o')[2].getBoundingClientRect() : null;
-  tintPop.style.left = Math.max(8, Math.min(W() - w - 8, DOCK ? o3.left + o3.width/2 - w/2 : r.left - 6)) + 'px';
-  tintPop.style.top = (r.bottom + 8 + h < H() ? r.bottom + 8 : Math.max(8, r.top - h - 8)) + 'px';
+  tintPop.style.left = Math.max(LEFT() + 8, Math.min(RIGHT() - w - 8, DOCK ? o3.left + o3.width/2 - w/2 : r.left - 6)) + 'px';
+  tintPop.style.top = (r.bottom + 8 + h < BOT() ? r.bottom + 8 : Math.max(TOP() + 8, r.top - h - 8)) + 'px';
   updateInteractive();
 }
 /* the logo's three O's are the controls: O1 blows a bubble (and holds the Floating tools), O2 opens Popped, O3 opens Tint.
@@ -2730,15 +2737,15 @@ function fitDock(){
   if(!DOCK || panel.hidden) return;
   requestAnimationFrame(() => {
     const open = dockOpen || !tintPop.hidden;
-    panel.classList.toggle('tall', panel.querySelector('.pz').offsetHeight * 1 > H() - 32);
+    panel.classList.toggle('tall', panel.querySelector('.pz').offsetHeight * 1 > BOT() - TOP() - 32);
     if(panel.classList.contains('moved')){ // a dragged panel keeps its spot, but never runs off the bottom
       const t = parseFloat(panel.style.top) || 0, need = panel.scrollHeight;
-      if(open && t + need > H() - 16) panel.style.top = Math.max(16, H() - 16 - need) + 'px';
+      if(open && t + need > BOT() - 16) panel.style.top = Math.max(TOP() + 16, BOT() - 16 - need) + 'px';
       return;
     }
     if(!open){ panel.style.top = ''; return; }
-    const base = Math.max(16, H()*.4 - 54), need = panel.scrollHeight;
-    panel.style.top = Math.max(16, Math.min(base, H() - 16 - need)) + 'px';
+    const base = Math.max(TOP() + 16, H()*.4 - 54), need = panel.scrollHeight;
+    panel.style.top = Math.max(TOP() + 16, Math.min(base, BOT() - 16 - need)) + 'px';
   });
 }
 function syncOs(){
@@ -2800,7 +2807,7 @@ function placePanel(x, y){
   x = x1 < x0 ? (x0 + x1)/2 : Math.max(x0, Math.min(x1, x));
   y = y1 < y0 ? y0 : Math.max(y0, Math.min(y1, y));
   panel.classList.add('moved'); panel.style.left = x+'px'; panel.style.top = y+'px';
-  panel.style.maxHeight = Math.max(160, H() - y - 16) + 'px'; // a moved panel scrolls within the space below it
+  panel.style.maxHeight = Math.max(160, BOT() - y - 16) + 'px'; // a moved panel scrolls within the space below it
 }
 function keepPanelOnScreen(){ if(panel.classList.contains('moved')) placePanel(parseFloat(panel.style.left) || 0, parseFloat(panel.style.top) || 0); }
 addEventListener('resize', () => requestAnimationFrame(keepPanelOnScreen));
@@ -2910,11 +2917,16 @@ function openEdit(b, x, y){
   { const sb = $('#edit-shrink'), base = startR(b); sb.disabled = b.isStep || (b.toR ?? b.R) <= base + 1; sb.title = sb.disabled ? L('It’s already at its starting size', '已经是初始大小了') : ''; }
   ed.hidden = false; ed.style.animation = 'none'; void ed.offsetWidth; ed.style.animation = '';
   const w = ed.offsetWidth, h = ed.offsetHeight;
-  ed.style.left = Math.max(12, Math.min(W()-w-12, x+16))+'px';
-  ed.style.top = Math.max(12, Math.min(H()-h-12, y-24))+'px';
+  ed.style.left = Math.max(LEFT() + 12, Math.min(RIGHT()-w-12, x+16))+'px';
+  ed.style.top = Math.max(TOP() + 12, Math.min(BOT()-h-12, y-24))+'px'; // whole, and clear of the Dock / taskbar
   if(!REMOTE){ $('#edit-name').focus(); $('#edit-name').select(); } // on a phone, don't throw up the keyboard
   updateInteractive();
 }
+// the editor can grow while open (steps, the urgency picker): keep it whole, scrolling inside if the screen is short
+if(!REMOTE && window.ResizeObserver) new ResizeObserver(() => { if(ed.hidden) return;
+  const room = BOT() - TOP() - 24; ed.style.maxHeight = room + 'px'; ed.style.overflowY = ed.scrollHeight > room ? 'auto' : '';
+  const r = ed.getBoundingClientRect(); if(r.bottom > BOT() - 12) ed.style.top = Math.max(TOP() + 12, BOT() - 12 - r.height) + 'px';
+}).observe(ed);
 function closeEdit(){ if(!ed.hidden) popupClosedAt = performance.now(); ed.hidden = true; editing = null; updateInteractive(); }
 $('#edit-close').addEventListener('click', closeEdit);
 const startR = b => b.level === 1 ? 34 : 42; // the size every new bubble starts at
@@ -3028,7 +3040,7 @@ function togglePicker(pk, open){
   pk.classList.toggle('open', open); pk.setAttribute('aria-hidden', !open);
   if(open) setTimeout(() => {
     const ed2 = pk.closest('.pop-edit');
-    if(ed2 && !REMOTE){ const r = ed2.getBoundingClientRect(); if(r.bottom > innerHeight - 12) ed2.style.top = Math.max(12, innerHeight - 12 - r.height) + 'px'; } // slide the editor up to fit
+    if(ed2 && !REMOTE){ const r = ed2.getBoundingClientRect(); if(r.bottom > BOT() - 12) ed2.style.top = Math.max(TOP() + 12, BOT() - 12 - r.height) + 'px'; } // slide the editor up to fit
     if(pk.closest('.sheet, .pop-edit')) pk.scrollIntoView({block:'nearest', behavior:'smooth'});
   }, 400);
 }
@@ -3279,7 +3291,7 @@ renderGroups(); syncPause(); renderTasks(); renderArchive();
 requestAnimationFrame(frame);
 
 /* ---------- first-run guide ---------- */
-const FIRST_RUN = !saved && !store.get('guided');
+const FIRST_RUN = !store.get('guided'); // anyone who hasn't seen the tour gets it once, however many times the app was opened before
 const bigBubble = () => tasks().filter(b => !b.isStep).sort((a, b) => b.R - a.R)[0];
 const bubRect = b => b && {left:b.x - b.R, top:b.y - b.R, width:2*b.R, height:2*b.R};
 const elRect = sel => { const e = typeof sel === 'string' ? document.querySelector(sel) : sel; if(!e || !e.offsetParent && e !== document.body) return null; return e.getBoundingClientRect(); };
