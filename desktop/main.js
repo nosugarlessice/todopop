@@ -20,10 +20,12 @@ if (!app.requestSingleInstanceLock()) {
   app.quit();
 }
 
-// Stay inside the usable part of the screen on every system: above the Windows taskbar, and on a Mac below the menu bar
-// and above the Dock. (macOS won't let a normal window sit over the menu bar anyway: it pushes it down, which left the
-// bottom of the window, and any panel there, hanging off the screen.)
-const overlayBounds = () => screen.getPrimaryDisplay().workArea;
+// Windows: stay above the taskbar, so the taskbar, its icons and the tray menu stay reachable.
+// Mac: cover the whole screen, so the focus-mode border always runs along the real edges of the display,
+// whether the Dock is showing (desktop) or swiped away (an app in full screen). This is a floating panel at the
+// highest level, so macOS lets it cover the menu bar and Dock area; clicks pass through everywhere but our controls.
+// Panels, pop-ups and the focus bar still keep clear of the menu bar and Dock: the page is told where they are (insets()).
+const overlayBounds = () => { const d = screen.getPrimaryDisplay(); return isMac ? d.bounds : d.workArea; };
 let trayMenu = null;
 let selfFocus = 0; // when we bring the window forward ourselves
 let interactive = false; // true while the cursor is over a bubble or the panel
@@ -54,6 +56,7 @@ function createOverlay() {
     minimizable: !isMac, // Windows: clicking the taskbar icon "minimizes"; we turn that into show/hide panel
     maximizable: false,
     fullscreenable: false,
+    enableLargerThanScreen: isMac, // never let macOS nudge the window down from under the menu bar
     skipTaskbar: isMac, // Windows: a TODOPOP icon sits in the taskbar like any other app
     alwaysOnTop: true,
     show: false,
