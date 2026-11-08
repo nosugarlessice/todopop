@@ -82,6 +82,7 @@ html.desktop, html.desktop body{background:transparent !important; background-im
 }
 .logo .o:nth-of-type(2){animation-delay:-1.8s; animation-duration:6.2s}
 .logo .o:nth-of-type(3){animation-delay:-3.4s; animation-duration:4.9s}
+html.rest *, html.rest *::before, html.rest *::after{animation-play-state:paused !important} /* the computer is idle: the logo stops breathing too */
 @keyframes blob{
   0%,100%{border-radius:50% 50% 50% 50% / 50% 50% 50% 50%}
   25%{border-radius:56% 44% 52% 48% / 46% 55% 45% 54%}
@@ -2722,15 +2723,52 @@ function growOnly(growDt){
     else if(b.level > 1 && growing) b.R = Math.min(maxR, b.R + rate[b.level]*growDt);
   }
 }
+/* ---------- frame rate: only as often as what's on screen needs ----------
+   fast  every display frame: something is moving (a drag, a pop, a new bubble, the mouse wobbling a skin, a squeeze)
+   calm  15 a second: bubbles only drifting and growing, slower than a pixel a frame, so it looks the same
+   empty nothing drawn, checked 4 times a second: no bubbles on screen (e.g. focus mode on a task without steps)
+   rest  once a second: the computer has been idle a while (no mouse or keys)
+   asleep nothing drawn: the screen is locked or the computer is asleep; bubbles keep growing, checked once a second */
+let busyUntil = 0, sysIdle = false, asleep = false, drawnEmpty = false, pendingFrame = null;
+function busy(ms = 1200){ busyUntil = Math.max(busyUntil, performance.now() + ms); }
+function kick(){ busy(); if(pendingFrame){ clearTimeout(pendingFrame); pendingFrame = null; requestAnimationFrame(frame); } }
+function later(ms){ pendingFrame = setTimeout(() => { pendingFrame = null; requestAnimationFrame(frame); }, ms); }
+function needsFast(){
+  if(drag || entering || particles.length || rings.length || deflating.length || Math.abs(fieldAlpha - (entering ? 0 : 1)) > .01) return true;
+  const mouseNew = mouse.x > -900 && performance.now() - mouse.lastT < 1500;
+  for(const b of bubbles){
+    if(b.spawn < 1 || b.pulse > 0 || b.holdP > 0 || b.toR != null) return true;
+    if(Math.abs(b.vx) + Math.abs(b.vy) > 14) return true; // being pushed around
+    const r = effR(b);
+    if(mouseNew && Math.hypot(mouse.x - b.x, mouse.y - b.y) < r + 90) return true; // the mouse is jiggling its skin
+    const lim = 6 + r*.06; for(let i = 0; i < N; i += 4) if(Math.abs(b.v[i]) > lim) return true; // still wobbling
+  }
+  return false;
+}
 function frame(now){
   const real = (now-last)/1000; last = now;
   // physics steps stay small; growth follows the real clock, so a slow frame rate never slows growth
   // (capped so a sleeping computer doesn't cause a jump on wake)
-  let dt = Math.min(1/30, real); const growDt = Math.min(5, Math.max(0, real));
+  const growDt = Math.min(5, Math.max(0, real));
   if(!sizeOK()){ requestAnimationFrame(frame); return; } // wait for a real size before simulating
-  if(REMOTE){ growOnly(growDt); setTimeout(() => requestAnimationFrame(frame), 1000); return; } // the phone shows a list, not the bubbles: just keep them growing, once a second
-  step(dt, growDt); draw(); if((++frameN % 6)===0) updateInteractive(); requestAnimationFrame(frame);
+  if(REMOTE){ growOnly(growDt); later(1000); return; } // the phone shows a list, not the bubbles: just keep them growing, once a second
+  if(asleep){ growOnly(growDt); later(1000); return; }
+  const fast = now < busyUntil || needsFast();
+  if(fast && now >= busyUntil) busy(); // stay quick a moment after things settle, so the last wobble eases out smoothly
+  const empty = !bubbles.length && !particles.length && !rings.length && !deflating.length && fieldAlpha === (entering ? 0 : 1);
+  if(empty){ if(!drawnEmpty){ draw(); drawnEmpty = true; } later(250); return; }
+  drawnEmpty = false;
+  // at a lower frame rate, two small physics steps keep the drift at its usual speed
+  const n = fast ? 1 : Math.max(1, Math.min(2, Math.round(real*30))), dt = Math.min(1/30, real/n);
+  for(let k = 0; k < n; k++) step(dt, k ? 0 : growDt);
+  draw();
+  if(!fast || (++frameN % 6) === 0) updateInteractive();
+  document.documentElement.classList.toggle('rest', !fast && sysIdle);
+  if(fast) requestAnimationFrame(frame); else later(sysIdle ? 1000 : 66);
 }
+// anything you do wakes the bubbles up to full speed at once
+for(const ev of ['pointerdown', 'keydown', 'wheel']) addEventListener(ev, kick, {passive:true, capture:true});
+addEventListener('pointermove', e => { if(pendingFrame && bubbles.some(b => Math.hypot(e.clientX - b.x, e.clientY - b.y) < effR(b) + 90)) kick(); }, {passive:true});
 /* ---------- control panel show / hide ---------- */
 const panel = $('.panel');
 const IS_MAC = /Mac|iPhone|iPad/.test(navigator.platform || navigator.userAgent);
@@ -3007,7 +3045,12 @@ const focusSoFar = b => (b.focusTotal || 0) + (focus && focus.b === b ? (focusCl
 function focusSleep(){ if(focus && !focus.sleptAt){ focus.sleptAt = Date.now(); save(); } }
 let focusBeat = Date.now();
 function focusWake(){ focusBeat = Date.now(); if(focus && focus.sleptAt){ focus.start += Date.now() - focus.sleptAt; focus.sleptAt = null; tickFocus(); } }
-if(DESKTOP) window.todopop.onPower?.(state => state === 'sleep' ? focusSleep() : focusWake());
+if(DESKTOP) window.todopop.onPower?.(state => {
+  if(state === 'sleep'){ asleep = true; focusSleep(); } // locked or asleep: the focus clock pauses, and nothing is drawn
+  else if(state === 'wake'){ asleep = false; focusWake(); kick(); }
+  else if(state === 'idle'){ sysIdle = true; } // no mouse or keys for a while: bubbles redraw once a second
+  else if(state === 'active'){ sysIdle = false; document.documentElement.classList.remove('rest'); kick(); }
+});
 // backup for anything the app didn't hear about: if this page itself was frozen for over a minute, that time wasn't focus
 setInterval(() => { const now = Date.now(), gap = now - focusBeat; focusBeat = now;
   if(focus && !focus.sleptAt && gap > 60e3) focus.start += gap - 5e3; }, 5e3);

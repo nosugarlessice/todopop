@@ -200,6 +200,13 @@ app.whenReady().then(() => {
   powerMonitor.on('shutdown', () => power('sleep'));
   powerMonitor.on('resume', () => power('wake'));
   powerMonitor.on('unlock-screen', () => power('wake'));
+  // nobody at the keyboard for two minutes (or the screen went dark): the bubbles redraw once a second instead of 60 times
+  let idle = false;
+  setInterval(() => {
+    let st = 'active'; try { st = powerMonitor.getSystemIdleState(120); } catch (e) {}
+    const now = st !== 'active';
+    if (now !== idle) { idle = now; power(now ? 'idle' : 'active'); }
+  }, 10000);
   if (isMac && app.dock) app.dock.hide(); // a floating layer, not a regular windowed app
   createOverlay();
   createTray();
