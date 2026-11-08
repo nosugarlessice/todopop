@@ -306,6 +306,7 @@
     const i = bubbles.indexOf(b); if(i<0) return; bubbles.splice(i,1);
     if(!quiet) api.onPop?.(b);
     const r = b.R*Math.min(1,b.spawn);
+    if(!quiet) window.TPSound?.pop(r);
     rings.push({x:b.x, y:b.y, r, t:0});
     const n = 12 + Math.min(24, Math.round(r/6));
     for(let k=0;k<n;k++){ const a = Math.random()*6.283, sp = 120 + Math.random()*260 + r*.8; particles.push({x:b.x+Math.cos(a)*r*.9, y:b.y+Math.sin(a)*r*.9, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:1.5+Math.random()*3.5, t:0, life:.5+Math.random()*.45}); }
@@ -348,7 +349,7 @@
       ctx.fillStyle = rgba(b.level===4 ? .085 : b.level===3 ? .06 : .04); ctx.fill();
       ctx.lineWidth = (b.level===4 ? 2.8 : 2.4) * (1 + (b.holdP || 0)*1.1); ctx.strokeStyle = rgba(1); ctx.stroke();
       if(gp && r > 10){ shapePath(b, 4.5); ctx.lineWidth = 2; ctx.strokeStyle = `rgba(${fill[0]},${fill[1]},${fill[2]},.67)`; ctx.stroke(); }
-      if(b.level>=3 && r>24){ shapePath(b, gp ? 9.5 : 6); ctx.lineWidth = .9; ctx.strokeStyle = rgba(.28); ctx.setLineDash(b.level===4?[]:[2,4]); ctx.stroke(); ctx.setLineDash([]); }
+      if(b.level>=3 && r>24){ shapePath(b, gp ? 9.5 : 6); ctx.lineWidth = .9; ctx.strokeStyle = rgba(.28); ctx.stroke(); }
       ctx.save(); shapePath(b); ctx.clip();
       if(r>22){
         let cx=0, cy=0; for(let i=0;i<N;i++){ const rr=r+b.d[i]; cx += Math.min(W()-8, Math.max(8, b.x+COS[i]*rr*.8)); cy += Math.min(H()-8, Math.max(8, b.y+SIN[i]*rr*.8)); }

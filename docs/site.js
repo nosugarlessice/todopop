@@ -135,7 +135,7 @@
     wireStops(pop, l => { level = l; $('#tp-lv').textContent = T(LEVEL_NAME[l]); });
     $('#tp-g').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if(!b) return; group = b.dataset.g || null; $$('#tp-g button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
     const blow = () => { const name = $('#tp-name').value.trim(); if(!name){ $('#tp-name').focus(); return; }
-      const r = big.getBoundingClientRect(); TP.add?.({name, level, group, at:{x:r.left + r.width*(.2 + Math.random()*.6), y:Math.min(innerHeight - 80, r.bottom + 160)}}); setO(null); };
+      const r = big.getBoundingClientRect(); TP.add?.({name, level, group, at:{x:r.left + r.width*(.2 + Math.random()*.6), y:Math.min(innerHeight - 80, r.bottom + 160)}}); window.TPSound?.blow(); setO(null); };
     $('#tp-blow').addEventListener('click', blow); $('#tp-name').addEventListener('keydown', e => { if(e.key === 'Enter') blow(); });
     setTimeout(() => $('#tp-name')?.focus({preventScroll:true}), 60);
   }
@@ -268,7 +268,7 @@
   function enterFocus(b){ // like the app: the bubble's skin opens out to the edges of the screen, and you're inside
     if(!b || entering || inside) return; closeEdit(); setO(null);
     if(REDUCED){ startFocus(b); return; }
-    entering = true; b.pulse = .8;
+    entering = true; b.pulse = .8; window.TPSound?.whoosh();
     const veil = document.createElement('div'), ring = document.createElement('div'); veil.className = 'veil'; ring.className = 'veil-ring'; document.body.append(veil, ring);
     const x = b.x, y = b.y, r0 = Math.max(10, b.R), Rend = Math.hypot(Math.max(x, innerWidth - x), Math.max(y, innerHeight - y)) + 20, t0 = performance.now(), DUR = 800;
     (function grow(now){

@@ -55,6 +55,13 @@ for fn, (key, parts) in PAGES.items():
     head = head.replace('<body>', '<body class="page-%s">' % key, 1)
     if TITLES[key]:
         head = re.sub(r'<title>[^<]*</title>', '<title>%s</title>' % TITLES[key], head, count=1)
+    # tell search engines each page's one true address, and what it's about
+    url = 'https://todopop.app/' + ('' if key == 'home' else fn)
+    head = head.replace('<meta property="og:url" content="https://todopop.app/">', '<meta property="og:url" content="%s">\n<link rel="canonical" href="%s">' % (url, url), 1)
+    if key == 'how':
+        head = re.sub(r'<meta name="description" content="[^"]*">', '<meta name="description" content="How TODOPOP (To Do Pop) works: every task is a bubble that floats over your screen and grows until you pop it. Focus mode, steps, colors, and privacy.">', head, count=1)
+    if key == 'phone':
+        head = re.sub(r'<meta name="description" content="[^"]*">', '<meta name="description" content="Use your phone as the remote for TODOPOP (To Do Pop): add, edit and pop tasks from anywhere. iPhone and Android, no account needed.">', head, count=1)
     body = '<main id="top">\n\n' + ''.join(parts) + '\n'
     tail = TAIL.replace('<a href="#download">Download</a>', '<a href="%s">Download</a>' % ('#download' if key == 'home' else './?to=download'))
     tail = tail.replace('<a href="#phone">Phone app</a>', '<a href="how.html">How it works</a>\n      <a href="phone.html">Phone app</a>')

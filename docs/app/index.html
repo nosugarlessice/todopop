@@ -486,6 +486,11 @@ kbd{font-family:var(--f-mono); font-weight:400; font-size:10px; letter-spacing:.
 .panel .logo .o{cursor:pointer}
 .panel .logo .o:focus-visible{outline:2px solid var(--ink); outline-offset:3px}
 .tint-pop{position:fixed; z-index:8}
+/* every floating panel fits the screen it's on (any size, any device): never taller than what's visible,
+   and if its content is taller, it scrolls inside instead of running off the edge */
+.tint-pop > .pz, .gcolor > .pz, .gnew-pop > .pz{max-height:calc((100vh - var(--sa-t) - var(--sa-b) - 24px) / var(--ui, 1)); max-height:calc((100dvh - var(--sa-t) - var(--sa-b) - 24px) / var(--ui, 1)); overflow-y:auto; overscroll-behavior:contain}
+.coach-card, .ask{max-height:calc(100vh - var(--sa-t) - var(--sa-b) - 24px); max-height:calc(100dvh - var(--sa-t) - var(--sa-b) - 24px); overflow-y:auto; overscroll-behavior:contain}
+html.remote .info-pop{max-height:calc(100dvh - var(--sa-t) - var(--sa-b) - 48px); overflow-y:auto; overscroll-behavior:contain}
 .tint-pop > .pz{zoom:var(--ui); width:236px; box-sizing:border-box; padding:14px 16px; background:var(--paper);
   border:1px solid var(--rule); border-radius:20px; box-shadow:0 18px 44px -22px rgba(16,24,48,.4); display:grid; gap:12px;
   animation:pop-in .3s cubic-bezier(.3,1.6,.5,1)}
@@ -572,7 +577,7 @@ html.remote #acc-new, html.remote #acc-arch{display:none}
 html.remote #acc-cur .acc-head{pointer-events:none; cursor:default}
 html.remote #acc-cur .acc-head .chev{display:none}
 html.remote #acc-cur .acc-wrap{grid-template-rows:1fr; transition:none}
-html.remote .acc.sheet, html.remote #acc-new.sheet, html.remote #acc-arch.sheet, html.remote #acc-pause.sheet, html.remote #acc-groups.sheet{display:block; position:fixed; z-index:22; left:0; right:0; bottom:0; max-height:86vh; overflow:auto; overscroll-behavior:contain;
+html.remote .acc.sheet, html.remote #acc-new.sheet, html.remote #acc-arch.sheet, html.remote #acc-pause.sheet, html.remote #acc-groups.sheet{display:block; position:fixed; z-index:22; left:0; right:0; bottom:0; max-height:86vh; max-height:calc(100dvh - var(--sa-t) - 16px); overflow:auto; overscroll-behavior:contain;
   background:var(--paper); border-radius:28px 28px 0 0; box-shadow:0 -20px 60px -30px rgba(16,24,48,.45); padding-bottom:var(--sa-b);
   animation:sheet-up .38s cubic-bezier(.2,.9,.3,1)}
 html.remote .acc.sheet .acc-wrap{grid-template-rows:1fr; transition:none}
@@ -600,7 +605,7 @@ html.remote #acc-pause.sheet .acc-inner{padding-bottom:22px}
 html.remote:not(.landing) body{overflow:hidden}
 html.remote:not(.landing) .panel{position:fixed; top:calc(12px + var(--sa-t)); bottom:calc(96px + var(--sa-b)); left:max(12px, var(--sa-l)); right:max(12px, var(--sa-r));
   margin:0; display:flex; flex-direction:column; overflow:hidden}
-@media (min-width:545px){ html.remote:not(.landing) .panel{left:50%; right:auto; width:520px; transform:translateX(-50%)} }
+@media (min-width:545px){ html.remote:not(.landing) .panel{left:0; right:0; width:520px; transform:none; margin-left:auto; margin-right:auto} } /* centred by margin (line above), not a transform: a transform would trap the bottom sheets inside the card */
 html.remote:not(.landing) .panel > .pz{display:flex; flex-direction:column; flex:1; min-height:0}
 html.remote:not(.landing) #acc-cur{display:flex; flex-direction:column; flex:1; min-height:0}
 html.remote:not(.landing) #acc-cur .acc-wrap, html.remote:not(.landing) #acc-cur .acc-body, html.remote:not(.landing) #acc-cur .acc-inner{display:flex; flex-direction:column; flex:1; min-height:0; overflow:visible}
@@ -679,6 +684,7 @@ html.remote:not(.landing) .panel > .pz > .sync{display:none}
 html.remote:not(.landing) .toast{bottom:calc(96px + var(--sa-b))}
 html.remote:not(.landing) .ask{bottom:calc(100px + var(--sa-b))}
 html.remote .pop-edit{z-index:23}
+html.remote .tint-pop{z-index:24} /* pop-ups sit above the bottom bar, never behind it */
 #info-unpair .link{all:unset; cursor:pointer; text-decoration:underline; text-underline-offset:3px; color:var(--ink-soft)}
 /* ---------- bigger section titles (+2 px on screen), tighter line spacing throughout ---------- */
 .panel .acc-head{font-size:17px; padding-top:12px; padding-bottom:12px}   /* 17 × 0.7 ≈ 12 px on screen (was ≈ 10) */
@@ -1217,11 +1223,21 @@ function setInsets(i){
   for(const k of ['t','r','b','l']){ SA[k] = Math.max(0, Math.min(k === 't' || k === 'b' ? 200 : 300, Math.round(+i[k] || 0))); document.documentElement.style.setProperty('--sa-' + k, SA[k] + 'px'); }
   if(typeof keepPanelOnScreen === 'function') requestAnimationFrame(keepPanelOnScreen);
 }
+if(!DESKTOP){ // phones: read the notch and home-bar insets, so pop-ups placed by code stay clear of them too
+  const probe = document.createElement('div'); probe.style.cssText = 'position:fixed; visibility:hidden; pointer-events:none; padding:env(safe-area-inset-top, 0px) env(safe-area-inset-right, 0px) env(safe-area-inset-bottom, 0px) env(safe-area-inset-left, 0px)';
+  const readEnv = () => { document.body.appendChild(probe); const c = getComputedStyle(probe); for(const [k, side] of [['t','Top'],['r','Right'],['b','Bottom'],['l','Left']]) SA[k] = parseFloat(c['padding' + side]) || 0; probe.remove(); };
+  addEventListener('DOMContentLoaded', readEnv); addEventListener('resize', readEnv); if(document.body) readEnv();
+}
 if(DESKTOP){ window.todopop.onInsets?.(setInsets); window.todopop.getInsets?.().then(setInsets).catch(() => {}); setInsets(null); addEventListener('resize', () => setInsets(null)); }
 if(DOCK) document.documentElement.classList.add('dock');
 
 /* ---------- language: English or 简体中文. Picked in the third O; switching reloads the app in the new language. ---------- */
-const LANG = (() => { try{ const v = JSON.parse(localStorage.getItem('todopop:lang')); if(v === 'zh' || v === 'en') return v; }catch(e){} return /^zh\b/i.test(navigator.language || '') ? 'zh' : 'en'; })();
+// language on first open: your own choice in the app wins; otherwise the phone app follows the language you picked
+// on todopop.app (same site, so it can see it; a link with ?lang=zh works too); otherwise your device's language
+const LANG = (() => { try{ const v = JSON.parse(localStorage.getItem('todopop:lang')); if(v === 'zh' || v === 'en') return v; }catch(e){}
+  try{ const q = new URLSearchParams(location.search).get('lang'); if(q === 'zh' || q === 'en'){ localStorage.setItem('todopop:lang', JSON.stringify(q)); return q; } }catch(e){} // remembered, so the home-screen icon opens in it too
+  try{ const w = localStorage.getItem('tp-lang'); if(w === 'zh' || w === 'en') return w; }catch(e){}
+  return /^zh\b/i.test(navigator.language || '') ? 'zh' : 'en'; })();
 const ZH_ON = LANG === 'zh';
 document.documentElement.lang = ZH_ON ? 'zh-CN' : 'en';
 const L = (en, zh) => ZH_ON ? zh : en; // a sentence with things filled in: both versions side by side
@@ -2350,8 +2366,8 @@ addEventListener('pointerup', e => {
   const {b, moved, t} = drag; drag = null;
   document.documentElement.classList.remove('dragging');
   b.holding = false;
-  if(!moved && performance.now()-t < 300){ // a quick click: get in (steps just pop)
-    if(b.isStep) popStep(b);
+  if(!moved && performance.now()-t < 300){ // a quick click: get in (steps, like tasks, pop only when held)
+    if(b.isStep){ if(POP_GESTURE === 'hold'){ for(let i = 0; i < N; i++) b.v[i] += (Math.random() - .5)*120; if(!stepHinted){ stepHinted = true; showToast(L('Press and hold a step to pop it.', '长按步骤即可戳破。'), false); } } else popStep(b); }
     else if(POP_GESTURE === 'double'){ // wait a beat: a second click means pop, not get in
       if(pendingClick && pendingClick.b === b){ clearTimeout(pendingClick.t); pendingClick = null; requestPop(b); }
       else { if(pendingClick) clearTimeout(pendingClick.t); pendingClick = {b, t:setTimeout(() => { pendingClick = null; getIn(b); }, DBL_MS)}; }
@@ -2447,14 +2463,15 @@ const HOLD_DELAY = .15, HOLD_TIME = .75; // seconds: when the swell starts, and 
    Press-and-hold is back on; set this to 'double' to try double-click again. */
 const POP_GESTURE = 'hold', DBL_MS = 280;
 let pendingClick = null;
+let stepHinted = false;
 function step(dt, growDt = dt){
   time += dt;
   // press and hold: the bubble swells and its skin tightens, then it pops; let go early and it relaxes
-  if(POP_GESTURE === 'hold' && drag && !drag.moved && !drag.b.isStep && !entering){
+  if(POP_GESTURE === 'hold' && drag && !drag.moved && !entering){ // tasks and steps alike
     const b = drag.b, held = (performance.now() - drag.t)/1000;
     b.holding = held > HOLD_DELAY; b.holdP = Math.max(0, Math.min(1, (held - HOLD_DELAY)/HOLD_TIME));
     if(b.holding) for(let i=0;i<N;i++) b.v[i] += (Math.random()-.5)*90*b.holdP; // a little tremble under the pressure
-    if(b.holdP >= 1){ drag = null; document.documentElement.classList.remove('dragging'); b.holding = false; b.holdP = 0; requestPop(b); }
+    if(b.holdP >= 1){ drag = null; document.documentElement.classList.remove('dragging'); b.holding = false; b.holdP = 0; if(b.isStep) popStep(b); else requestPop(b); }
   }
   for(const b of bubbles) if(!b.holding && b.holdP){ b.holdP *= .82; if(b.holdP < .01) b.holdP = 0; }
   wall = panelWall();
@@ -2634,7 +2651,7 @@ function draw(){
         ctx.fillStyle = k < done ? rgba(1) : '#FAFAF8'; ctx.fill(); ctx.lineWidth = 1.8; ctx.strokeStyle = rgba(1); ctx.stroke();
       }
     }
-    if(b.level>=3 && r>24){ shapePath(b, gp ? 9.5 : 6); ctx.lineWidth = .9; ctx.strokeStyle = rgba(.28); ctx.setLineDash(b.level===4?[]:[2,4]); ctx.stroke(); ctx.setLineDash([]); }
+    if(b.level>=3 && r>24){ shapePath(b, gp ? 9.5 : 6); ctx.lineWidth = .9; ctx.strokeStyle = rgba(.28); ctx.stroke(); } // always solid, Today and Now! alike
     ctx.save(); shapePath(b); ctx.clip();
     // label
     if(r>22){
@@ -3562,7 +3579,7 @@ const b64u = str => btoa(unescape(encodeURIComponent(str))).replace(/\+/g, '-').
 const unb64u = str => decodeURIComponent(escape(atob(str.replace(/-/g, '+').replace(/_/g, '/'))));
 const rand = n => { const a = new Uint8Array(n); crypto.getRandomValues(a); return [...a].map(x => x.toString(16).padStart(2, '0')).join(''); };
 const phoneBase = () => PHONE_URL || (/^https?:/.test(location.protocol) ? location.origin + location.pathname : '');
-function pairLink(){ const c = store.get('pairCred'); return c ? phoneBase() + '?remote#pair=' + b64u(c.e + '\n' + c.p) : ''; }
+function pairLink(){ const c = store.get('pairCred'); return c ? phoneBase() + '?remote&lang=' + LANG + '#pair=' + b64u(c.e + '\n' + c.p) : ''; } // the phone opens in your computer's language
 // the device that makes the account keeps its list; a phone joining it starts from the account
 function joinAs(keep, dropSamples){
   if(keep && dropSamples) for(const b of [...tasks()]) if(isSample(b)){ const i = bubbles.indexOf(b); if(i >= 0) bubbles.splice(i, 1); } // only your own tasks come along
