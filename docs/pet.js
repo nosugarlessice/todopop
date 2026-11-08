@@ -224,7 +224,7 @@ if(page !== 'tubby'){
     size(); hideTip(); D.busy(2500);
     clearTimeout(wanderT); wanderT = setTimeout(wander, 30000 + Math.random()*30000); // somewhere between half a minute and a minute
   }
-  wanderT = setTimeout(wander, 30000 + Math.random()*30000);
+  wanderT = setTimeout(wander, 8000 + Math.random()*7000); // the first hop comes early, so people notice it moves
   function target(){
     if(spot === leanSpot && !override && !logoVisible()) wander(); // the logo scrolled away: it hops off to a new spot
     let t = override ? override() : spot();
@@ -261,12 +261,28 @@ if(page !== 'tubby'){
     const left = Math.max(8, Math.min(innerWidth - w - 8, cur.x + S/2 - w/2)), above = cur.y - h - 6 > 70;
     tip.style.left = left + 'px'; tip.style.top = (above ? cur.y + S*.08 - h - 6 : cur.y + S*.95) + 'px'; }
   function hideTip(){ tip.hidden = true; clearTimeout(hideTip.t); }
-  hit.addEventListener('click', () => {
+  function sayHi(){
     D.cheer(1800);
     tip.innerHTML = `<span>${T(station ? station.tip : 'Hi, I’m Tubby.')}</span> <a href="tubby.html">${T('Meet Tubby')}</a>`;
     tip.hidden = false; placeTip(); clearTimeout(hideTip.t); hideTip.t = setTimeout(hideTip, 4200);
     try{ window.TPSound?.pop?.(40); }catch(e){}
-  });
+  }
+  // pick it up and put it anywhere; a click without moving says hi
+  let held = null;
+  hit.addEventListener('pointerdown', e => { if(e.button !== 0 || !cur) return; e.preventDefault(); hit.setPointerCapture(e.pointerId);
+    held = {sx:e.clientX, sy:e.clientY, ox:e.clientX - cur.x, oy:e.clientY - cur.y, moved:false}; });
+  hit.addEventListener('pointermove', e => { if(!held) return;
+    if(!held.moved){ if(Math.hypot(e.clientX - held.sx, e.clientY - held.sy) < 5) return; held.moved = true; hideTip(); D.setMood('suspicious'); box.classList.add('held'); }
+    const x = Math.max(4, Math.min(innerWidth - S - 4, e.clientX - held.ox)), y = Math.max(70, Math.min(innerHeight - S - 4, e.clientY - held.oy));
+    const fx = x/innerWidth, fy = y/innerHeight; override = () => ({x: fx*innerWidth, y: fy*innerHeight, r: 0});
+    cur.x = x; cur.y = y; place(cur.x, cur.y, cur.r); D.busy(500); });
+  const drop = () => { if(!held) return; const h = held; held = null; box.classList.remove('held');
+    if(!h.moved){ sayHi(); return; }
+    spot = override; override = null; // its new spot, until it feels like wandering again
+    D.cheer(900, station ? station.mood.replace('cheering', 'watching') : 'watching');
+    clearTimeout(wanderT); wanderT = setTimeout(wander, 45000 + Math.random()*30000); };
+  hit.addEventListener('pointerup', drop); hit.addEventListener('pointercancel', drop);
+  hit.addEventListener('click', e => { if(e.detail === 0) sayHi(); }); // Enter or Space
   // react to what happens on the page
   const seen = new Set();
   const io = new IntersectionObserver(es => es.forEach(e => { if(e.isIntersecting && !seen.has(e.target)){ seen.add(e.target); D.cheer(e.target.id === 'feat3' ? 2200 : 900); } }), {threshold:.6});
