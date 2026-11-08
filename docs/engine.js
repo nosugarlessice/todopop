@@ -400,7 +400,30 @@
   // ---- run ----
   addEventListener('resize', resize); resize();
   const count = () => SMALL() ? 3 : (W() > 1200 ? 5 : 4);
-  for(let k=0;k<count();k++) add();
+  /* the same bubbles on every page: switching pages keeps them where they were, instead of blowing a new set.
+     Saved for this tab only (sessionStorage), so a fresh visit still starts with a fresh set. */
+  const SAVE = 'tp-bubbles';
+  function save(){
+    try{ sessionStorage.setItem(SAVE, JSON.stringify({ti, w:W(), h:H(), b: bubbles.filter(b => !b.dead && !b.popping).map(b => ({
+      name:b.name, key:b.key, level:b.level, group:b.group, R:+b.R.toFixed(1),
+      hx:+(b.hx/W()).toFixed(4), hy:+(b.hy/H()).toFixed(4), x:+(b.x/W()).toFixed(4), y:+(b.y/H()).toFixed(4)}))})); }catch(e){}
+  }
+  function restore(){
+    let s = null; try{ s = JSON.parse(sessionStorage.getItem(SAVE) || 'null'); }catch(e){}
+    if(!s || !Array.isArray(s.b) || !s.b.length) return false;
+    ti = s.ti | 0;
+    for(const o of s.b){
+      if(typeof o.name !== 'string' || !(o.R > 0)) continue;
+      const b = makeBubble({name:o.name, level:o.level, group:o.group || null, R:o.R, hx:o.hx*W(), hy:o.hy*H()});
+      b.key = o.key ?? null; b.x = o.x*W(); b.y = o.y*H(); b.spawn = 1; // already here: no pop-in
+      bubbles.push(b);
+    }
+    return true;
+  }
+  addEventListener('pagehide', save);
+  document.addEventListener('visibilitychange', () => { if(document.hidden) save(); });
+  api.save = save;
+  if(!restore()) for(let k=0;k<count();k++) add();
   if(window.I18N?.lang === 'zh') api.setLang();
   let last = performance.now();
   (function frame(now){ const dt = Math.min(1/30, (now-last)/1000); last = now; step(dt); draw(); requestAnimationFrame(frame); })(last);

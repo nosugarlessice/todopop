@@ -218,13 +218,30 @@ if(page !== 'tubby'){
   const SPOTS = [side('left', .5), side('right', .5), side('right', .3), side('left', .72),
     () => ({x: innerWidth - S - 10, y: innerHeight - S - 10, r: 4}), () => ({x: 10, y: innerHeight - S - 10, r: -4})];
   let spot = logoVisible() ? leanSpot : SPOTS[1], wanderT = null;
+  /* switching pages keeps Tubby right where it was (this tab only); it carries on with its own timer from there */
+  const SAVE = 'tp-pet';
+  let saved = null; try{ saved = JSON.parse(sessionStorage.getItem(SAVE) || 'null'); }catch(e){}
+  const pin = (fx, fy, r) => () => ({x: fx*innerWidth, y: fy*innerHeight, r});
+  if(saved && saved.fx >= 0 && saved.fx <= 1 && saved.fy >= 0 && saved.fy <= 1){
+    spot = saved.lean && logoVisible() ? leanSpot : pin(saved.fx, saved.fy, saved.lean ? 0 : +saved.r || 0);
+    cur = {x: saved.fx*innerWidth, y: saved.fy*innerHeight, r: +saved.r || 0};
+  } else saved = null;
+  addEventListener('pagehide', savePet);
+  document.addEventListener('visibilitychange', () => { if(document.hidden) savePet(); });
+  function savePet(){ if(!cur) return;
+    try{ sessionStorage.setItem(SAVE, JSON.stringify({fx: +(cur.x/innerWidth).toFixed(4), fy: +(cur.y/innerHeight).toFixed(4), r: +cur.r.toFixed(1),
+      lean: spot === leanSpot && !override, wanderAt: wanderAt})); }catch(e){} }
+  let wanderAt = 0;
+  const later = ms => { clearTimeout(wanderT); wanderAt = Date.now() + ms; wanderT = setTimeout(wander, ms); };
   function wander(){
     const options = SPOTS.filter(f => f !== spot);
     spot = logoVisible() && spot !== leanSpot && Math.random() < .5 ? leanSpot : options[Math.floor(Math.random()*options.length)];
     size(); hideTip(); D.busy(2500);
-    clearTimeout(wanderT); wanderT = setTimeout(wander, 30000 + Math.random()*30000); // somewhere between half a minute and a minute
+    later(30000 + Math.random()*30000); // somewhere between half a minute and a minute
   }
-  wanderT = setTimeout(wander, 8000 + Math.random()*7000); // the first hop comes early, so people notice it moves
+  if(saved && saved.wanderAt > Date.now()) later(Math.min(60000, saved.wanderAt - Date.now())); // its next hop stays on schedule
+  else if(saved) later(4000 + Math.random()*6000);
+  else later(8000 + Math.random()*7000); // the first hop comes early, so people notice it moves
   function target(){
     if(spot === leanSpot && !override && !logoVisible()) wander(); // the logo scrolled away: it hops off to a new spot
     let t = override ? override() : spot();
@@ -280,7 +297,7 @@ if(page !== 'tubby'){
     if(!h.moved){ sayHi(); return; }
     spot = override; override = null; // its new spot, until it feels like wandering again
     D.cheer(900, station ? station.mood.replace('cheering', 'watching') : 'watching');
-    clearTimeout(wanderT); wanderT = setTimeout(wander, 45000 + Math.random()*30000); };
+    later(45000 + Math.random()*30000); };
   hit.addEventListener('pointerup', drop); hit.addEventListener('pointercancel', drop);
   hit.addEventListener('click', e => { if(e.detail === 0) sayHi(); }); // Enter or Space
   // react to what happens on the page
