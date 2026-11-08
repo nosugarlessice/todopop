@@ -3,7 +3,7 @@
 // takes the mouse while the cursor is over a bubble or the control panel; everywhere
 // else, clicks pass straight through to whatever is underneath.
 
-const { app, BrowserWindow, screen, ipcMain, Tray, Menu, globalShortcut, nativeImage, shell, powerMonitor } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, Tray, Menu, globalShortcut, nativeImage, shell, powerMonitor, net } = require('electron');
 const path = require('path');
 const { openInNewWindow } = require('./openwin');
 // Windows updates itself from the GitHub releases (it downloads in the background and installs when TODOPOP restarts).
@@ -170,6 +170,20 @@ ipcMain.on('paused', (_event, on) => {
 
 ipcMain.handle('app-version', () => app.getVersion());
 ipcMain.handle('insets', () => insets());
+// the calendar's private link (an .ics file): fetched here, because calendar sites don't let web pages read them directly.
+// Only the user's own link is ever fetched, straight from their calendar; nothing passes through TODOPOP.
+ipcMain.handle('cal-fetch', async (_event, link) => {
+  try {
+    const u = new URL(String(link).trim().replace(/^webcal:/i, 'https:'));
+    if (u.protocol !== 'https:') return { error: 'https' };
+    const res = await net.fetch(u.href, { headers: { Accept: 'text/calendar, */*' } });
+    if (!res.ok) return { error: 'status', status: res.status };
+    const text = await res.text();
+    if (text.length > 8e6) return { error: 'big' };
+    if (!/BEGIN:VCALENDAR/.test(text.slice(0, 2000))) return { error: 'notcal' };
+    return { text };
+  } catch (e) { return { error: 'net' }; }
+});
 ipcMain.on('install-update', () => { if (autoUpdater) setImmediate(() => autoUpdater.quitAndInstall(true, true)); });
 function setupUpdates() {
   if (isMac || !autoUpdater || !app.isPackaged) return;

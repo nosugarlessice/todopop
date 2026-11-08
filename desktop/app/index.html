@@ -882,6 +882,10 @@ html.remote .task .name:active{opacity:.6}
   max-width:calc(100% - 32px); background:var(--paper); border:1px solid var(--ink); border-radius:999px; padding:7px 7px 7px 18px; font-size:12.5px;
   box-shadow:0 18px 50px -22px rgba(16,24,48,.45); animation:pop-in .32s cubic-bezier(.3,1.6,.5,1)}
 .ask span{min-width:0}
+.cal-card b{font-weight:500}
+.cal-card .field-label{margin-right:4px}
+.calx-opt{display:flex; align-items:center; justify-content:space-between; gap:10px}
+.calx .sync-row .btn{flex:none}
 .gnew-pop{position:fixed; z-index:30; inset:0; display:grid; place-items:center; background:color-mix(in srgb, var(--paper) 55%, transparent);
   -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); animation:fade-in .2s ease}
 .gnew-pop[hidden]{display:none}
@@ -1078,6 +1082,22 @@ input.has-cjk{line-height:1.5}
         </div>
         <p class="note sync-err" id="sync-err" hidden></p>
       </div>
+      <div class="sync calx" id="calx" hidden>
+        <div class="sync-top"><span class="field-label">Calendar</span><span class="sync-state" id="calx-state"></span></div>
+        <div class="sync-step" id="calx-off">
+          <p class="note" id="calx-why"></p>
+          <div class="sync-row"><input class="text-in" id="calx-in" type="url" inputmode="url" autocomplete="off" spellcheck="false" placeholder="https://calendar.google.com/…/basic.ics" aria-label="Your calendar’s private link"><button type="button" class="btn small solid" id="calx-go">Connect</button></div>
+          <button type="button" class="link" id="calx-how" aria-expanded="false">Where do I find it?</button>
+          <p class="note" id="calx-steps" hidden></p>
+        </div>
+        <div class="sync-step" id="calx-on" hidden>
+          <p class="note" id="calx-who"></p>
+          <div class="calx-opt"><span class="field-label">Time blocks</span><div class="seg lang-seg" id="calx-nudge" role="group" aria-label="Time blocks"><button type="button" data-v="on">Nudge me</button><button type="button" data-v="off">Off</button></div></div>
+          <div class="calx-opt"><span class="field-label">Meetings</span><div class="seg lang-seg" id="calx-quiet" role="group" aria-label="Meetings"><button type="button" data-v="on">Hide bubbles</button><button type="button" data-v="off">Leave them</button></div></div>
+          <div class="sync-links"><button type="button" class="link" id="calx-now">Check now</button><button type="button" class="link" id="calx-out">Disconnect</button></div>
+        </div>
+        <p class="note sync-err" id="calx-err" hidden></p>
+      </div>
       <div class="lang-row"><span class="field-label">Growth speed</span><div class="seg lang-seg" id="speed-seg" role="group" aria-label="Growth speed"><button type="button" data-speed="real">Real time</button><button type="button" data-speed="demo">Demo (fast)</button></div></div>
       <div class="lang-row"><span class="field-label">Sounds</span><div class="seg lang-seg" id="sound-seg" role="group" aria-label="Sounds"><button type="button" data-sound="on">On</button><button type="button" data-sound="off">Off</button></div></div>
       <div class="lang-row"><span class="field-label">Version</span><span class="ver" id="app-ver">Phone app · always up to date</span></div>
@@ -1187,6 +1207,16 @@ input.has-cjk{line-height:1.5}
   <button type="button" class="btn small solid" id="ask-yes">Pop it!</button>
 </div>
 
+<div class="ask cal-card" id="calnudge" role="alertdialog" aria-labelledby="calnudge-t" hidden>
+  <span id="calnudge-t"><span class="field-label" id="calnudge-when"></span> <b id="calnudge-name"></b></span>
+  <button type="button" class="btn small" id="calnudge-no">Later</button>
+  <button type="button" class="btn small solid" id="calnudge-yes">Get in</button>
+</div>
+<div class="ask cal-card" id="calq" role="status" hidden>
+  <span id="calq-t"></span>
+  <button type="button" class="btn small" id="calq-show">Show bubbles</button>
+</div>
+
 <div class="toast" id="toast" role="status"><span id="toast-msg"></span><button type="button" id="undo">Undo</button></div>
 
 <script>
@@ -1261,6 +1291,7 @@ const ZH = { // fixed words, English → Chinese
   'Scan with your phone':'用手机扫一扫', 'Pairing code':'配对二维码', 'Phone connected. You can close this.':'手机已连接，可以关掉这个窗口了。', 'Copy link':'复制链接', 'Done':'完成',
   'Phone controls':'手机控制', 'Pause':'暂停', 'Not yet':'还没', 'Pop it!':'戳破！', 'Undo':'撤销',
   'Press and hold':'长按', 'Double-click':'双击', 'Growth speed':'生长速度', 'Guide':'引导', 'Version':'版本', 'Phone app · always up to date':'手机 App · 自动保持最新', 'Show the tour again':'再看一遍引导', 'Skip':'跳过', 'Real time':'实时', 'Demo (fast)':'演示（快速）', 'Pop sound':'戳破音效', 'Sounds':'音效', 'On':'打开',
+  'Calendar':'日历', 'Connect':'连接', 'Where do I find it?':'在哪里找？', 'Time blocks':'时间块', 'Meetings':'会议', 'Nudge me':'提醒我', 'Hide bubbles':'藏起泡泡', 'Leave them':'不用藏', 'Check now':'现在检查', 'Disconnect':'断开', 'Later':'等会儿', 'Get in':'进去', 'Show bubbles':'显示泡泡', 'Checking…':'检查中…', 'Not reached':'连不上', 'Your calendar’s private link':'你日历的私密链接',
   'Off':'关闭', 'Synced':'已同步', 'Syncing':'同步中', 'Offline':'离线', 'Reconnecting':'重新连接中', 'Not connected':'未连接',
   // starter tasks and the sample history
   'Problem set 4':'数学作业', 'Reply to emails':'回邮件', 'Figma critique':'改设计稿', 'Book dentist':'约牙医', 'Laundry':'洗衣服', 'Water the pothos':'给绿萝浇水', 'Drink water':'喝水',
@@ -2343,7 +2374,7 @@ addEventListener('pointermove', e => {
   if(h !== hover){ if(h){ for(let i=0;i<N;i++) h.v[i] += (COS[i]*mouse.vx + SIN[i]*mouse.vy)*-0.03; } hover = h; }
   document.documentElement.classList.toggle('over-bubble', !!h);
 }, {passive:true});
-const UI = '.coach, .panel, .launcher, .update-note, .pop-edit, .focus-bar, .toast, .tint-pop, .gcolor, .ask, .focus-note, .gnew-pop, .pair-pop, .rbar';
+const UI = '.cal-card, .coach, .panel, .launcher, .update-note, .pop-edit, .focus-bar, .toast, .tint-pop, .gcolor, .ask, .focus-note, .gnew-pop, .pair-pop, .rbar';
 const onUI = e => !!(e.target && e.target.closest && e.target.closest(UI));
 addEventListener('pointerdown', e => {
   if(!ed.hidden && !ed.contains(e.target) && !e.target.closest?.('.gcolor, .gnew-pop')) closeEdit();
@@ -2605,7 +2636,7 @@ function wrap(text, maxW){ needCJK(text);
 }
 function draw(){
   ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,W(),H());
-  const fieldTarget = entering ? 0 : 1; // the field fades out while you get in, then comes back as the steps
+  const fieldTarget = fieldGoal(); // the field fades out while you get in, then comes back as the steps
   fieldAlpha += (fieldTarget - fieldAlpha) * .12; if(Math.abs(fieldAlpha - fieldTarget) < .01) fieldAlpha = fieldTarget;
   ctx.globalAlpha = fieldAlpha;
   for(let i = deflating.length - 1; i >= 0; i--){ const d = deflating[i]; d.spawn = Math.min(1, d.spawn) - 1/60*3.2; if(d.spawn <= 0){ deflating.splice(i, 1); d.deflate = false; } }
@@ -2723,12 +2754,13 @@ function growOnly(growDt){
    empty nothing drawn, checked 4 times a second: no bubbles on screen (e.g. focus mode on a task without steps)
    rest  once a second: the computer has been idle a while (no mouse or keys)
    asleep nothing drawn: the screen is locked or the computer is asleep; bubbles keep growing, checked once a second */
+const fieldGoal = () => (entering || calHidden()) ? 0 : 1; // the bubbles fade out while you get in, and during a meeting
 let busyUntil = 0, sysIdle = false, asleep = false, drawnEmpty = false, pendingFrame = null;
 function busy(ms = 1200){ busyUntil = Math.max(busyUntil, performance.now() + ms); }
 function kick(){ busy(); if(pendingFrame){ clearTimeout(pendingFrame); pendingFrame = null; requestAnimationFrame(frame); } }
 function later(ms){ pendingFrame = setTimeout(() => { pendingFrame = null; requestAnimationFrame(frame); }, ms); }
 function needsFast(){
-  if(drag || entering || particles.length || rings.length || deflating.length || Math.abs(fieldAlpha - (entering ? 0 : 1)) > .01) return true;
+  if(drag || entering || particles.length || rings.length || deflating.length || Math.abs(fieldAlpha - fieldGoal()) > .01) return true;
   const mouseNew = mouse.x > -900 && performance.now() - mouse.lastT < 1500;
   for(const b of bubbles){
     if(b.spawn < 1 || b.pulse > 0 || b.holdP > 0 || b.toR != null) return true;
@@ -2749,7 +2781,7 @@ function frame(now){
   if(asleep){ growOnly(growDt); later(1000); return; }
   const fast = now < busyUntil || needsFast();
   if(fast && now >= busyUntil) busy(); // stay quick a moment after things settle, so the last wobble eases out smoothly
-  const empty = !bubbles.length && !particles.length && !rings.length && !deflating.length && fieldAlpha === (entering ? 0 : 1);
+  const empty = !bubbles.length && !particles.length && !rings.length && !deflating.length && fieldAlpha === fieldGoal();
   if(empty){ if(!drawnEmpty){ draw(); drawnEmpty = true; } later(250); return; }
   drawnEmpty = false;
   // at a lower frame rate, two small physics steps keep the drift at its usual speed
@@ -3372,13 +3404,231 @@ function inRect(el, x, y){ if(!el || el.hidden) return false; const r = el.getBo
 function updateInteractive(){
   if(!DESKTOP) return;
   const x = mouse.x, y = mouse.y;
-  const on = !$('#coach').hidden || !!drag || !!pdrag || !!barDrag || !ed.hidden || !gnew.hidden || !$('#pair').hidden || !$('#ask').hidden || inRect($('#ask'),x,y) || !tintPop.hidden || !$('#gcolor').hidden || !!hit(x,y) || inRect($('#focus'),x,y) || inRect(panel,x,y) || inRect($('#launcher'),x,y) || inRect($('#update-note'),x,y) || ($('#toast').classList.contains('show') && inRect($('#toast'),x,y));
+  const on = !$('#coach').hidden || !!drag || !!pdrag || !!barDrag || !ed.hidden || !gnew.hidden || !$('#pair').hidden || !$('#ask').hidden || inRect($('#ask'),x,y) || !tintPop.hidden || !$('#gcolor').hidden || !!hit(x,y) || inRect($('#focus'),x,y) || inRect(panel,x,y) || inRect($('#launcher'),x,y) || inRect($('#calnudge'),x,y) || inRect($('#calq'),x,y) || inRect($('#update-note'),x,y) || ($('#toast').classList.contains('show') && inRect($('#toast'),x,y));
   if(on !== interactive){ interactive = on; window.todopop.setInteractive(on); }
 }
 addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; updateInteractive(); }, {passive:true});
 
 renderGroups(); syncPause(); renderTasks(); renderArchive();
 requestAnimationFrame(frame);
+
+/* ---------- calendar: the private link to the user's own calendar (desktop app) ----------
+   Read-only, and the link never leaves this computer. A time block named like a task nudges you when it starts;
+   during a meeting (other guests or a video link) the bubbles step aside, so nothing shows when you share your screen. */
+const CAL = {link: store.get('calLink') || '', nudge: store.get('calNudge') !== false, quiet: store.get('calQuiet') !== false, occ: [], at: 0, err: '', busy: false};
+{ const c = store.get('calCache'); if(CAL.link && c && Array.isArray(c.occ)){ CAL.occ = c.occ; CAL.at = c.at || 0; } }
+const icsText = v => v.replace(/\\n/gi, ' ').replace(/\\([,;\\])/g, '$1').trim();
+function icsDur(v){ const m = /^[+-]?P(?:(\d+)W)?(?:(\d+)D)?(?:T(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?)?$/.exec(v.trim()); return m ? ((+m[1]||0)*604800 + (+m[2]||0)*86400 + (+m[3]||0)*3600 + (+m[4]||0)*60 + (+m[5]||0))*1000 : 0; }
+const tzFmt = {};
+function tzOffset(ms, tz){ // minutes that zone is ahead of UTC at that moment, or null if this computer doesn't know the zone
+  try{
+    const f = tzFmt[tz] || (tzFmt[tz] = new Intl.DateTimeFormat('en-US', {timeZone:tz, hourCycle:'h23', year:'numeric', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', second:'2-digit'}));
+    const q = {}; for(const x of f.formatToParts(new Date(ms))) q[x.type] = +x.value;
+    return Math.round((Date.UTC(q.year, q.month - 1, q.day, q.hour % 24, q.minute, q.second) - Math.floor(ms/1000)*1000)/60000);
+  }catch(e){ return null; }
+}
+function wallToMs(w, tz){ // a clock time in a time zone → a moment
+  const guess = Date.UTC(w.y, w.mo - 1, w.d, w.h, w.mi, w.s);
+  if(tz === 'UTC') return guess;
+  if(tz){ const o1 = tzOffset(guess, tz); if(o1 != null){ let ms = guess - o1*60000; const o2 = tzOffset(ms, tz); if(o2 != null && o2 !== o1) ms = guess - o2*60000; return ms; } }
+  return new Date(w.y, w.mo - 1, w.d, w.h, w.mi, w.s).getTime(); // no zone, or one this computer doesn't know: the computer's own
+}
+function icsTime(v, p){
+  const m = /^(\d{4})(\d\d)(\d\d)(?:T(\d\d)(\d\d)(\d\d)(Z)?)?$/.exec((v || '').trim()); if(!m) return null;
+  const wall = {y:+m[1], mo:+m[2], d:+m[3], h:+(m[4]||0), mi:+(m[5]||0), s:+(m[6]||0)}, tz = m[7] ? 'UTC' : (p.TZID || '');
+  return {ms: wallToMs(wall, tz), wall, tz, allDay: !m[4] || p.VALUE === 'DATE'};
+}
+function icsParse(text){
+  const evs = []; let ev = null;
+  for(const line of text.replace(/\r?\n[ \t]/g, '').split(/\r?\n/)){
+    if(line === 'BEGIN:VEVENT'){ ev = {att:0, ex:[], where:''}; continue; }
+    if(line === 'END:VEVENT'){ if(ev && ev.start) evs.push(ev); ev = null; continue; }
+    if(!ev) continue;
+    const i = line.indexOf(':'); if(i < 0) continue;
+    const [name, ...ps] = line.slice(0, i).split(';'), val = line.slice(i + 1), p = {};
+    for(const x of ps){ const j = x.indexOf('='); if(j > 0) p[x.slice(0, j).toUpperCase()] = x.slice(j + 1).replace(/^"|"$/g, ''); }
+    switch(name.toUpperCase()){
+      case 'UID': ev.uid = val; break;
+      case 'SUMMARY': ev.title = icsText(val); break;
+      case 'DTSTART': ev.start = icsTime(val, p); break;
+      case 'DTEND': ev.end = icsTime(val, p); break;
+      case 'DURATION': ev.dur = icsDur(val); break;
+      case 'RRULE': ev.rrule = val; break;
+      case 'EXDATE': for(const v of val.split(',')){ const t = icsTime(v, p); if(t) ev.ex.push(t.ms); } break;
+      case 'RECURRENCE-ID': ev.rid = icsTime(val, p); break;
+      case 'STATUS': ev.status = val.trim().toUpperCase(); break;
+      case 'TRANSP': ev.transp = val.trim().toUpperCase(); break;
+      case 'ATTENDEE': ev.att++; break;
+      case 'LOCATION': case 'DESCRIPTION': case 'X-GOOGLE-CONFERENCE': case 'URL': ev.where += ' ' + val; break;
+    }
+  }
+  return evs;
+}
+const ICS_DAYS = ['SU','MO','TU','WE','TH','FR','SA'];
+const daysIn = (y, mo) => new Date(Date.UTC(y, mo + 1, 0)).getUTCDate();
+function calExpand(ev, from, to){ // the times this event happens between from and to, repeats included
+  if(!ev.start || ev.start.allDay || ev.status === 'CANCELLED') return [];
+  const dur = ev.end ? Math.max(0, ev.end.ms - ev.start.ms) : (ev.dur || 3600e3), out = [];
+  const meet = ev.att >= 2 || /meet\.google\.com|zoom\.us|teams\.microsoft\.com|teams\.live\.com|webex\.com|whereby\.com|facetime/i.test(ev.where);
+  const add = ms => { if(ms + dur > from && ms < to && !ev.ex.includes(ms)) out.push({uid:ev.uid || ev.title, title:ev.title || '', start:ms, end:ms + Math.max(dur, 60e3), meet, free:ev.transp === 'TRANSPARENT'}); };
+  if(!ev.rrule){ add(ev.start.ms); return out; }
+  const r = {}; for(const x of ev.rrule.split(';')){ const [k, v] = x.split('='); r[(k || '').toUpperCase()] = v || ''; }
+  const iv = Math.max(1, +r.INTERVAL || 1), count = +r.COUNT || Infinity, u = r.UNTIL ? icsTime(r.UNTIL, {}) : null;
+  const untilMs = u ? (u.allDay ? u.ms + 864e5 - 1 : u.ms) : Infinity;
+  const w0 = ev.start.wall, tz = ev.start.tz;
+  const at = (y, mo, d) => { const t = new Date(Date.UTC(y, mo, d)); return wallToMs({y:t.getUTCFullYear(), mo:t.getUTCMonth() + 1, d:t.getUTCDate(), h:w0.h, mi:w0.mi, s:w0.s}, tz); };
+  const byday = (r.BYDAY || '').split(',').filter(Boolean).map(x => ({n:parseInt(x, 10) || 0, d:ICS_DAYS.indexOf(x.slice(-2).toUpperCase())})).filter(b => b.d >= 0);
+  const bymd = (r.BYMONTHDAY || '').split(',').filter(Boolean).map(Number);
+  let n = 0;
+  const emit = ms => { if(ms < ev.start.ms) return true; if(ms > untilMs || n >= count) return false; n++; add(ms); return ms < to; };
+  for(let k = 0; k < 4000; k++){
+    if(r.FREQ === 'DAILY'){ if(!emit(at(w0.y, w0.mo - 1, w0.d + k*iv))) break; }
+    else if(r.FREQ === 'WEEKLY'){
+      const base = w0.d + k*7*iv, mon = (new Date(Date.UTC(w0.y, w0.mo - 1, base)).getUTCDay() + 6) % 7; // weeks run Monday to Sunday
+      const days = (byday.length ? byday.map(b => b.d) : [new Date(Date.UTC(w0.y, w0.mo - 1, w0.d)).getUTCDay()]).map(d => (d + 6) % 7).sort((a, b) => a - b);
+      let go = true; for(const d of days){ if(!emit(at(w0.y, w0.mo - 1, base - mon + d))){ go = false; break; } }
+      if(!go) break;
+    }
+    else if(r.FREQ === 'MONTHLY'){
+      const t = new Date(Date.UTC(w0.y, w0.mo - 1 + k*iv, 1)), y = t.getUTCFullYear(), mo = t.getUTCMonth(), dim = daysIn(y, mo);
+      let ds = [];
+      if(byday.length){ for(const b of byday){ const all = []; for(let d = 1; d <= dim; d++) if(new Date(Date.UTC(y, mo, d)).getUTCDay() === b.d) all.push(d);
+        if(!b.n) ds.push(...all); else { const x = b.n > 0 ? all[b.n - 1] : all[all.length + b.n]; if(x) ds.push(x); } } }
+      else ds = (bymd.length ? bymd : [w0.d]).map(d => d < 0 ? dim + 1 + d : d);
+      let go = true; for(const d of [...new Set(ds)].filter(d => d >= 1 && d <= dim).sort((a, b) => a - b)){ if(!emit(at(y, mo, d))){ go = false; break; } }
+      if(!go) break;
+    }
+    else if(r.FREQ === 'YEARLY'){ if(!emit(at(w0.y + k*iv, w0.mo - 1, w0.d))) break; }
+    else { add(ev.start.ms); break; }
+  }
+  return out;
+}
+function calOccurrences(evs, from, to){
+  const moved = new Set(evs.filter(e => e.rid).map(e => (e.uid || e.title) + '@' + e.rid.ms)), out = [];
+  for(const e of evs){
+    if(e.rid){ out.push(...calExpand({...e, rrule:null}, from, to)); continue; } // one changed time of a repeating event
+    for(const o of calExpand(e, from, to)) if(!moved.has(o.uid + '@' + o.start)) out.push(o);
+  }
+  return out.sort((a, b) => a.start - b.start);
+}
+// an event belongs to a task when they share a name ("Essay draft", "Essay draft 2-4pm", "Work on essay draft")
+const calNorm = s => (s || '').toLowerCase().normalize('NFKC').replace(/[^\p{L}\p{N}]+/gu, ' ').trim();
+function calTask(title){
+  const t = calNorm(title); if(!t) return null;
+  let best = null, bl = 0;
+  for(const b of tasks()){ if(b.isStep || b.deflate) continue; const n = calNorm(b.name); if(!n) continue;
+    const min = /[㐀-鿿]/.test(n) ? 2 : 4;
+    if((n === t || (Math.min(n.length, t.length) >= min && (t.includes(n) || n.includes(t)))) && n.length > bl){ best = b; bl = n.length; } }
+  return best;
+}
+const okey = o => o.uid + '@' + o.start;
+const hhmm = ms => new Date(ms).toLocaleTimeString(ZH_ON ? 'zh-CN' : [], {hour:'numeric', minute:'2-digit'});
+let calQuietOcc = null, calShownFor = null, calFocusOcc = null, calNudgeTimer = null, calNudgeFor = null;
+const calNudged = new Set(store.get('calNudged') || []);
+function calHidden(){ return !!calQuietOcc && calShownFor !== okey(calQuietOcc) && !focus; }
+function showQuietNote(){
+  if(!calQuietOcc) return;
+  $('#calq-t').textContent = L(`In a meeting until ${hhmm(calQuietOcc.end)}. Your bubbles stepped aside.`, `${hhmm(calQuietOcc.end)} 前在开会，泡泡先让开了。`);
+  $('#calq').hidden = false; updateInteractive();
+  clearTimeout(showQuietNote.t); showQuietNote.t = setTimeout(() => { $('#calq').hidden = true; updateInteractive(); }, 9000);
+}
+function setQuiet(m){
+  const k = m ? okey(m) : null; if(k === (calQuietOcc ? okey(calQuietOcc) : null)) return;
+  calQuietOcc = m; if(!m){ calShownFor = null; $('#calq').hidden = true; updateInteractive(); } else showQuietNote();
+  kick();
+}
+$('#calq-show').addEventListener('click', () => { if(calQuietOcc) calShownFor = okey(calQuietOcc); $('#calq').hidden = true; updateInteractive(); kick(); });
+new MutationObserver(() => { if(!panel.hidden && calHidden()) showQuietNote(); }).observe(panel, {attributes:true, attributeFilter:['hidden']}); // opening TODOPOP mid-meeting says why the bubbles are gone
+function calNudge(b, o){
+  calNudgeFor = {b, o};
+  $('#calnudge-when').textContent = L(`${hhmm(o.start)} · Time block`, `${hhmm(o.start)} · 时间块`);
+  $('#calnudge-name').textContent = b.name;
+  $('#calnudge').hidden = false; updateInteractive();
+  b.pulse = 1; kick(); playClip('blow', 1, .5);
+  clearTimeout(calNudgeTimer); calNudgeTimer = setTimeout(closeNudge, 3*60e3); // it doesn't wait forever
+}
+function closeNudge(){ clearTimeout(calNudgeTimer); calNudgeFor = null; $('#calnudge').hidden = true; updateInteractive(); }
+$('#calnudge-no').addEventListener('click', closeNudge);
+$('#calnudge-yes').addEventListener('click', () => { const n = calNudgeFor; closeNudge(); if(n && !focus && tasks().includes(n.b)){ calFocusOcc = n.o; getIn(n.b); } });
+function calTick(){
+  if(!CAL.link){ setQuiet(null); return; }
+  const now = Date.now();
+  setQuiet(CAL.quiet ? CAL.occ.find(o => o.meet && !o.free && o.start <= now && now < o.end) || null : null);
+  if(CAL.nudge && !calQuietOcc && !calNudgeFor){
+    for(const o of CAL.occ){
+      if(o.start > now || now - o.start > 10*60e3 || now >= o.end || calNudged.has(okey(o))) continue; // only just started
+      const b = calTask(o.title); if(!b) continue;
+      calNudged.add(okey(o)); store.set('calNudged', [...calNudged].slice(-80));
+      if(focus && focus.b === b){ calFocusOcc = o; break; } // already in it
+      if(!focus) calNudge(b, o);
+      break;
+    }
+  }
+  if(!focus) calFocusOcc = null;
+  else if(!calFocusOcc) calFocusOcc = CAL.occ.find(o => o.start <= now && now < o.end && calTask(o.title) === focus.b) || null;
+  if(focus && calFocusOcc && now >= calFocusOcc.end && !calFocusOcc.told){ calFocusOcc.told = true;
+    showToast(L(`Your time block is over. Keep going, or pop it when it’s done.`, '时间块结束了。可以继续，做完了就戳破它。')); }
+  if(!$('#tint-pop').hidden) paintCal();
+}
+async function calFetch(){
+  if(!DESKTOP || !CAL.link || !window.todopop.fetchCalendar || CAL.busy) return;
+  CAL.busy = true; paintCal();
+  const r = await window.todopop.fetchCalendar(CAL.link).catch(() => ({error:'net'}));
+  CAL.busy = false;
+  if(r && r.text){ const now = Date.now();
+    CAL.occ = calOccurrences(icsParse(r.text), now - 864e5, now + 8*864e5); CAL.at = now; CAL.err = '';
+    store.set('calCache', {at:CAL.at, occ:CAL.occ}); }
+  else CAL.err = (r && r.error) || 'net';
+  paintCal(); calTick();
+}
+function calAgo(){ const m = Math.round((Date.now() - CAL.at)/60000); return m < 1 ? L('just now', '刚刚') : m < 60 ? L(`${m} min ago`, `${m} 分钟前`) : L(`${Math.round(m/60)} h ago`, `${Math.round(m/60)} 小时前`); }
+function paintCal(){
+  const on = !!CAL.link, st = $('#calx-state');
+  $('#calx-off').hidden = on; $('#calx-on').hidden = !on;
+  st.dataset.s = !on ? '' : CAL.busy ? 'busy' : CAL.err ? 'off' : 'on';
+  st.textContent = !on ? T('Off') : CAL.busy ? T('Checking…') : CAL.err ? T('Not reached') : T('On');
+  const ERR = {https:L('Paste the link that starts with https://', '请粘贴以 https:// 开头的链接'), status:L('That link didn’t open. Copy the secret address again: it changes if it was reset.', '这个链接打不开。请重新复制私密地址：重置后它会变。'),
+    notcal:L('That link isn’t a calendar. Use the secret address in iCal format (it ends in .ics).', '这不是日历链接。请用 iCal 格式的私密地址（以 .ics 结尾）。'), big:L('That calendar is too big to read.', '这个日历太大了，读不了。'),
+    net:L('Couldn’t reach your calendar. TODOPOP will try again in a few minutes.', '暂时连不上你的日历，过几分钟会再试。')};
+  $('#calx-err').hidden = !CAL.err; $('#calx-err').textContent = ERR[CAL.err] || ERR.net;
+  if(on){
+    const now = Date.now(), ahead = CAL.occ.filter(o => o.end > now), blocks = ahead.filter(o => calTask(o.title)), meets = ahead.filter(o => o.meet && !o.free);
+    const when = ms => new Date(ms).toLocaleString(ZH_ON ? 'zh-CN' : [], {weekday:'short', hour:'numeric', minute:'2-digit'});
+    const next = blocks[0];
+    $('#calx-who').textContent = [
+      next ? L(`Next time block: ${calTask(next.title).name}, ${when(next.start)}.`, `下一个时间块：${calTask(next.title).name}，${when(next.start)}。`)
+           : L('No events this week share a name with a task yet. Name a time block like the task, and its bubble will nudge you when it starts.', '这周还没有和任务同名的日程。把时间块起成任务的名字，开始时泡泡就会提醒你。'),
+      L(`${meets.length} meeting${meets.length === 1 ? '' : 's'} coming up this week.`, `这周还有 ${meets.length} 个会议。`),
+      CAL.at ? L(`Checked ${calAgo()}.`, `${calAgo()}检查过。`) : ''].filter(Boolean).join(' ');
+  }
+  document.querySelectorAll('#calx-nudge [data-v]').forEach(b => b.classList.toggle('on', (b.dataset.v === 'on') === CAL.nudge));
+  document.querySelectorAll('#calx-quiet [data-v]').forEach(b => b.classList.toggle('on', (b.dataset.v === 'on') === CAL.quiet));
+}
+if(DESKTOP && window.todopop.fetchCalendar){
+  $('#calx').hidden = false;
+  $('#calx-why').textContent = L('Connect your calendar: a time block named like a task nudges that bubble when it starts, and during meetings your bubbles step aside, so nothing shows when you share your screen. Read-only, and the link stays on this computer.',
+    '连上你的日历：和任务同名的时间块开始时，那个泡泡会提醒你；开会时泡泡会先让开，共享屏幕时什么都不会露出来。只读取，链接只存在这台电脑上。');
+  $('#calx-steps').textContent = L('Google Calendar on the web → Settings (the gear) → under “Settings for my calendars”, pick your calendar → Integrate calendar → copy “Secret address in iCal format”. Apple Calendar and Outlook have a private link like this too.',
+    '在网页版 Google 日历 → 设置（齿轮）→ 在“我的日历的设置”里选你的日历 → 集成日历 → 复制“iCal 格式的私密地址”。Apple 日历和 Outlook 也有这样的私密链接。');
+  $('#calx-how').addEventListener('click', () => { const s = $('#calx-steps'); s.hidden = !s.hidden; $('#calx-how').setAttribute('aria-expanded', !s.hidden); });
+  const connect = async () => {
+    const v = $('#calx-in').value.trim(); if(!v) { $('#calx-in').focus(); return; }
+    if(!/^(https|webcal):\/\//i.test(v)){ CAL.err = 'https'; paintCal(); return; }
+    CAL.link = v; CAL.occ = []; CAL.at = 0; CAL.err = ''; await calFetch();
+    if(CAL.err){ CAL.link = ''; paintCal(); return; } // didn't work: stay on the paste step, with the reason
+    store.set('calLink', CAL.link); $('#calx-in').value = ''; paintCal();
+  };
+  $('#calx-go').addEventListener('click', connect);
+  $('#calx-in').addEventListener('keydown', e => { if(e.key === 'Enter'){ e.preventDefault(); connect(); } });
+  $('#calx-now').addEventListener('click', () => calFetch());
+  $('#calx-out').addEventListener('click', () => { CAL.link = ''; CAL.occ = []; CAL.at = 0; CAL.err = ''; store.set('calLink', ''); store.set('calCache', null); closeNudge(); setQuiet(null); paintCal(); });
+  $('#calx-nudge').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if(!b) return; CAL.nudge = b.dataset.v === 'on'; store.set('calNudge', CAL.nudge); paintCal(); });
+  $('#calx-quiet').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if(!b) return; CAL.quiet = b.dataset.v === 'on'; store.set('calQuiet', CAL.quiet); paintCal(); calTick(); });
+  new MutationObserver(() => { if(!$('#tint-pop').hidden) paintCal(); }).observe($('#tint-pop'), {attributes:true, attributeFilter:['hidden']});
+  window.todopop.onPower?.(s => { if(s === 'wake') calFetch(); });
+  paintCal(); setTimeout(calTick, 1500); setTimeout(calFetch, 4000);
+  setInterval(calTick, 20000); setInterval(calFetch, 10*60e3);
+}
 
 /* ---------- first-run guide ---------- */
 const FIRST_RUN = !store.get('guided'); // anyone who hasn't seen the tour gets it once, however many times the app was opened before
