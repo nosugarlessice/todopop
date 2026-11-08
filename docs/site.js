@@ -118,6 +118,7 @@
   const hex = rgb => '#' + rgb.map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
   function setTint(i){
     tint = i; const [h, s] = PRESETS[i], rgb = hslToRgb(h, s, inkL(h, s));
+    if(window.__tintReady) dispatchEvent(new CustomEvent('tp-tint')); window.__tintReady = true;
     root.style.setProperty('--ink', hex(rgb)); document.querySelector('meta[name=theme-color]')?.setAttribute('content', hex(rgb)); TP.setTint?.(rgb);
     if(openO === 2) renderCustomize();
   }
@@ -135,7 +136,7 @@
     wireStops(pop, l => { level = l; $('#tp-lv').textContent = T(LEVEL_NAME[l]); });
     $('#tp-g').addEventListener('click', e => { const b = e.target.closest('[data-g]'); if(!b) return; group = b.dataset.g || null; $$('#tp-g button').forEach(x => x.setAttribute('aria-pressed', x === b)); });
     const blow = () => { const name = $('#tp-name').value.trim(); if(!name){ $('#tp-name').focus(); return; }
-      const r = big.getBoundingClientRect(); TP.add?.({name, level, group, at:{x:r.left + r.width*(.2 + Math.random()*.6), y:Math.min(innerHeight - 80, r.bottom + 160)}}); window.TPSound?.blow(); setO(null); };
+      const r = big.getBoundingClientRect(); TP.add?.({name, level, group, at:{x:r.left + r.width*(.2 + Math.random()*.6), y:Math.min(innerHeight - 80, r.bottom + 160)}}); window.TPSound?.blow(); setO(null); dispatchEvent(new CustomEvent('tp-blow')); };
     $('#tp-blow').addEventListener('click', blow); $('#tp-name').addEventListener('keydown', e => { if(e.key === 'Enter') blow(); });
     setTimeout(() => $('#tp-name')?.focus({preventScroll:true}), 60);
   }
@@ -211,7 +212,7 @@
     pop.querySelector('.swatches').addEventListener('click', e => { const b = e.target.closest('[data-t]'); if(b) setTint(+b.dataset.t); });
   }
   function setO(i){
-    openO = (i === openO) ? null : i;
+    openO = (i === openO) ? null : i; dispatchEvent(new CustomEvent('tp-o', {detail:openO})); // Tubby reacts
     big.querySelectorAll('.o').forEach((o, k) => { o.classList.toggle('on', k === openO); o.setAttribute('aria-expanded', k === openO); });
     if(openO === null){ pop.hidden = true; notes.forEach(n => n.classList.remove('lift')); return; }
     pop.hidden = false; pop.classList.toggle('wide', openO === 1); if(openO === 1){ archMode = 'week'; archOffset = 0; selDay = null; }
@@ -283,12 +284,12 @@
   function startFocus(b){
     inside = b; started = Date.now();
     $('#fb-name').textContent = label(b); $('#fb-time').textContent = '0:00';
-    root.classList.add('focusing'); bar.inert = false; TP.hide?.(true);
+    root.classList.add('focusing'); bar.inert = false; TP.hide?.(true); dispatchEvent(new CustomEvent('tp-focus', {detail:true}));
     clearInterval(tick); tick = setInterval(() => { const s = Math.floor((Date.now() - started)/1000); $('#fb-time').textContent = `${Math.floor(s/60)}:${String(s%60).padStart(2, '0')}`; }, 1000);
   }
   function leaveFocus(popIt){
     if(!inside) return; const b = inside; inside = null; clearInterval(tick);
-    root.classList.remove('focusing'); bar.inert = true; TP.hide?.(false);
+    root.classList.remove('focusing'); bar.inert = true; TP.hide?.(false); dispatchEvent(new CustomEvent('tp-focus', {detail:false}));
     b.focusSecs = (b.focusSecs || 0) + (Date.now() - started)/1000;
     if(popIt) setTimeout(() => TP.pop?.(b), 350); // back out, then it bursts
   }

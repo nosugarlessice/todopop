@@ -116,7 +116,7 @@
     if(Math.abs(mouse.vx)>6000) mouse.vx=0; if(Math.abs(mouse.vy)>6000) mouse.vy=0;
     mouse.x=e.clientX; mouse.y=e.clientY; mouse.lastT=t;
     if(drag){
-      if(Math.hypot(e.clientX-drag.sx, e.clientY-drag.sy) > 6) drag.moved = true;
+      if(!drag.moved && Math.hypot(e.clientX-drag.sx, e.clientY-drag.sy) > 6){ drag.moved = true; dispatchEvent(new CustomEvent('tp-drag', {detail:'start'})); } // Tubby watches
       drag.b.hx = e.clientX - drag.ox; drag.b.hy = e.clientY - drag.oy;
       keepApart(drag.b, 'home');
       return;
@@ -140,7 +140,7 @@
   addEventListener('touchstart', e => { const t = e.touches[0]; if(t && !e.target?.closest?.('.nav') && hit(t.clientX, t.clientY)) e.preventDefault(); }, {capture:true, passive:false});
   const release = e => {
     if(!drag || (e.pointerId !== undefined && e.pointerId !== drag.id)) return;
-    const {b, moved, t} = drag; drag = null;
+    const {b, moved, t} = drag; drag = null; if(moved) dispatchEvent(new CustomEvent('tp-drag', {detail:'end'}));
     root.classList.remove('grabbing'); b.holding = false;
     if(!moved && performance.now()-t < 300){ // a quick click gets you in; a second click right after pops it instead
       b.pulse = 1;

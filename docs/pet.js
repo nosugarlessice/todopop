@@ -181,7 +181,7 @@ if(page !== 'tubby'){
   const tip = document.createElement('div'); tip.className = 'site-pet-tip'; tip.setAttribute('role', 'status'); tip.hidden = true; document.body.appendChild(tip);
   const pet = new Tubby(box, 'watching');
   const D = driver(pet, null);
-  let S = 96, cur = null, tgt = {x:0, y:0, r:0}, station = null, ducked = false;
+  let S = 96, cur = null, tgt = {x:0, y:0, r:0}, station = null, ducked = false, override = null, dragging = false;
   const size = () => { // leaning on the big logo it matches the logo; elsewhere it's desk-pet sized
     let s = innerWidth < 700 ? 64 : Math.round(Math.max(84, Math.min(124, innerHeight*.11)));
     const lg = $('#big .logo');
@@ -212,9 +212,9 @@ if(page !== 'tubby'){
   }[page] || [];
   const pick = () => { let s = STATIONS[0]; for(const st of STATIONS){ const e = $(st.sel); if(e && e.getBoundingClientRect().top < innerHeight*.55) s = st; } return s; };
   function target(){
-    if(!station) return null;
-    let t = station.at();
-    if(station.sel === '.hero' && (!t || t.y + S < 70 || t.y > innerHeight)) t = side('right')(); // the logo has scrolled away
+    if(!station && !override) return null;
+    let t = override ? override() : station.at();
+    if(!override && station.sel === '.hero' && (!t || t.y + S < 70 || t.y > innerHeight)) t = side('right')(); // the logo has scrolled away
     if(!t) return null;
     t.x = Math.max(4, Math.min(innerWidth - S - 4, t.x)); t.y = Math.max(70, Math.min(innerHeight - S - 4, t.y));
     if(ducked) t.y = innerHeight - S*.38; // the calendar demo's meeting: ducking down to the edge
@@ -261,7 +261,24 @@ if(page !== 'tubby'){
     if(e.detail === 'block') D.cheer(1600);
     ducked = e.detail === 'meet' && station && station.sel === '#cal'; D.busy(1500);
   });
-  addEventListener('tp-pop', () => D.cheer(1600)); // the hero bubbles
+  addEventListener('tp-pop', () => D.cheer(1600)); // a bubble burst
+  // the landing page: Tubby reacts to whatever you try
+  let oT = null;
+  addEventListener('tp-o', e => { clearTimeout(oT); const i = e.detail; // one of the filled O's
+    if(i === 0) D.cheer(700, 'watching');                                        // making a task: a little hop
+    else if(i === 1) D.setMood('ontask');                                         // your progress: content
+    else if(i === 2){ D.setMood('suspicious'); oT = setTimeout(() => D.setMood(station ? station.mood.replace('cheering', 'watching') : 'watching'), 2600); } // customize: curious
+    else D.setMood(station ? station.mood.replace('cheering', 'watching') : 'watching');
+    D.busy(2500); });
+  addEventListener('tp-blow', () => D.cheer(2200));                                // a new bubble
+  addEventListener('tp-tint', () => { clearTimeout(oT); D.cheer(900, 'suspicious'); oT = setTimeout(() => D.setMood('watching'), 2400); }); // a new color, admired
+  addEventListener('tp-drag', e => { dragging = e.detail === 'start'; if(dragging) D.setMood('watching'); D.busy(1500); }); // its eyes follow the bubble
+  addEventListener('pointermove', () => { if(dragging) D.busy(600); }, {passive:true});
+  let fT = null;
+  addEventListener('tp-focus', e => { clearTimeout(fT); // you got into a bubble: Tubby keeps watch from a corner, then settles in
+    if(e.detail){ override = () => ({x: 12, y: innerHeight - S - (innerWidth < 700 ? 90 : 24), r: -4}); D.setMood('watching'); fT = setTimeout(() => D.setMood('ontask'), 6000); }
+    else { override = null; D.setMood(station ? station.mood.replace('cheering', 'watching') : 'watching'); }
+    hideTip(); D.busy(2000); });
   window.TPPet = {cheer: ms => D.cheer(ms)};
   size(); update();
 }
