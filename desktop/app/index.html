@@ -332,7 +332,7 @@ html.remote .pet, html.remote .pet-keys{display:none !important}
 .focus-bar.dock-l{left:calc(22px + var(--sa-l)); transform:translateY(-50%) rotate(180deg)} /* reads bottom to top on the left edge */
 .focus-bar:is(.dock-l, .dock-r) .focus-name{max-inline-size:min(36ch, 46vh)}
 .focus-bar:is(.dock-l, .dock-r) .focus-time{writing-mode:horizontal-tb; font-size:14px} /* the clock stays upright */
-.focus-bar.dock-l :is(.focus-time, #step-side, .close){transform:rotate(180deg)}
+.focus-bar.dock-l :is(.focus-time, #step-side, .close, .focus-reset){transform:rotate(180deg)}
 .focus-bar:is(.dock-l, .dock-r) .focus-grip{width:16px; height:8px}
 .focus-bar:is(.dock-l, .dock-r) .step-in{position:absolute; writing-mode:horizontal-tb; top:50%; right:calc(100% + 12px); transform:translateY(-50%); background:var(--paper); border:1px solid var(--rule); border-radius:14px; padding:10px 14px; box-shadow:0 14px 34px -18px rgba(16,24,48,.4)}
 .focus-bar.dock-l .step-in{transform:translateY(-50%) rotate(180deg)}
@@ -342,6 +342,13 @@ html.remote .pet, html.remote .pet-keys{display:none !important}
 .focus-bar .focus-ring{color:var(--ink)}
 .focus-name{font-size:19px; font-style:italic; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:36ch; line-height:normal}
 .focus-time{font-size:19px; font-variant-numeric:tabular-nums; color:var(--ink-soft); letter-spacing:.02em}
+/* reset the clock: a small round arrow beside the time, quiet until you point at the bar */
+.focus-reset{all:unset; box-sizing:border-box; width:26px; height:26px; display:grid; place-items:center; border-radius:50%; cursor:pointer; color:var(--ink-soft); opacity:.45; margin-inline-start:-6px; transition:opacity .2s, background .2s, rotate .35s cubic-bezier(.3,1.6,.5,1)}
+.focus-reset svg{width:15px; height:15px; fill:none; stroke:currentColor; stroke-width:1.6; stroke-linecap:round; stroke-linejoin:round}
+.focus-bar:hover .focus-reset, .focus-reset:focus-visible{opacity:1}
+.focus-reset:hover{background:var(--ink-wash); color:var(--ink)}
+.focus-reset:active{rotate:-120deg}
+.focus-reset:focus-visible{outline:2px solid var(--ink); outline-offset:1px}
 .focus-bar .close{position:static; flex:none; width:34px; height:34px; min-width:34px; aspect-ratio:1; padding:0; box-sizing:border-box; display:grid; place-items:center; border-radius:50%}
 .focus-bar > *{flex:none}
 .focus-bar .btn{white-space:nowrap}
@@ -396,6 +403,7 @@ html.remote .shrink-back{font-size:10px; padding-top:14px}
   max-width:calc(100% - 32px);
 }
 .toast.show{opacity:1; transform:translate(-50%, 0); pointer-events:auto}
+html.focusing .toast{z-index:10; bottom:calc(86px + var(--sa-b))} /* in focus mode it sits above the focus bar, not under it */
 .toast span{overflow:hidden; text-overflow:ellipsis; white-space:nowrap; line-height:normal}
 .toast button{all:unset; cursor:pointer; border:1px solid color-mix(in srgb, var(--paper) 50%, transparent); border-radius:999px; padding:5px 12px; font-family:var(--f-mono); font-size:11px; letter-spacing:.06em; text-transform:uppercase}
 .toast button:focus-visible{outline:2px solid var(--paper)}
@@ -692,6 +700,7 @@ html.remote.landing .brand{text-align:center; justify-items:center}
 html.remote.landing .panel > .pz > .sync{margin:18px 16px 0}
 html.remote:not(.landing) .panel > .pz > .sync{display:none}
 html.remote:not(.landing) .toast{bottom:calc(96px + var(--sa-b))}
+html.remote.focusing:not(.landing) .toast{bottom:calc(152px + var(--sa-b))}
 html.remote:not(.landing) .ask{bottom:calc(100px + var(--sa-b))}
 html.remote .pop-edit{z-index:23}
 html.remote .tint-pop{z-index:24} /* pop-ups sit above the bottom bar, never behind it */
@@ -1149,6 +1158,7 @@ input.has-cjk{line-height:1.5}
   <span class="focus-ring" aria-hidden="true"></span>
   <span class="focus-name" id="focus-name"></span>
   <span class="focus-time" id="focus-time" aria-label="Time in focus">0:00</span>
+  <button type="button" class="focus-reset" id="focus-reset" title="Reset the timer to 0:00" aria-label="Reset the focus timer"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.2 6.2A5.2 5.2 0 1 1 3 9.6"/><path d="M2.6 2.8v3.6h3.6"/></svg></button>
   <button type="button" class="tool arrow" id="step-side" title="Steps float anywhere (click to line them up on a side)" aria-label="Where the steps live"></button>
   <button type="button" class="btn small" id="step-add" title="Break it into steps">+ Step</button>
   <input class="step-in" id="step-in" maxlength="40" placeholder="Next step, then Enter" aria-label="New step" hidden>
@@ -1312,7 +1322,7 @@ const ZH = { // fixed words, English → Chinese
   'Phone app':'手机 App', 'Your devices':'设备同步', 'Join another computer’s list':'加入另一台电脑的清单', 'Paste the link here':'把链接粘贴到这里', 'Join':'加入', 'Not now':'以后再说', 'Show the code again':'再显示一次二维码', 'Unpair':'解除配对',
   'Now':'当前', 'Focus mode':'专注模式', 'Drag to move the bar':'拖动来移动这个栏', 'Time in focus':'专注时长', 'Where the steps live':'步骤放在哪里',
   '+ Step':'+ 步骤', 'Break it into steps':'拆成小步骤', 'Next step, then Enter':'输入下一步，按回车', 'New step':'新步骤', 'Done, pop it!':'完成，戳破！',
-  'Leave focus mode without popping':'离开专注模式（不戳破）', 'Leave focus mode':'离开专注模式', 'Open TODOPOP':'打开 TODOPOP',
+  'Leave focus mode without popping':'离开专注模式（不戳破）', 'Reset the timer to 0:00':'把计时归零', 'Reset the focus timer':'重置专注计时', 'Leave focus mode':'离开专注模式', 'Open TODOPOP':'打开 TODOPOP',
   'Edit bubble':'编辑泡泡', 'Cancel editing':'取消编辑', 'Steps':'步骤', '+ Add a step':'+ 添加步骤', 'Add a step':'添加步骤', 'Get in the bubble':'钻进泡泡',
   'Delete':'删除', 'Cancel':'取消', 'Save':'保存', 'Shrink back to starting size':'缩回初始大小',
   'Color':'颜色', "Where this group's bubbles live":'这个分组的泡泡放在哪里', 'Custom hue':'自定义色相', 'Saturation':'饱和度',
@@ -2119,8 +2129,9 @@ async function requestPop(b){
 
 /* ---------- popping ---------- */
 const particles = [], rings = [], deflating = [];
-let lastPopped = null, toastTimer;
+let lastPopped = null, lastReset = null, toastTimer;
 function showToast(msg, undoable){
+  lastReset = null;
   if(!undoable) lastPopped = null;
   lastStep = null;
   $('#toast-msg').textContent = msg; $('#undo').hidden = !undoable;
@@ -2197,6 +2208,9 @@ function pop(b, complete=true, focusSecs=0, fromSync=false){
   renderTasks(); renderArchive(); save();
 }
 $('#undo').addEventListener('click', () => {
+  if(lastReset){ const r = lastReset; lastReset = null; // the reset, taken back: the time comes back as if it never left
+    r.b.focusTotal = r.total; if(focus && focus.b === r.b) focus.start = r.start;
+    tickFocus(); $('#toast').classList.remove('show'); save(); renderTasks(); return; }
   if(lastStep && !lastPopped){ // bring a popped step back
     const sb = lastStep; lastStep = null; sb.step.done = false;
     if(focus && stash && focus.b === sb.parent){ sb.spawn = .2; sb.d.fill(0); sb.v.fill(0); bubbles.push(sb); }
@@ -3112,6 +3126,17 @@ if(DESKTOP) window.todopop.onPower?.(state => {
 setInterval(() => { const now = Date.now(), gap = now - focusBeat; focusBeat = now;
   if(focus && !focus.sleptAt && gap > 60e3) focus.start += gap - 5e3; }, 5e3);
 function tickFocus(){ if(focus) $('#focus-time').textContent = fmtClock(focusSoFar(focus.b)); }
+/* reset: back to 0:00 for this task, counting on from now. Undo in the toast brings the time back. */
+function resetFocusTimer(){
+  if(!focus) return; const b = focus.b, was = focusSoFar(b);
+  if(was < 1) return;
+  const keep = {b, total:b.focusTotal || 0, start:focus.start};
+  b.focusTotal = 0; focus.start = focusClock();
+  lastPopped = null; lastStep = null;
+  showToast(L(`Timer reset (was ${fmtClock(was)})`, `计时已重置（之前 ${fmtClock(was)}）`), true);
+  lastReset = keep; // after the toast, which clears it
+  tickFocus(); save(); renderTasks();
+}
 // "Get in the bubble": the bubble swells from where it floats until it wraps the screen, then you're inside
 function normUrl(v){ // accept "canvas.brown.edu/…" as well as full links
   v = (v || '').trim(); if(!v) return null;
@@ -3416,6 +3441,7 @@ async function popStep(sb){
 $('#focus-done').addEventListener('click', () => { if(!focus) return; const li = REMOTE && document.querySelector(`#tasks .task[data-id="${focus.b.id}"]`);
   if(li && !stepsLeft(focus.b)) burstRow(li, focus.b); else requestPop(focus.b); });
 $('#focus-exit').addEventListener('click', () => endFocus(false));
+$('#focus-reset').addEventListener('click', resetFocusTimer);
 
 addEventListener('keydown', e => {
   if(e.key !== 'Escape') return;
