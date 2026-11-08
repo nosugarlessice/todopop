@@ -185,7 +185,7 @@ if(page !== 'tubby'){
   const size = () => { // leaning on the big logo it matches the logo; elsewhere it's desk-pet sized
     let s = innerWidth < 700 ? 64 : Math.round(Math.max(84, Math.min(124, innerHeight*.11)));
     const lg = $('#big .logo');
-    if(station && station.sel === '.hero' && lg){ const h = lg.getBoundingClientRect().height; if(h > 10) s = Math.round(Math.max(s, Math.min(200, h*1.2))); }
+    if(spot === leanSpot && lg){ const h = lg.getBoundingClientRect().height; if(h > 10) s = Math.round(Math.max(s, Math.min(200, h*1.2))); }
     if(s !== S){ S = s; box.style.width = box.style.height = S + 'px'; } };
   const wrapL = () => { const w = $('main .wrap'); return w ? w.getBoundingClientRect().left : 24; };
   const wrapR = () => { const w = $('main .wrap'); return w ? w.getBoundingClientRect().right : innerWidth - 24; };
@@ -211,10 +211,23 @@ if(page !== 'tubby'){
     phone: [{sel:'#phone', at: side('right', .42), mood:'watching', tip:'Pop tasks from your phone, and I’ll still cheer.'}],
   }[page] || [];
   const pick = () => { let s = STATIONS[0]; for(const st of STATIONS){ const e = $(st.sel); if(e && e.getBoundingClientRect().top < innerHeight*.55) s = st; } return s; };
+  /* where it sits: it wanders to a new spot on its own every 30 to 60 seconds or so, not as you scroll,
+     so a quick scroll doesn't send it zipping around. On the landing page it starts leaning on the big logo. */
+  const leanSpot = lean('#big .logo');
+  const logoVisible = () => { const e = $('#big .logo'); if(!e) return false; const r = e.getBoundingClientRect(); return r.bottom > 90 && r.top < innerHeight - 40; };
+  const SPOTS = [side('left', .5), side('right', .5), side('right', .3), side('left', .72),
+    () => ({x: innerWidth - S - 10, y: innerHeight - S - 10, r: 4}), () => ({x: 10, y: innerHeight - S - 10, r: -4})];
+  let spot = logoVisible() ? leanSpot : SPOTS[1], wanderT = null;
+  function wander(){
+    const options = SPOTS.filter(f => f !== spot);
+    spot = logoVisible() && spot !== leanSpot && Math.random() < .5 ? leanSpot : options[Math.floor(Math.random()*options.length)];
+    size(); hideTip(); D.busy(2500);
+    clearTimeout(wanderT); wanderT = setTimeout(wander, 30000 + Math.random()*30000); // somewhere between half a minute and a minute
+  }
+  wanderT = setTimeout(wander, 30000 + Math.random()*30000);
   function target(){
-    if(!station && !override) return null;
-    let t = override ? override() : station.at();
-    if(!override && station.sel === '.hero' && (!t || t.y + S < 70 || t.y > innerHeight)) t = side('right')(); // the logo has scrolled away
+    if(spot === leanSpot && !override && !logoVisible()) wander(); // the logo scrolled away: it hops off to a new spot
+    let t = override ? override() : spot();
     if(!t) return null;
     t.x = Math.max(4, Math.min(innerWidth - S - 4, t.x)); t.y = Math.max(70, Math.min(innerHeight - S - 4, t.y));
     if(ducked) t.y = innerHeight - S*.38; // the calendar demo's meeting: ducking down to the edge
@@ -231,9 +244,12 @@ if(page !== 'tubby'){
     return Math.abs(dx) > .4 || Math.abs(dy) > .4 || Math.abs(t.r - cur.r) > .3;
   };
   D.look = lookAt(box, () => mouse && performance.now() - mouse.t < 3000 ? mouse : null);
+  // its mood still follows what you're reading, once you've stayed on a section for a moment
+  let moodT = null, seenSection = null;
   function update(){
     const s = pick();
-    if(s !== station){ const first = !station; station = s; size(); if(s){ if(s.mood === 'cheering' && !first) D.cheer(2400, 'watching'); else D.setMood(s.mood === 'cheering' ? 'watching' : s.mood); } hideTip(); }
+    if(s !== seenSection){ seenSection = s; clearTimeout(moodT);
+      moodT = setTimeout(() => { const first = !station; station = s; if(s){ if(s.mood === 'cheering' && !first) D.cheer(2400, 'watching'); else D.setMood(s.mood === 'cheering' ? 'watching' : s.mood); } }, station ? 1200 : 0); }
     D.run();
   }
   let ticking = false;
@@ -259,7 +275,7 @@ if(page !== 'tubby'){
   if(scr) new MutationObserver(() => { if(station && station.sel === '#focus') D.setMood(scr.classList.contains('in-focus') ? 'ontask' : 'watching'); }).observe(scr, {attributes:true, attributeFilter:['class']});
   addEventListener('tp-cal', e => {
     if(e.detail === 'block') D.cheer(1600);
-    ducked = e.detail === 'meet' && station && station.sel === '#cal'; D.busy(1500);
+    const c = $('#cal-demo'), r = c && c.getBoundingClientRect(); ducked = e.detail === 'meet' && !!r && r.bottom > 0 && r.top < innerHeight; D.busy(1500);
   });
   addEventListener('tp-pop', () => D.cheer(1600)); // a bubble burst
   // the landing page: Tubby reacts to whatever you try
