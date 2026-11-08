@@ -174,7 +174,7 @@ let mouse = null;
 addEventListener('pointermove', e => { mouse = {x:e.clientX, y:e.clientY, t:performance.now()}; }, {passive:true});
 
 /* ---------- the roaming Tubby ---------- */
-if(page !== 'tubby'){
+{
   const box = document.createElement('div'); box.className = 'site-pet'; box.setAttribute('aria-hidden', 'true');
   const hit = document.createElement('button'); hit.type = 'button'; hit.className = 'site-pet-hit'; hit.setAttribute('aria-label', 'Tubby, the desk pet');
   box.appendChild(hit); document.body.appendChild(box);
@@ -185,7 +185,8 @@ if(page !== 'tubby'){
   const size = () => { // leaning on the big logo it matches the logo; elsewhere it's desk-pet sized
     let s = innerWidth < 700 ? 64 : Math.round(Math.max(84, Math.min(124, innerHeight*.11)));
     const lg = $('#big .logo');
-    if(spot === leanSpot && lg){ const h = lg.getBoundingClientRect().height; if(h > 10) s = Math.round(Math.max(s, Math.min(200, h*1.2))); }
+    if(page === 'tubby' && spot === leanSpot){ const c = $('#pet-case'); if(c){ const w = c.getBoundingClientRect().width; if(w > 10) s = Math.round(Math.min(200, w*.62)); } }
+    else if(spot === leanSpot && lg){ const h = lg.getBoundingClientRect().height; if(h > 10) s = Math.round(Math.max(s, Math.min(200, h*1.2))); }
     if(s !== S){ S = s; box.style.width = box.style.height = S + 'px'; } };
   const wrapL = () => { const w = $('main .wrap'); return w ? w.getBoundingClientRect().left : 24; };
   const wrapR = () => { const w = $('main .wrap'); return w ? w.getBoundingClientRect().right : innerWidth - 24; };
@@ -208,13 +209,17 @@ if(page !== 'tubby'){
       {sel:'#cal', at: side('right'), mood:'watching', tip:'When a time block starts, I call you in.'},
       {sel:'#more', at: side('left'), mood:'watching', tip:'More things bubbles can do.'},
       {sel:'#privacy', at: side('right'), mood:'ontask', tip:'Your list stays with you. So do I.'}],
+    tubby: [{sel:'#pet', at: null, mood:'watching', tip:'Hi! Take me out of the box. Drag me anywhere.'}],
     phone: [{sel:'#phone', at: side('right', .42), mood:'watching', tip:'Pop tasks from your phone, and I’ll still cheer.'}],
   }[page] || [];
   const pick = () => { let s = STATIONS[0]; for(const st of STATIONS){ const e = $(st.sel); if(e && e.getBoundingClientRect().top < innerHeight*.55) s = st; } return s; };
   /* where it sits: it wanders to a new spot on its own every 30 to 60 seconds or so, not as you scroll,
      so a quick scroll doesn't send it zipping around. On the landing page it starts leaning on the big logo. */
-  const leanSpot = lean('#big .logo');
-  const logoVisible = () => { const e = $('#big .logo'); if(!e) return false; const r = e.getBoundingClientRect(); return r.bottom > 90 && r.top < innerHeight - 40; };
+  const HOME = page === 'tubby' ? '#pet-case' : '#big .logo';
+  const leanSpot = page === 'tubby' ? () => { const e = $(HOME); if(!e) return null; const r = e.getBoundingClientRect(); // standing upright in the middle of its box
+      return {x: r.left + r.width/2 - S/2, y: r.top + r.height*.47 - S/2, r: 0}; } : lean(HOME);
+  const logoVisible = () => { const e = $(HOME); if(!e) return false; const r = e.getBoundingClientRect(); return r.bottom > 90 && r.top < innerHeight - 40; };
+  const inBox = (x, y) => { if(page !== 'tubby') return false; const e = $(HOME); if(!e) return false; const r = e.getBoundingClientRect(); return x > r.left && x < r.right && y > r.top && y < r.bottom; };
   const SPOTS = [side('left', .5), side('right', .5), side('right', .3), side('left', .72),
     () => ({x: innerWidth - S - 10, y: innerHeight - S - 10, r: 4}), () => ({x: 10, y: innerHeight - S - 10, r: -4})];
   let spot = logoVisible() ? leanSpot : SPOTS[1], wanderT = null;
@@ -223,17 +228,18 @@ if(page !== 'tubby'){
   let saved = null; try{ saved = JSON.parse(sessionStorage.getItem(SAVE) || 'null'); }catch(e){}
   const pin = (fx, fy, r) => () => ({x: fx*innerWidth, y: fy*innerHeight, r});
   if(saved && saved.fx >= 0 && saved.fx <= 1 && saved.fy >= 0 && saved.fy <= 1){
-    spot = saved.lean && logoVisible() ? leanSpot : pin(saved.fx, saved.fy, saved.lean ? 0 : +saved.r || 0);
+    spot = logoVisible() && (page === 'tubby' || (saved.lean && saved.page === page)) ? leanSpot : pin(saved.fx, saved.fy, saved.lean ? 0 : +saved.r || 0);
     cur = {x: saved.fx*innerWidth, y: saved.fy*innerHeight, r: +saved.r || 0};
   } else saved = null;
   addEventListener('pagehide', savePet);
   document.addEventListener('visibilitychange', () => { if(document.hidden) savePet(); });
   function savePet(){ if(!cur) return;
     try{ sessionStorage.setItem(SAVE, JSON.stringify({fx: +(cur.x/innerWidth).toFixed(4), fy: +(cur.y/innerHeight).toFixed(4), r: +cur.r.toFixed(1),
-      lean: spot === leanSpot && !override, wanderAt: wanderAt})); }catch(e){} }
+      lean: spot === leanSpot && !override, page, wanderAt: wanderAt})); }catch(e){} }
   let wanderAt = 0;
   const later = ms => { clearTimeout(wanderT); wanderAt = Date.now() + ms; wanderT = setTimeout(wander, ms); };
   function wander(){
+    if(page === 'tubby' && spot === leanSpot && logoVisible() && !override){ later(30000 + Math.random()*30000); return; } // it stays in its box until you take it out or scroll away
     const options = SPOTS.filter(f => f !== spot);
     spot = logoVisible() && spot !== leanSpot && Math.random() < .5 ? leanSpot : options[Math.floor(Math.random()*options.length)];
     size(); hideTip(); D.busy(2500);
@@ -280,7 +286,7 @@ if(page !== 'tubby'){
   function hideTip(){ tip.hidden = true; clearTimeout(hideTip.t); }
   function sayHi(){
     D.cheer(1800);
-    tip.innerHTML = `<span>${T(station ? station.tip : 'Hi, I’m Tubby.')}</span> <a href="tubby.html">${T('Meet Tubby')}</a>`;
+    tip.innerHTML = `<span>${T(station ? station.tip : 'Hi, I’m Tubby.')}</span>` + (page === 'tubby' ? '' : ` <a href="tubby.html">${T('Meet Tubby')}</a>`);
     tip.hidden = false; placeTip(); clearTimeout(hideTip.t); hideTip.t = setTimeout(hideTip, 4200);
     try{ window.TPSound?.pop?.(40); }catch(e){}
   }
@@ -296,6 +302,8 @@ if(page !== 'tubby'){
   const drop = () => { if(!held) return; const h = held; held = null; box.classList.remove('held');
     if(!h.moved){ sayHi(); return; }
     spot = override; override = null; // its new spot, until it feels like wandering again
+    if(page === 'tubby'){ const k = S; size(); if(S !== k && cur){ cur.x += (k - S)/2; cur.y += (k - S)/2; place(cur.x, cur.y, cur.r); } } // out of the box it's desk-pet sized, shrinking around its middle
+    if(cur && inBox(cur.x + S/2, cur.y + S/2)){ spot = leanSpot; size(); D.cheer(900, 'watching'); later(30000 + Math.random()*30000); tip.innerHTML = `<span>${T('Home sweet box.')}</span>`; tip.hidden = false; placeTip(); clearTimeout(hideTip.t); hideTip.t = setTimeout(hideTip, 2600); return; }
     D.cheer(900, station ? station.mood.replace('cheering', 'watching') : 'watching');
     later(45000 + Math.random()*30000); };
   hit.addEventListener('pointerup', drop); hit.addEventListener('pointercancel', drop);
@@ -370,18 +378,6 @@ if(cal){
 
 /* ---------- the Tubby page ---------- */
 if(page === 'tubby'){
-  // the big one, leaning on its logo; click it for a cheer
-  const heroBox = $('#pet-hero-tubby');
-  if(heroBox){
-    const big = new Tubby(heroBox, 'watching'); const H = driver(big, null);
-    H.look = lookAt(heroBox, () => mouse && performance.now() - mouse.t < 3000 ? mouse : null);
-    addEventListener('pointermove', () => H.busy(500), {passive:true});
-    heroBox.addEventListener('click', () => H.cheer(2000));
-    const stage = $('.pet-stage'), logo = $('.pet-logo');
-    const placeHero = () => { const L = logo.getBoundingClientRect(), st = stage.getBoundingClientRect(), s = heroBox.offsetWidth;
-      heroBox.style.left = (L.right - st.left - s*.44) + 'px'; heroBox.style.top = (L.bottom - st.top - s*.86) + 'px'; };
-    new ResizeObserver(placeHero).observe(stage); addEventListener('resize', placeHero); placeHero();
-  }
   // the moods, each acting its part when it comes into view
   document.querySelectorAll('[data-pet-mood]').forEach(host => {
     const m = host.dataset.petMood, t = new Tubby(host, m), d = driver(t, null);
