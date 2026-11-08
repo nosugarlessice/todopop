@@ -306,7 +306,7 @@
     const i = bubbles.indexOf(b); if(i<0) return; bubbles.splice(i,1);
     if(!quiet) api.onPop?.(b);
     const r = b.R*Math.min(1,b.spawn);
-    if(!quiet) window.TPSound?.pop(r);
+    if(!quiet){ window.TPSound?.pop(r); dispatchEvent(new CustomEvent('tp-pop')); }
     rings.push({x:b.x, y:b.y, r, t:0});
     const n = 12 + Math.min(24, Math.round(r/6));
     for(let k=0;k<n;k++){ const a = Math.random()*6.283, sp = 120 + Math.random()*260 + r*.8; particles.push({x:b.x+Math.cos(a)*r*.9, y:b.y+Math.sin(a)*r*.9, vx:Math.cos(a)*sp, vy:Math.sin(a)*sp, r:1.5+Math.random()*3.5, t:0, life:.5+Math.random()*.45}); }

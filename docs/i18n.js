@@ -20,7 +20,7 @@
     ['.bubble-hint > b', '*与这些任务泡泡交互'],
     ['.bubble-hint li', ['可<b>拖拽</b>', '<b>右键</b>编辑', '<b>单击</b>进入专注模式', '<b>长按</b>戳破 标记完成']],
 
-    ['.eyebrow', '<span>痛点</span> TODOPOP 想解决的问题'],
+    ['#how .eyebrow', '<span>痛点</span> TODOPOP 想解决的问题'],
     ['#story-title', `<span class="bk">(</span>${CZ}<span class="bk">)</span> 的作品`],
     ['.collab', '*与 <span class="bk">(</span><a class="md cz" href="https://www.linkedin.com/in/xiaoxiaomelody/" target="_blank" rel="noopener">Melody Chen</a><span class="bk">)</span><br>合作完成'],
     ['.who .tx', '她：'],
@@ -85,6 +85,34 @@
     ['footer nav a', ['下载', '怎么用', '手机 App']],
     ['#fb-done', '完成，戳破！'],
   ];
+  // the calendar demo (How it works) and the Tubby page
+  PAGE.push(
+    ['#cal-title', '连上你的日历'],
+    ['.cal-lede', '把 Google 日历的私密链接粘贴进 TODOPOP。<b>和任务同名的时间块一开始，那个泡泡就会叫你进去。</b><b>开会时，泡泡会先让开，</b>共享屏幕时什么都不会露出来。'],
+    ['#cal-today', '今天'], ['#cal-ev1', '论文草稿'], ['#cal-ev1k', '时间块'], ['#cal-ev2', '团队周会'], ['#cal-ev2k', '视频会议'],
+    ['#cal-b1', '论文草稿'], ['#cal-b2', '回邮件'], ['#cal-b3', '洗衣服'], ['.cb small', ['今天', '快了', '快了']], ['#cal-fb-name', '论文草稿'],
+    ['#cal-card-when', '2:00 PM · 时间块'], ['#cal-card-name', '论文草稿'], ['#cal-later', '等会儿'], ['#cal-getin', '进去'],
+    ['#cal-note-t', '3:30 前在开会，泡泡先让开了。'], ['#cal-show', '显示泡泡'],
+    ['#cal-jump .jl', ['时间块开始', '你进去了', '开会', '泡泡回来了']],
+    ['.cal-steps li > span:last-child', ['在网页版 <b>Google 日历</b>：<b>设置</b> → 你的日历 → <b>集成日历</b> → 复制 <b>iCal 格式的私密地址</b>。',
+      '在 TODOPOP：点第三个 O → <b>日历</b> → 粘贴 → <b>连接</b>。', '把时间块起成任务的名字，比如<b>论文草稿</b>。有其他参与者或视频链接的日程就算会议。']],
+    ['.cal-fine', '只读取，链接只存在你的电脑上。Apple 日历和 Outlook 也有这样的私密链接。电脑版 App 可用。'],
+    ['#pet .eyebrow', '<span>新功能</span> TODOPOP 0.1.7'],
+    ['#pet-title', '认识 Tubby'],
+    ['.pet-lede', 'Tubby 是一个住在你屏幕上的小泡泡瓶。你工作时它陪着你，专注模式里它盯着你，每戳破一个泡泡它都会为你欢呼。'],
+    ['.pet-lede2', 'Tubby 会跟着你 TODOPOP 的颜色变。它默认就是打开的，也可以在设置里关掉。'],
+    ['#moods-title', 'Tubby 的心情'],
+    ['.mood h3', ['盯着你', '专心中', '欢呼', '困了']],
+    ['.mood p', ['你在用 TODOPOP，或者刚钻进一个泡泡。它的眼睛会跟着你的鼠标。', '专注十分钟后，它很满足，轻轻晃，瓶子里冒着小气泡。',
+      '你戳破了一步或一个任务，或者时间块刚开始。它会跳起来吹泡泡。', '你走开了，或者 TODOPOP 暂停了。慢慢呼吸，瓶盖滑到一边。']],
+    ['#where-title', '它住在哪'],
+    ['.where-tx li', ['<b>点 Tubby</b> 打开 TODOPOP，它会靠在面板的一端。', '<b>再点一下</b>，或点空白处，它就会回到自己的位置。', '<b>拖动它</b>到任何地方，那里就是它的新位置，快捷键提示也会跟着它。']],
+    ['.pet-trio h3', ['很省电', '适应你的屏幕', '认得你的日历']],
+    ['.pet-trio .card > p', ['Tubby 平时静止不动，只有发生了什么才会动：戳破泡泡、眨眼、鼠标靠近。', '笔记本上小巧，大屏幕上大一点，还会避开 Dock 和任务栏。',
+      '时间块开始时它会陪你跳起来，开会时它会躲到一边。<a href="how.html#cal">看看怎么用</a>']],
+    ['.pet-cta .btn', '下载 TODOPOP'],
+  );
+
   const ATTRS = [ // [selector, attribute, Chinese]
     ['#device img', 'src', 'phone-app-zh.png'],
     ['#device img', 'alt', 'TODOPOP 手机 App：漂浮中的任务排成一个列表，底部是暂停、一个大加号和已戳破。'],
@@ -116,6 +144,13 @@
     'Portfolio review': '作品集评审', 'Call mom': '给妈妈打电话', 'Drink water': '喝水', 'Pay rent': '交房租', 'Gym': '去健身',
     'Email the landlord': '给房东发邮件', 'Groceries': '买菜', 'Return library books': '还图书馆的书', 'Taxes': '报税',
     'Problem set 3': '物理作业', 'Reading response': '阅读反馈', 'Email TA': '给助教发邮件', 'Studio crit prep': '准备课堂汇报', 'Print posters': '打印海报',
+    'Meet Tubby': '认识 Tubby', 'Hi, I’m Tubby.': '嗨，我是 Tubby。',
+    'Hi, I’m Tubby. I live on your desktop too.': '嗨，我是 Tubby，我也住在你的桌面上。', 'These three are why TODOPOP works.': 'TODOPOP 管用，靠的就是这三点。',
+    'Download, and I’ll keep you company.': '下载吧，我来陪你。', 'Ignoring deadlines? I know the feeling.': '无视 deadline？我懂。',
+    'Get in a bubble: I’ll keep watch.': '钻进泡泡吧，我帮你盯着。', 'When a time block starts, I call you in.': '时间块一开始，我就叫你进去。',
+    'More things bubbles can do.': '泡泡还能做这些。', 'Your list stays with you. So do I.': '你的清单只属于你，我也一样。',
+    'Pop tasks from your phone, and I’ll still cheer.': '在手机上戳破任务，我也会欢呼。',
+    'Panel open: Tubby leans on it.': '面板打开了：Tubby 靠在上面。', 'Tucked away: Tubby is the button. Click it, or drag it somewhere new.': '收起来了：Tubby 就是按钮。点它，或者把它拖到别处。',
     'Send invoice': '发账单', 'Update portfolio': '更新作品集', 'Clean desk': '收拾桌面', 'Return library book': '还图书馆的书',
   };
 

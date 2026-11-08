@@ -71,9 +71,9 @@ html[lang="zh-CN"] body{line-height:1.7} html[lang="zh-CN"] #solves{line-height:
 html[lang="zh-CN"] .o-notes .hint{font-size:21px} html[lang="zh-CN"] .bubble-hint{font-size:19.5px}
 @media (max-width:700px){ html[lang="zh-CN"] .o-notes .hint{font-size:17px} } html[lang="zh-CN"] .why .card, html[lang="zh-CN"] .q{line-height:1.5}
 .nav .get{background:var(--ink); color:var(--paper); padding:11px 18px}
-@media (max-width:700px){ .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} .nav ul{gap:0} .nav ul a{padding:8px 6px; font-size:11.5px; letter-spacing:0; text-transform:none} .nav li:has(> .get){display:none} }
-@media (max-width:420px){ .logo.navlogo{--s:17px} .nav .wrap{gap:6px; padding-left:14px; padding-right:8px} .nav ul a{padding:8px 4px; font-size:11px} .lang span{padding:4px 6px} }
-@media (max-width:370px){ .logo.navlogo{--s:15px} .nav ul a{padding:8px 3px; font-size:10.5px} }
+@media (max-width:700px){ .nav .wrap{padding-left:18px} .logo.navlogo{--s:22px} .nav ul{gap:0} .nav ul a{padding:8px 4px; font-size:11px; letter-spacing:0; text-transform:none} .nav li:has(> .get){display:none} }
+@media (max-width:520px){ .logo.navlogo{--s:16px} .nav .wrap{gap:4px; padding-left:12px; padding-right:6px} .nav ul a{padding:8px 3px; font-size:10.5px} .lang span{padding:4px 5px} }
+@media (max-width:370px){ .logo.navlogo{--s:12px} .nav .wrap{padding-left:10px; padding-right:4px} .nav ul a{padding:6px 1.5px; font-size:9px} .lang{padding:2px} .lang span{padding:3px 4px; font-size:10px} }
 .nav ul a{white-space:nowrap}
 .nav ul a[aria-current="page"]{background:var(--wash)}
 /* pages without the landing frame start below the bar */
@@ -414,6 +414,121 @@ footer .wrap{display:flex; flex-wrap:wrap; gap:16px 28px; align-items:center; ju
 footer nav{display:flex; gap:20px; flex-wrap:wrap}
 footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-underline-offset:4px}
 
+
+/* ---------- Tubby, the desk pet ---------- */
+.pet-art{position:absolute; inset:0; width:100%; height:100%; overflow:visible; pointer-events:none}
+.pet-art .ol{fill:none; stroke:var(--ink); stroke-width:4; stroke-linejoin:round; stroke-linecap:round}
+.pet-art .ln{fill:none; stroke:var(--ink); stroke-width:2.6; stroke-linejoin:round; stroke-linecap:round}
+.pet-art .fw{fill:#fff} .pet-art .fi{fill:var(--ink)} .pet-art .fl{fill:var(--ink); fill-opacity:.13} .pet-art .fm{fill:var(--ink); fill-opacity:.3}
+.pet-art .face{transition:opacity .12s}
+.site-pet{position:fixed; left:0; top:0; z-index:15; width:96px; height:96px; pointer-events:none; will-change:transform; transform:translate(-200px, -200px); transition:width .5s cubic-bezier(.3,1.3,.5,1), height .5s cubic-bezier(.3,1.3,.5,1)}
+.site-pet-hit{all:unset; position:absolute; left:33%; top:15%; width:34%; height:77%; border-radius:12px; pointer-events:auto; cursor:pointer}
+.site-pet-hit:focus-visible{outline:2px solid var(--ink); outline-offset:3px}
+.site-pet-tip{position:fixed; z-index:16; max-width:min(300px, 80vw); background:var(--paper); border:2px solid var(--ink); border-radius:18px; padding:10px 14px; font-size:13px; line-height:1.45; font-weight:400;
+  box-shadow:0 18px 40px -22px rgba(16,24,60,.45); animation:tipIn .35s cubic-bezier(.3,1.6,.5,1)}
+.site-pet-tip a{font-weight:600; white-space:nowrap}
+@keyframes tipIn{from{opacity:0; transform:translateY(6px) scale(.9)}}
+
+/* ---------- the calendar demo ---------- */
+.cal{display:grid; gap:clamp(22px, 3vw, 34px)}
+.cal-head{display:grid; gap:16px; justify-items:start}
+.cal-lede{font-size:17px; line-height:1.65; color:var(--ink-mid); max-width:58em}
+.cal-lede b{color:var(--ink)}
+.cal-demo{display:grid; grid-template-columns:minmax(210px, .36fr) minmax(0, 1fr); gap:clamp(12px, 2vw, 22px); background:var(--paper); border-radius:clamp(28px, 4vw, 50px); padding:clamp(14px, 2vw, 24px)}
+@media (max-width:760px){ .cal-demo{grid-template-columns:1fr} .cal-hours{min-height:240px} }
+.cal-day{display:grid; grid-template-rows:auto 1fr; gap:12px; min-width:0}
+.cal-top{display:flex; justify-content:space-between; align-items:baseline; padding:6px 6px 0}
+.cal-clock{font-variant-numeric:tabular-nums; font-weight:500; font-size:15px}
+.cal-hours{position:relative; margin:8px 4px 10px 48px; min-height:300px; border-left:2px solid var(--faint);
+  background:repeating-linear-gradient(to bottom, var(--faint) 0 1px, transparent 1px 20%)}
+.cal-hours .hr{position:absolute; left:-46px; font-size:11px; color:var(--ink-soft); transform:translateY(-50%); font-variant-numeric:tabular-nums}
+.ev{position:absolute; left:8px; right:4px; border-radius:14px; padding:8px 10px; display:grid; align-content:start; gap:3px; font-size:13px; line-height:1.25; overflow:hidden}
+.ev b{font-weight:500}
+.ev small{font-size:10.5px; color:var(--ink-soft); display:flex; align-items:center; gap:4px}
+.ev svg{width:13px; height:13px; fill:currentColor; flex:none}
+.ev.blk{background:var(--tint25); box-shadow:inset 0 0 0 2px var(--ink)}
+.ev.mtg{background:var(--wash); box-shadow:inset 0 0 0 2px var(--ink-soft)}
+.now{position:absolute; left:-7px; right:0; height:2px; background:var(--ink); transition:top .2s linear}
+.now::before{content:""; position:absolute; left:0; top:-4px; width:10px; height:10px; border-radius:50%; background:var(--ink)}
+.cal-scr{position:relative; aspect-ratio:16/10; border-radius:clamp(14px, 2vw, 24px); overflow:hidden; background:var(--bg);
+  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:18px 18px; box-shadow:inset 0 0 0 2px var(--faint); container-type:inline-size}
+.cal-win{position:absolute; left:14%; top:12%; width:60%; height:62%; border-radius:12px; background:var(--paper); box-shadow:0 18px 40px -24px rgba(16,24,60,.4); overflow:hidden}
+.cal-win .bar, .where-win .bar{height:12%; background:color-mix(in srgb, var(--ink) 7%, #fff); display:flex; align-items:center; gap:5px; padding:0 3%}
+.cal-win .bar i, .where-win .bar i{width:6px; aspect-ratio:1; border-radius:50%; background:var(--rule)}
+.cal-win .ln, .where-win .ln{height:5%; margin:5% 7% 0; border-radius:9px; background:color-mix(in srgb, var(--ink) 8%, #fff)}
+.cal-win .ln:nth-child(3), .where-win .ln:nth-child(3){width:70%}
+.cb{position:absolute; aspect-ratio:1; border-radius:50%; border:2px solid var(--ink); background:color-mix(in srgb, var(--ink) 6%, var(--paper)); display:grid; place-content:center; text-align:center;
+  font-size:clamp(8px, 2.1cqw, 13px); line-height:1.2; padding:4px; transform:translate(-50%, -50%); transition:opacity .6s ease, scale .45s cubic-bezier(.3,1.6,.5,1)}
+.cb small{font-size:.7em; letter-spacing:.08em; color:var(--ink-soft)}
+.cb.swell{animation:calswell 1.1s ease-in-out infinite}
+@keyframes calswell{50%{scale:1.1}}
+.cal-scr.quiet .cb, .cal-scr.focusing .cb{opacity:0}
+.cal-frame{position:absolute; inset:0; border-radius:inherit; box-shadow:inset 0 0 0 5px var(--ink); opacity:0; transition:opacity .4s; pointer-events:none}
+.cal-scr.focusing .cal-frame{opacity:1}
+.cal-fbar{position:absolute; left:50%; bottom:6%; transform:translate(-50%, 40px); opacity:0; display:flex; align-items:center; gap:8px; background:var(--paper); border:2px solid var(--ink); border-radius:999px; padding:5px 12px;
+  font-size:clamp(9px, 2cqw, 12px); white-space:nowrap; transition:transform .45s cubic-bezier(.3,1.5,.5,1), opacity .3s}
+.cal-fbar .rg{width:.9em; height:.9em; border-radius:50%; border:1.5px solid var(--ink)} .cal-fbar .t{color:var(--ink-soft); font-variant-numeric:tabular-nums}
+.cal-scr.focusing .cal-fbar{transform:translate(-50%, 0); opacity:1}
+.cal-card, .cal-note{position:absolute; left:50%; bottom:7%; transform:translateX(-50%); background:var(--paper); border:2px solid var(--ink); box-shadow:0 18px 40px -22px rgba(16,24,60,.45);
+  animation:calIn .45s cubic-bezier(.3,1.6,.5,1); font-size:clamp(10px, 2.2cqw, 14px)}
+.cal-card{border-radius:18px; padding:10px 12px; display:grid; gap:3px; min-width:46%}
+.cal-card .cap{font-size:.72em} .cal-card b{font-weight:500; font-size:1.15em}
+.cal-card .row, .cal-note{display:flex; gap:6px; align-items:center}
+.cal-card .row{justify-content:flex-end; margin-top:4px}
+.cal-note{border-radius:999px; padding:6px 6px 6px 14px; width:max-content; max-width:92%; gap:10px}
+.cal-card .btn.small, .cal-note .btn.small{padding:6px 11px; font-size:.85em}
+@keyframes calIn{from{opacity:0; transform:translate(-50%, 14px) scale(.9)}}
+.cal-pet{position:absolute; right:3%; bottom:3%; width:clamp(48px, 15cqw, 104px); aspect-ratio:1; transition:translate .7s cubic-bezier(.34,1.3,.5,1)}
+.cal-demo[data-phase="meet"] .cal-pet{translate:0 55%}
+.cal-jump{display:flex; flex-wrap:wrap; gap:8px}
+.chip{font:400 13px var(--f); border:2px solid var(--rule); border-radius:999px; padding:9px 15px; background:var(--paper); color:var(--ink); cursor:pointer; transition:border-color .2s, background .2s, translate .3s cubic-bezier(.3,1.6,.5,1)}
+.chip:hover{translate:0 -2px; border-color:var(--ink)} .chip[aria-pressed="true"]{border-color:var(--ink); background:var(--tint25)}
+.chip span:first-child{font-weight:500; font-variant-numeric:tabular-nums}
+.cal-steps{list-style:none; margin:0; padding:0; display:grid; grid-template-columns:repeat(3, minmax(0, 1fr)); gap:clamp(14px, 2vw, 22px)}
+.cal-steps li{display:flex; gap:14px; align-items:flex-start; background:var(--paper); border-radius:28px; padding:18px; font-size:15px; line-height:1.55; color:var(--ink-mid)}
+.cal-steps li b{color:var(--ink)} .cal-steps .badge{width:44px}
+@media (max-width:860px){ .cal-steps{grid-template-columns:1fr} }
+.cal-fine{font-size:13px; color:var(--ink-soft)}
+
+/* ---------- the Tubby page ---------- */
+.pet-page{display:grid; gap:clamp(34px, 4.5vw, 56px)}
+.pet-hero{display:grid; grid-template-columns:minmax(0, 1.05fr) minmax(0, .95fr); gap:clamp(22px, 4vw, 60px); align-items:center}
+@media (max-width:860px){ .pet-hero{grid-template-columns:1fr} }
+.pet-hero-tx{display:grid; gap:18px; justify-items:start}
+#pet-title{font-size:clamp(32px, 5.2vw, 60px)}
+.pet-lede{font-size:clamp(17px, 1.7vw, 21px); line-height:1.6}
+.pet-lede2{font-size:16px; line-height:1.6; color:var(--ink-mid)}
+.pet-stage{position:relative; display:grid; place-items:center; min-height:clamp(250px, 30vw, 380px); background:var(--paper); border-radius:clamp(28px, 4vw, 50px); overflow:visible}
+.pet-logo{--s:clamp(28px, 3.6vw, 48px); padding:.38em .75em; border:3px solid var(--ink); border-radius:999px; background:var(--bg); translate:-12% 8%}
+.pet-big{position:absolute; width:clamp(110px, 13vw, 176px); aspect-ratio:1; rotate:15deg; cursor:pointer}
+.pet-h{justify-self:start; font-size:clamp(22px, 3vw, 34px)}
+.moods{display:grid; grid-template-columns:repeat(4, minmax(0, 1fr)); gap:clamp(12px, 2vw, 20px)}
+@media (max-width:900px){ .moods{grid-template-columns:repeat(2, minmax(0, 1fr))} }
+.mood{display:grid; justify-items:center; text-align:center; gap:8px; align-content:start}
+.mood-pet{position:relative; width:min(150px, 82%); aspect-ratio:1}
+.mood h3{font-size:19px} .mood p{font-size:14px; line-height:1.55; color:var(--ink-mid)}
+.where{display:grid; grid-template-columns:minmax(0, 1.3fr) minmax(0, .7fr); gap:clamp(18px, 3vw, 40px); align-items:center}
+@media (max-width:860px){ .where{grid-template-columns:1fr} }
+.where-screen{position:relative; aspect-ratio:16/10; border-radius:clamp(16px, 2.4vw, 28px); overflow:hidden; background:var(--bg);
+  background-image:radial-gradient(var(--faint) 1px, transparent 1.2px); background-size:18px 18px; box-shadow:inset 0 0 0 2px var(--faint); touch-action:none}
+.where-win{position:absolute; left:10%; top:12%; width:56%; height:64%; border-radius:12px; background:var(--paper); box-shadow:0 18px 40px -24px rgba(16,24,60,.4); overflow:hidden}
+.where-pill{position:absolute; left:50%; top:32%; transform:translate(-50%, -50%); --s:clamp(18px, 2.6vw, 32px); padding:.38em .72em; border:2px solid var(--ink); border-radius:999px; background:var(--paper);
+  transition:opacity .3s, scale .4s cubic-bezier(.3,1.5,.5,1)}
+.where-pill.off{opacity:0; scale:.8}
+.where-tubby{position:absolute; left:0; top:0; width:clamp(64px, 8vw, 104px); aspect-ratio:1; cursor:grab; touch-action:none;
+  transition:left .6s cubic-bezier(.34,1.3,.5,1), top .6s cubic-bezier(.34,1.3,.5,1), rotate .5s cubic-bezier(.34,1.4,.5,1)}
+.where-tubby.lean{rotate:15deg} .where-tubby.drag{transition:none; cursor:grabbing}
+.where-tubby:focus-visible{outline:2px solid var(--ink); outline-offset:2px; border-radius:12px}
+.where-keys{position:absolute; display:flex; gap:3px; transition:opacity .25s} .where-keys.off{opacity:0}
+.where-keys kbd{font:400 10px var(--f); border:1.5px solid var(--rule); background:var(--paper); border-radius:6px; padding:2px 6px}
+.where-tx{display:grid; gap:14px}
+.where-state{font-weight:500; font-size:17px; line-height:1.5; min-height:3em}
+.where-tx ul{margin:0; padding-left:1.1em; display:grid; gap:10px; color:var(--ink-mid); line-height:1.6}
+.where-tx b{color:var(--ink)}
+.pet-trio{margin-top:0}
+.pet-trio .card{display:grid; gap:10px; align-content:start; padding-top:40px}
+.pet-trio h3{font-size:19px} .pet-trio p{color:var(--ink-mid); line-height:1.6}
+.pet-cta{justify-content:flex-start}
 @media (prefers-reduced-motion:reduce){ *,*::before,*::after{animation:none !important; transition:none !important} html{scroll-behavior:auto} .rv, .pop-in{opacity:1; transform:none} }
 </style>
 <script>
@@ -436,6 +551,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
     <ul>
       <li><a href="how.html" aria-current="page">How it works</a></li>
       <li><a href="phone.html">Phone</a></li>
+      <li><a href="tubby.html">Tubby</a></li>
       <li><button type="button" class="lang" id="lang" aria-label="Switch language / 切换语言"><span data-l="en">EN</span><span data-l="zh">中</span></button></li>
       <li><a class="get" href="./?to=download">Download</a></li>
     </ul>
@@ -519,6 +635,50 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
   </section>
   <hr class="sep">
 
+  <section id="cal" aria-labelledby="cal-title">
+    <div class="wrap cal">
+      <div class="cal-head">
+        <h2 class="pill rv" id="cal-title" data-solid>Works with your calendar</h2>
+        <p class="cal-lede rv" style="--i:1">Paste your Google Calendar’s private link into TODOPOP. <b>When a time block named like a task starts, that bubble calls you in.</b> <b>During meetings, your bubbles step aside,</b> so nothing shows when you share your screen.</p>
+      </div>
+      <div class="cal-demo rv" id="cal-demo" style="--i:2" data-phase="before">
+        <div class="cal-day" aria-label="Your calendar, this afternoon">
+          <div class="cal-top"><span class="cap" id="cal-today">Today</span><span class="cal-clock" id="cal-clock">1:50 PM</span></div>
+          <div class="cal-hours">
+            <span class="hr" style="top:0%">1:30</span><span class="hr" style="top:20%">2:00</span><span class="hr" style="top:40%">2:30</span><span class="hr" style="top:60%">3:00</span><span class="hr" style="top:80%">3:30</span>
+            <div class="ev blk" style="top:20%; height:38.6%"><b id="cal-ev1">Essay draft</b><small>2:00 – 2:58 PM · <span id="cal-ev1k">time block</span></small></div>
+            <div class="ev mtg" style="top:60%; height:20%"><b id="cal-ev2">Team sync</b><small><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7.5A1.5 1.5 0 0 1 4.5 6h9A1.5 1.5 0 0 1 15 7.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 3 16.5zM16 10.5l5-3v9l-5-3z"/></svg> <span id="cal-ev2k">video call</span></small></div>
+            <div class="now" id="cal-now"></div>
+          </div>
+        </div>
+        <div class="cal-scr" id="cal-scr" role="img" aria-label="Your screen with TODOPOP: when the time block starts, a card asks you in; during the meeting the bubbles fade away">
+          <div class="cal-win"><div class="bar"><i></i><i></i><i></i></div><div class="ln"></div><div class="ln"></div><div class="ln"></div><div class="ln"></div></div>
+          <span class="cb" id="cal-essay" style="left:58%; top:44%; width:24%"><span id="cal-b1">Essay draft</span><small>TODAY</small></span>
+          <span class="cb" style="left:16%; top:22%; width:17%"><span id="cal-b2">Reply to emails</span><small>SOON</small></span>
+          <span class="cb" style="left:30%; top:62%; width:14%"><span id="cal-b3">Laundry</span><small>SOON</small></span>
+          <div class="cal-frame"></div>
+          <div class="cal-fbar" aria-hidden="true"><span class="rg"></span><span id="cal-fb-name">Essay draft</span><span class="t">0:04</span></div>
+          <div class="cal-card" id="cal-card" hidden><span class="cap" id="cal-card-when">2:00 PM · Time block</span><b id="cal-card-name">Essay draft</b><span class="row"><button type="button" class="btn small" id="cal-later">Later</button><button type="button" class="btn small solid" id="cal-getin">Get in</button></span></div>
+          <div class="cal-note" id="cal-note" hidden><span id="cal-note-t">In a meeting until 3:30. Your bubbles stepped aside.</span><button type="button" class="btn small" id="cal-show">Show bubbles</button></div>
+          <div class="cal-pet" id="cal-pet"></div>
+        </div>
+      </div>
+      <div class="cal-jump rv" id="cal-jump" role="group" aria-label="Jump to a moment" style="--i:3">
+        <button type="button" class="chip" data-m="29.5" data-p="block"><span>2:00</span> <span class="jl">Time block starts</span></button>
+        <button type="button" class="chip" data-m="62" data-p="focus"><span>2:05</span> <span class="jl">You got in</span></button>
+        <button type="button" class="chip" data-m="91" data-p="meet"><span>3:00</span> <span class="jl">Meeting</span></button>
+        <button type="button" class="chip" data-m="121" data-p="after"><span>3:30</span> <span class="jl">Bubbles are back</span></button>
+      </div>
+      <ol class="cal-steps">
+        <li class="rv" style="--i:1"><span class="badge pop-in">1.</span><span>In <b>Google Calendar</b> on the web: <b>Settings</b> → your calendar → <b>Integrate calendar</b> → copy the <b>Secret address in iCal format</b>.</span></li>
+        <li class="rv" style="--i:2"><span class="badge pop-in" style="--i:1">2.</span><span>In TODOPOP: click the third O → <b>Calendar</b> → paste it → <b>Connect</b>.</span></li>
+        <li class="rv" style="--i:3"><span class="badge pop-in" style="--i:2">3.</span><span>Name a time block like the task it’s for, like <b>Essay draft</b>. Meetings are anything with guests or a video link.</span></li>
+      </ol>
+      <p class="cal-fine rv">Read-only, and the link stays on your computer. Apple Calendar and Outlook have a private link like this too. In the desktop app.</p>
+    </div>
+  </section>
+  <hr class="sep">
+
   <section id="more" aria-labelledby="more-title">
     <div class="wrap more more-solo">
       <div class="more-left">
@@ -556,6 +716,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
       <a href="./?to=download">Download</a>
       <a href="how.html">How it works</a>
       <a href="phone.html">Phone app</a>
+      <a href="tubby.html">Tubby</a>
     </nav>
     <span>© 2026 TODOPOP</span>
   </div>
@@ -565,6 +726,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 <script src="sounds.js"></script>
 <script src="engine.js"></script>
 <script src="site.js"></script>
+<script src="pet.js"></script>
 <script>if(/[?&]tune\b/.test(location.search)){ const s = document.createElement("script"); s.src = "tune.js"; document.body.appendChild(s); }</script>
 </body>
 </html>
