@@ -909,6 +909,8 @@ html.remote .task .name:active{opacity:.6}
 .cal-card .field-label{margin-right:4px}
 .calx-opt{display:flex; align-items:center; justify-content:space-between; gap:10px}
 .calx .sync-row .btn{flex:none}
+#offx-list{width:100%; min-height:5.4em; resize:vertical; font:inherit; font-size:12px !important; line-height:1.5}
+.offx-perm{display:grid; gap:8px; justify-items:start}
 .gnew-pop{position:fixed; z-index:30; inset:0; display:grid; place-items:center; background:color-mix(in srgb, var(--paper) 55%, transparent);
   -webkit-backdrop-filter:blur(3px); backdrop-filter:blur(3px); animation:fade-in .2s ease}
 .gnew-pop[hidden]{display:none}
@@ -1121,6 +1123,14 @@ input.has-cjk{line-height:1.5}
         <p class="note sync-err" id="calx-err" hidden></p>
       </div>
       <div class="lang-row"><span class="field-label">Growth speed</span><div class="seg lang-seg" id="speed-seg" role="group" aria-label="Growth speed"><button type="button" data-speed="real">Real time</button><button type="button" data-speed="demo">Demo (fast)</button></div></div>
+      <div class="sync offx" id="offx" hidden>
+        <div class="sync-top"><span class="field-label">Off-task check</span><span class="sync-state" id="offx-state"></span></div>
+        <p class="note" id="offx-why"></p>
+        <div class="calx-opt"><span class="field-label">In focus mode</span><div class="seg lang-seg" id="offx-seg" role="group" aria-label="Off-task check"><button type="button" data-v="on">Notice</button><button type="button" data-v="off">Off</button></div></div>
+        <label class="field-label" for="offx-list" id="offx-list-l">Counts as off-task</label>
+        <textarea class="text-in" id="offx-list" rows="2" spellcheck="false" autocomplete="off"></textarea>
+        <div class="offx-perm" id="offx-perm" hidden><p class="note" id="offx-perm-t"></p><button type="button" class="btn small" id="offx-allow">Allow window titles</button></div>
+      </div>
       <div class="lang-row" id="pet-row" hidden><span class="field-label">Desk pet</span><div class="seg lang-seg" id="pet-seg" role="group" aria-label="Desk pet"><button type="button" data-pet="on">Tubby</button><button type="button" data-pet="off">Off</button></div></div>
       <div class="lang-row"><span class="field-label">Sounds</span><div class="seg lang-seg" id="sound-seg" role="group" aria-label="Sounds"><button type="button" data-sound="on">On</button><button type="button" data-sound="off">Off</button></div></div>
       <div class="lang-row"><span class="field-label">Version</span><span class="ver" id="app-ver">Phone app · always up to date</span></div>
@@ -1316,7 +1326,7 @@ const ZH = { // fixed words, English → Chinese
   'Scan with your phone':'用手机扫一扫', 'Pairing code':'配对二维码', 'Phone connected. You can close this.':'手机已连接，可以关掉这个窗口了。', 'Copy link':'复制链接', 'Done':'完成',
   'Phone controls':'手机控制', 'Pause':'暂停', 'Not yet':'还没', 'Pop it!':'戳破！', 'Undo':'撤销',
   'Press and hold':'长按', 'Double-click':'双击', 'Growth speed':'生长速度', 'Guide':'引导', 'Version':'版本', 'Phone app · always up to date':'手机 App · 自动保持最新', 'Show the tour again':'再看一遍引导', 'Skip':'跳过', 'Real time':'实时', 'Demo (fast)':'演示（快速）', 'Pop sound':'戳破音效', 'Sounds':'音效', 'On':'打开',
-  'Desk pet':'桌宠', 'Tubby':'Tubby', 'Tuck TODOPOP away':'收起 TODOPOP',
+  'Desk pet':'桌宠', 'Off-task check':'走神检查', 'In focus mode':'专注模式里', 'Notice':'留意', 'Counts as off-task':'算作走神', 'Allow window titles':'允许读取窗口标题', 'Tubby':'Tubby', 'Tuck TODOPOP away':'收起 TODOPOP',
   'Calendar':'日历', 'Connect':'连接', 'Where do I find it?':'在哪里找？', 'Time blocks':'时间块', 'Meetings':'会议', 'Nudge me':'提醒我', 'Hide bubbles':'藏起泡泡', 'Leave them':'不用藏', 'Check now':'现在检查', 'Disconnect':'断开', 'Later':'等会儿', 'Get in':'进去', 'Show bubbles':'显示泡泡', 'Checking…':'检查中…', 'Not reached':'连不上', 'Your calendar’s private link':'你日历的私密链接',
   'Off':'关闭', 'Synced':'已同步', 'Syncing':'同步中', 'Offline':'离线', 'Reconnecting':'重新连接中', 'Not connected':'未连接',
   // starter tasks and the sample history
@@ -3806,7 +3816,7 @@ const sizeNow = () => Math.round(Math.max(78, Math.min(140, H()*.088)));
 const pet = new Tubby(box, 'watching');
 let on = DESKTOP && !REMOTE && store.get('pet') !== false;
 let spot = store.get('petSpot'); // where it sits when tucked away: its centre, as a share of the screen
-let busyUntil = 0, cheerUntil = 0, raf = 0, lastT = 0, pointer = null, drag = null, blinkT = null, focusSince = 0, lastMood = '';
+let busyUntil = 0, cheerUntil = 0, raf = 0, lastT = 0, pointer = null, drag = null, blinkT = null, focusSince = 0, lastMood = '', offTask = null;
 PET = {get on(){ return on; }, get dragging(){ return !!drag; }, hit};
 function busy(ms){ busyUntil = Math.max(busyUntil, performance.now() + ms); run(); }
 function run(){ if(!raf && on && !asleep) { lastT = performance.now(); raf = requestAnimationFrame(loop); } }
@@ -3828,6 +3838,7 @@ function lookDir(){
   let tx = W()/2, ty = H()/2;
   const near = pointer && performance.now() - pointer.t < 3000 && (!panel.hidden || Math.hypot(pointer.x - cx, pointer.y - cy) < 320);
   if(near && !focus){ tx = pointer.x; ty = pointer.y; }
+  else if(focus && offTask && offTask.win){ tx = offTask.win.x + offTask.win.w/2; ty = offTask.win.y + offTask.win.h/2; } // the window you wandered to
   else if(!$('#calnudge').hidden){ const n = $('#calnudge').getBoundingClientRect(); tx = n.left + n.width/2; ty = n.top + n.height/2; }
   const k = Math.max(160, W()*.3);
   return {x:Math.max(-1, Math.min(1, (tx - cx)/k)), y:Math.max(-1, Math.min(1, (ty - cy)/k))};
@@ -3838,6 +3849,7 @@ addEventListener('pointermove', e => { if(!on) return; const r = box.getBounding
 // its mood, from what's going on
 function moodNow(){
   if(performance.now() < cheerUntil) return 'cheering';
+  if(focus && offTask) return Date.now() - offTask.since > 60e3 ? 'nudging' : 'suspicious'; // you wandered off: a look, then a nudge
   if(sysIdle || isPaused()) return 'sleepy';
   if(focus && Date.now() - focusSince > 10*60e3) return 'ontask'; // ten minutes in: settled and content
   return 'watching';
@@ -3848,6 +3860,8 @@ function updateMood(){
   const m = moodNow(); if(m === lastMood) return;
   lastMood = m; pet.setMood(m); busy(m === 'sleepy' ? 2500 : 5000);
 }
+PET.offTask = s => { offTask = s; updateMood(); busy(1500); };
+setInterval(() => { if(on && pet.mood === 'nudging' && !asleep) busy(1900); }, 6000); // a worried little shake every few seconds
 PET.cheer = (ms = 2400) => { if(!on) return; cheerUntil = performance.now() + ms; updateMood(); run(); setTimeout(updateMood, ms + 60); };
 setInterval(updateMood, 1000);
 function scheduleBlink(){ clearTimeout(blinkT); blinkT = setTimeout(() => { // a blink every few seconds, even while resting
@@ -3923,6 +3937,58 @@ if(DESKTOP && !REMOTE){
 }
 PET.place = place;
 apply();
+}
+
+/* ---------- off-task check: in focus mode, Tubby glances at the window you're on ----------
+   The desktop app reports the front window's app and title (only while you're in focus mode). If it's on your
+   off-task list and isn't the task itself, Tubby gets suspicious; after a minute, it nudges you. Nothing is kept. */
+{
+const DEFAULT_OFF = 'YouTube, Netflix, TikTok, Instagram, Reddit, Twitter, Facebook, Twitch, Hulu, Disney+, Prime Video, Pinterest, Tumblr, Bilibili, 哔哩哔哩, 抖音, 小红书, 微博, Steam';
+const OFF = {on: store.get('offCheck') !== false, list: store.get('offList') ?? DEFAULT_OFF, state: null, since: 0, told: false, what: '', win: null};
+const can = DESKTOP && !REMOTE && !!(window.todopop && window.todopop.watchWindows);
+const words = () => OFF.list.split(/[,，、\n]/).map(x => x.trim()).filter(Boolean);
+function judge(a){ // the off-task word this window matches, or null
+  const b = focus && focus.b; if(!b) return null;
+  const text = `${a.title || ''} ${a.app || ''}`.toLowerCase();
+  const n = calNorm(b.name); if(n.length >= 3 && calNorm(text).includes(n)) return null; // that's the task itself
+  if(b.url){ try{ const h = new URL(b.url).hostname.replace(/^www\./, '').split('.')[0].toLowerCase(); if(h.length > 2 && text.includes(h)) return null; }catch(e){} } // its link
+  return words().find(w => text.includes(w.toLowerCase())) || null;
+}
+function setOff(what, win){
+  if(what && !OFF.state){ OFF.state = 'off'; OFF.since = Date.now(); OFF.told = false; }
+  if(!what) OFF.state = null;
+  OFF.what = what || ''; OFF.win = win || null;
+  PET?.offTask?.(OFF.state ? {since: OFF.since, win: OFF.win} : null);
+}
+window.__off = {judge, setOff, OFF}; // for tests
+if(can){
+  window.todopop.onActive(a => { if(!a || a.own || !focus) return; setOff(OFF.on ? judge(a) : null, a.b); });
+  let watching = false;
+  const sync = () => { const want = OFF.on && !!focus; if(want !== watching){ watching = want; window.todopop.watchWindows(want); } if(!focus && OFF.state) setOff(null); };
+  new MutationObserver(sync).observe(document.documentElement, {attributes:true, attributeFilter:['class']});
+  setInterval(() => { sync();
+    if(OFF.state && !OFF.told && focus && Date.now() - OFF.since > 60e3){ OFF.told = true;
+      showToast(L(`Still on ${OFF.what}? “${focus.b.name}” is waiting.`, `还在看${OFF.what}吗？「${focus.b.name}」在等你。`)); } }, 3000);
+  // settings
+  $('#offx').hidden = false;
+  $('#offx-why').textContent = L('In focus mode, Tubby glances at the window you’re on. Something on this list makes it suspicious, and after a minute it nudges you. Window titles are read on this computer only, and never saved.',
+    '专注模式里，Tubby 会瞄一眼你正在用的窗口。如果是清单上的东西，它会起疑心；一分钟后还在，它就会提醒你。窗口标题只在这台电脑上读取，从不保存。');
+  $('#offx-perm-t').textContent = L('On a Mac, Tubby needs the Screen Recording permission to read window titles. No pictures of your screen are taken. Without it, Tubby only sees app names.',
+    '在 Mac 上，Tubby 需要“屏幕录制”权限才能读取窗口标题，不会截取你的屏幕画面。没有这个权限时，它只能看到应用名。');
+  const list = $('#offx-list'); list.value = OFF.list;
+  list.addEventListener('change', () => { OFF.list = list.value.trim(); store.set('offList', OFF.list); });
+  async function paintOff(){
+    $('#offx-state').dataset.s = OFF.on ? 'on' : ''; $('#offx-state').textContent = OFF.on ? T('On') : T('Off');
+    document.querySelectorAll('#offx-seg [data-v]').forEach(b => b.classList.toggle('on', (b.dataset.v === 'on') === OFF.on));
+    list.disabled = !OFF.on;
+    let st = 'granted'; try{ st = await window.todopop.titlesPermission?.() || 'granted'; }catch(e){}
+    $('#offx-perm').hidden = !OFF.on || st === 'granted';
+  }
+  $('#offx-seg').addEventListener('click', e => { const b = e.target.closest('[data-v]'); if(!b) return; OFF.on = b.dataset.v === 'on'; store.set('offCheck', OFF.on); if(!OFF.on) setOff(null); paintOff(); sync(); });
+  $('#offx-allow').addEventListener('click', async () => { try{ await window.todopop.askTitlesPermission?.(); }catch(e){} setTimeout(paintOff, 1200); });
+  new MutationObserver(() => { if(!$('#tint-pop').hidden) paintOff(); }).observe($('#tint-pop'), {attributes:true, attributeFilter:['hidden']});
+  paintOff();
+}
 }
 
 /* ---------- first-run guide ---------- */

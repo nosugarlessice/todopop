@@ -3,7 +3,8 @@
 // takes the mouse while the cursor is over a bubble or the control panel; everywhere
 // else, clicks pass straight through to whatever is underneath.
 
-const { app, BrowserWindow, screen, ipcMain, Tray, Menu, globalShortcut, nativeImage, shell, powerMonitor, net } = require('electron');
+const { app, BrowserWindow, screen, ipcMain, Tray, Menu, globalShortcut, nativeImage, shell, powerMonitor, net, systemPreferences, desktopCapturer } = require('electron');
+const { spawn } = require('child_process');
 const path = require('path');
 const { openInNewWindow } = require('./openwin');
 // Windows updates itself from the GitHub releases (it downloads in the background and installs when TODOPOP restarts).
@@ -170,6 +171,76 @@ ipcMain.on('paused', (_event, on) => {
 
 ipcMain.handle('app-version', () => app.getVersion());
 ipcMain.handle('insets', () => insets());
+
+// ---------- the window you're on, for Tubby (only while you're in focus mode) ----------
+// A tiny helper prints the front app, its window title and where the window is, every 1.5 s, and only when it changes.
+// Nothing is saved or sent anywhere: the page compares it with your task and your off-task list, then forgets it.
+const MAC_WATCH = `ObjC.import('AppKit'); ObjC.import('CoreGraphics');
+function run(){ const out = $.NSFileHandle.fileHandleWithStandardOutput; let last = '';
+  while(true){ const pool = $.NSAutoreleasePool.alloc.init; let app = '', title = '', b = null;
+    try{ const fa = $.NSWorkspace.sharedWorkspace.frontmostApplication;
+      if(fa){ app = ObjC.unwrap(fa.localizedName) || ''; const pid = fa.processIdentifier;
+        const list = ObjC.deepUnwrap(ObjC.castRefToObject($.CGWindowListCopyWindowInfo(17, 0))) || [];
+        for(const w of list){ if(w.kCGWindowOwnerPID === pid && w.kCGWindowLayer === 0){ title = w.kCGWindowName || ''; b = w.kCGWindowBounds || null; break; } } } }catch(e){}
+    const line = JSON.stringify({app: app, title: title, b: b});
+    if(line !== last){ last = line; out.writeData($(line + '\\n').dataUsingEncoding($.NSUTF8StringEncoding)); }
+    pool.drain; delay(1.5); } }`;
+const WIN_WATCH = `Add-Type @'
+using System; using System.Runtime.InteropServices; using System.Text;
+public class FG {
+  [DllImport("user32.dll")] public static extern IntPtr GetForegroundWindow();
+  [DllImport("user32.dll", CharSet=CharSet.Unicode)] public static extern int GetWindowText(IntPtr h, StringBuilder s, int n);
+  [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
+  [DllImport("user32.dll")] public static extern bool GetWindowRect(IntPtr h, out RECT r);
+  public struct RECT { public int L; public int T; public int R; public int B; }
+}
+'@
+[Console]::OutputEncoding = [Text.Encoding]::UTF8
+$last = ''
+while ($true) {
+  $h = [FG]::GetForegroundWindow(); $sb = New-Object Text.StringBuilder 512; [void][FG]::GetWindowText($h, $sb, 512)
+  $p = [uint32]0; [void][FG]::GetWindowThreadProcessId($h, [ref]$p); $name = ''; try { $name = (Get-Process -Id $p -ErrorAction Stop).ProcessName } catch {}
+  $r = New-Object FG+RECT; [void][FG]::GetWindowRect($h, [ref]$r)
+  $o = @{ app = $name; title = $sb.ToString(); b = @{ X = $r.L; Y = $r.T; Width = $r.R - $r.L; Height = $r.B - $r.T } } | ConvertTo-Json -Compress
+  if ($o -ne $last) { $last = $o; [Console]::Out.WriteLine($o); [Console]::Out.Flush() }
+  Start-Sleep -Milliseconds 1500
+}`;
+let watcher = null, watchBuf = '';
+function sendActive(o) {
+  if (!win || win.isDestroyed()) return;
+  const own = /^(todopop|electron)$/i.test(o.app || '');
+  let b = null;
+  if (o.b) { const wb = win.getBounds(), B = o.b; b = { x: (B.X ?? B.x) - wb.x, y: (B.Y ?? B.y) - wb.y, w: B.Width ?? B.width, h: B.Height ?? B.height }; }
+  win.webContents.send('active', { app: o.app || '', title: o.title || '', b, own });
+}
+function watchStart() {
+  if (watcher) return;
+  try {
+    if (isMac) watcher = spawn('osascript', ['-l', 'JavaScript', '-e', MAC_WATCH]);
+    else if (process.platform === 'win32') watcher = spawn('powershell.exe', ['-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-EncodedCommand', Buffer.from(WIN_WATCH, 'utf16le').toString('base64')], { windowsHide: true }); // encoded, so its quotes survive
+    else return;
+  } catch (e) { watcher = null; return; }
+  const w = watcher;
+  w.stdout.setEncoding('utf8');
+  w.stdout.on('data', (d) => {
+    watchBuf += d; let i;
+    while ((i = watchBuf.indexOf('\n')) >= 0) { const line = watchBuf.slice(0, i).trim(); watchBuf = watchBuf.slice(i + 1); if (line) { try { sendActive(JSON.parse(line)); } catch (e) {} } }
+  });
+  w.on('error', () => { if (watcher === w) watcher = null; });
+  w.on('exit', () => { if (watcher === w) { watcher = null; watchBuf = ''; } });
+}
+function watchStop() { if (watcher) { try { watcher.kill(); } catch (e) {} watcher = null; watchBuf = ''; } }
+ipcMain.on('watch', (_event, on) => (on ? watchStart() : watchStop()));
+app.on('before-quit', watchStop);
+// on a Mac, window titles need the Screen Recording permission (only titles are read: no pictures of your screen)
+ipcMain.handle('titles-perm', () => (isMac ? systemPreferences.getMediaAccessStatus('screen') : 'granted'));
+ipcMain.handle('titles-ask', async () => {
+  if (!isMac) return 'granted';
+  try { await desktopCapturer.getSources({ types: ['screen'], thumbnailSize: { width: 1, height: 1 } }); } catch (e) {} // puts TODOPOP in the list
+  const st = systemPreferences.getMediaAccessStatus('screen');
+  if (st !== 'granted') shell.openExternal('x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture');
+  return st;
+});
 // the calendar's private link (an .ics file): fetched here, because calendar sites don't let web pages read them directly.
 // Only the user's own link is ever fetched, straight from their calendar; nothing passes through TODOPOP.
 ipcMain.handle('cal-fetch', async (_event, link) => {

@@ -15,6 +15,10 @@ contextBridge.exposeInMainWorld('todopop', {
   getInsets: () => ipcRenderer.invoke('insets'), // menu bar / Dock / taskbar: the strips to keep controls clear of
   onInsets: (cb) => ipcRenderer.on('insets', (_e, i) => cb(i)),
   onPower: (cb) => ipcRenderer.on('power', (_e, state) => cb(state)), // 'sleep', 'wake', 'idle' or 'active'
-  fetchCalendar: (link) => ipcRenderer.invoke('cal-fetch', link), // the user's private calendar link → its events, as .ics text
+  fetchCalendar: (link) => ipcRenderer.invoke('cal-fetch', link),
+  watchWindows: (on) => ipcRenderer.send('watch', !!on), // only while in focus mode
+  onActive: (cb) => ipcRenderer.on('active', (_e, a) => cb(a)), // {app, title, b: where the window is, own}
+  titlesPermission: () => ipcRenderer.invoke('titles-perm'),
+  askTitlesPermission: () => ipcRenderer.invoke('titles-ask'), // the user's private calendar link → its events, as .ics text
   setLang: (l) => ipcRenderer.send('lang', l === 'zh' ? 'zh' : 'en'), // so the tray menu speaks the same language
 });
