@@ -3794,7 +3794,9 @@ class Tubby{ // the desk pet; energy (0..1) scales its idle sway, so it can sett
   }
 }
 
-const box = $('#pet'), hit = $('#pet-hit'), keysEl = $('#pet-keys'), SIZE = 78;
+const box = $('#pet'), hit = $('#pet-hit'), keysEl = $('#pet-keys');
+let SIZE = 78; // grows with the screen: about 84px on a 13-inch laptop, about 127px on a big 1440p desktop
+const sizeNow = () => Math.round(Math.max(78, Math.min(140, H()*.088)));
 const pet = new Tubby(box, 'watching');
 let on = DESKTOP && !REMOTE && store.get('pet') !== false;
 let spot = store.get('petSpot'); // where it sits when tucked away: its centre, as a share of the screen
@@ -3852,6 +3854,7 @@ function home(){
 }
 function place(){
   if(!on || drag) return;
+  const sz = sizeNow(); if(sz !== SIZE || !box.style.width){ SIZE = sz; box.style.width = box.style.height = SIZE + 'px'; }
   box.style.transition = pdrag ? 'none' : ''; // dragged with the panel, not behind it
   let x, y, lean = false;
   const brand = panel.querySelector('.brand');
