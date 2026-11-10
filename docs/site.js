@@ -14,7 +14,7 @@
     const w = g.querySelector('[data-os=win]'), m = g.querySelector('[data-os=mac]'); if(!w || !m) return;
     const [mine, other] = mac ? [m, w] : [w, m]; mine.classList.add('solid'); other.classList.remove('solid');
   });
-  if(mobile){
+  if(mobile && $('#hero-btns')){ // (the download buttons only live on the home page)
     const g = $('#hero-btns'), a = document.createElement('a'); a.className = 'btn solid';
     const fill = () => { if(android) a.innerHTML = `${T('Get the Android app')} <small>.apk</small>`; else a.textContent = T('Get on iPhone');
       if($('#hero-meta')) $('#hero-meta').textContent = T('Free · No Sign-up · No ads · The bubbles float on your computer; your phone is the remote.'); };
