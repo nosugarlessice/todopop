@@ -66,6 +66,7 @@ Tubby, a bubble bottle: drawn in the current ink with the UI's line logic (4px o
 - The first-run tour's button must be styled like the other buttons.
 - No hover effects in the Privacy section.
 - The mascot takes the TODOPOP color and can be switched off.
+- Step aside (hide everything for screen sharing) uses the panel's quiet `.tool` and `.seg` styles: a tab hanging under the TODOPOP pill, shown while pointing at the panel, plus a row at the top of the third O's popup. The panel shortcut works like a drawer: once opens or tucks, twice steps aside, once more brings everything back.
 - The focus-timer reset uses the bar's round icon button (`.tool.arrow`), like the steps button beside it. A first version had its own borderless style and stood out.
 
 ## Known drift (found by style_inventory.py, to collapse when touched)

@@ -8,6 +8,8 @@ contextBridge.exposeInMainWorld('todopop', {
   onShowPanel: (cb) => ipcRenderer.on('show-panel', () => cb()),
   onPause: (cb) => ipcRenderer.on('pause', (_e, mode) => cb(mode)),
   setPaused: (on) => ipcRenderer.send('paused', !!on),
+  setAside: (on) => ipcRenderer.send('aside', !!on), // step aside: the window hides until it's brought back
+  onAside: (cb) => ipcRenderer.on('aside', (_e, mode) => cb(mode)), // 'on' | '30' | '60' | 'off', from the shortcut or the tray
   platform: process.platform,
   getVersion: () => ipcRenderer.invoke('app-version'),
   onUpdate: (cb) => ipcRenderer.on('update', (_e, info) => cb(info)), // Windows: a new version is downloaded and ready

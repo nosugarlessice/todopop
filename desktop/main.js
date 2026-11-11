@@ -98,14 +98,33 @@ function createOverlay() {
 
 function showPanel() {
   if (!win) return;
+  if (aside) { sendAside('off'); return; } // asked for TODOPOP while it stepped aside: bring everything back first
   selfFocus = Date.now();
   win.show();
   win.focus();
   win.webContents.send('show-panel');
 }
 
+/* Step aside: the page asks, the window hides (nothing to show on a shared screen, nothing drawn).
+   The shortcut works like a drawer: once opens or tucks the panel, twice quickly steps aside, once more brings everything back. */
+let aside = false, lastShortcut = 0;
+const sendAside = (mode) => win && win.webContents.send('aside', mode);
+ipcMain.on('aside', (_event, on) => {
+  aside = !!on;
+  if (win) { if (aside) win.hide(); else win.showInactive(); }
+  if (tray) buildTrayMenu();
+});
+function onShortcut() {
+  const now = Date.now();
+  if (aside) { lastShortcut = 0; sendAside('off'); return; }
+  if (now - lastShortcut < 450) { lastShortcut = 0; sendAside('on'); return; }
+  lastShortcut = now;
+  togglePanel();
+}
+
 function togglePanel() {
   if (!win) return;
+  if (aside) { sendAside('off'); return; }
   selfFocus = Date.now();
   win.show();
   win.focus();
@@ -128,6 +147,16 @@ function buildTrayMenu() {
   const shortcutLabel = isMac ? '⌘⇧Space' : 'Ctrl+Shift+Space';
   trayMenu = Menu.buildFromTemplate([
       { label: tr(`Show / hide control panel (${shortcutLabel})`, `显示 / 隐藏控制面板（${shortcutLabel}）`), click: togglePanel },
+      aside
+        ? { label: tr(`Bring bubbles back (${shortcutLabel})`, `让泡泡回来（${shortcutLabel}）`), click: () => sendAside('off') }
+        : {
+            label: tr(`Step aside (${shortcutLabel} twice)`, `先让开（连按两次 ${shortcutLabel}）`),
+            submenu: [
+              { label: tr('Until I bring them back', '直到我叫回来'), click: () => sendAside('on') },
+              { label: tr('For 30 minutes', '30 分钟'), click: () => sendAside('30') },
+              { label: tr('For 1 hour', '1 小时'), click: () => sendAside('60') },
+            ],
+          },
       { type: 'separator' },
       paused
         ? { label: tr('Resume growing', '恢复生长'), click: () => sendPause('resume') }
@@ -151,7 +180,7 @@ function buildTrayMenu() {
       { label: tr('Quit TODOPOP', '退出 TODOPOP'), role: 'quit' },
   ]);
   if (isMac) tray.setContextMenu(trayMenu); // Windows opens it on right-click below
-  tray.setToolTip(paused ? tr('TODOPOP (paused)', 'TODOPOP（已暂停）') : 'TODOPOP');
+  tray.setToolTip(aside ? tr('TODOPOP (stepped aside)', 'TODOPOP（已让开）') : paused ? tr('TODOPOP (paused)', 'TODOPOP（已暂停）') : 'TODOPOP');
 }
 
 function createTray() {
@@ -296,7 +325,7 @@ app.whenReady().then(() => {
   createOverlay();
   createTray();
   setupUpdates();
-  globalShortcut.register(SHORTCUT, togglePanel);
+  globalShortcut.register(SHORTCUT, onShortcut);
   screen.on('display-metrics-changed', fitToDisplay);
   screen.on('display-added', fitToDisplay);
   screen.on('display-removed', fitToDisplay);
