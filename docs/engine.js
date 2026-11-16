@@ -41,7 +41,7 @@
   const OUT = .08, GAP = 2.5, SQUISH = 9, JELLY = 0.55, SWELL = 34, HOLD_DELAY = .15, HOLD_TIME = .75;
   const bubbles = [], particles = [], rings = [];
   const POP_GESTURE = 'hold', DBL_MS = 280; let pending = null; // press and hold to pop; 'double' = double-click
-  let time = 0, drawOrder = [], walls = [], ti = 0, dpr = 1, fieldAlpha = 1, fieldTarget = 1;
+  let time = 0, drawOrder = [], walls = [], ti = 0, dpr = 1, fieldAlpha = 1, fieldTarget = 1, hidden = false, off = false;
   const easeOut = t => { const c = 1.7; return 1 + (c+1)*Math.pow(t-1,3) + c*Math.pow(t-1,2); };
   const effR = b => b.R * easeOut(Math.min(1, b.spawn)) + SWELL*Math.pow(b.holdP || 0, 1.6);
   // on a website they stop growing before they cover what you're reading (the app lets them fill the screen)
@@ -388,7 +388,9 @@
   // ---- what the page can do with the bubbles ----
   const api = window.TP = {
     add, pop, list: () => bubbles,
-    hide(on){ fieldTarget = on ? 0 : 1; }, // focus mode: the others step out of the way
+    hide(on){ hidden = !!on; fieldTarget = (hidden || off) ? 0 : 1; }, // focus mode: the others step out of the way
+    setOff(on, now){ off = !!on; fieldTarget = (hidden || off) ? 0 : 1; if(now) fieldAlpha = fieldTarget; }, // the visitor turned the bubbles off
+    isOff(){ return off; },
     rename(b, name, level, keepKey){ if(!keepKey){ b.name = name; b.key = null; } if(level && level !== b.level){ b.level = level; if(level === 1) b.R = Math.min(b.R, maxFor(1)); } b.pulse = 1; },
     shrink(b){ b.R = K()*(b.level === 1 ? 34 : 42)*.75; b.pulse = 1; },
     setTint(rgb){ INK_RGB = rgb; retint(); },

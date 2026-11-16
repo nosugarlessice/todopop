@@ -125,6 +125,7 @@
     ['#fb-exit', 'aria-label', '离开泡泡（Esc）'], ['#fb-exit', 'title', '离开泡泡（Esc）'],
     ['#focus-bar .grip', 'title', '拖动来移动这个栏'],
     ['.big .o[data-o="0"]', 'aria-label', '新建任务'], ['.big .o[data-o="1"]', 'aria-label', '查看进度'], ['.big .o[data-o="2"]', 'aria-label', '个性化'],
+    ['#bubbles-sw b', '泡泡'], ['#bubbles-sw [data-v="on"]', '开'], ['#bubbles-sw [data-v="off"]', '关'], ['#bubbles-sw', 'title', '打开或关闭飘浮的任务泡泡'],
     ['.navlogo', 'aria-label', 'TODOPOP，回到顶部'], ['#foot-logo', 'aria-label', 'TODOPOP，重新开始'],
   ];
 

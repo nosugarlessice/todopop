@@ -66,6 +66,11 @@ b, strong{font-weight:600}
 .lang span{padding:5px 9px; border-radius:999px; color:var(--ink-soft); transition:background .25s, color .25s}
 html[lang="en"] .lang [data-l="en"], html[lang="zh-CN"] .lang [data-l="zh"]{background:var(--ink); color:var(--paper)}
 .lang:hover{border-color:var(--ink)} .lang:focus-visible{outline:2px solid var(--ink); outline-offset:2px}
+/* the bubbles switch: same pill as the language switch, fixed in the bottom-left corner */
+.bubbles-sw{position:fixed; z-index:40; left:calc(16px + env(safe-area-inset-left, 0px)); bottom:calc(16px + env(safe-area-inset-bottom, 0px)); background:var(--paper); box-shadow:0 6px 18px rgba(16,24,48,.08)}
+.bubbles-sw b{font-weight:400; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-soft); padding:0 6px 0 9px}
+.bubbles-sw[aria-pressed="true"] [data-v="on"], .bubbles-sw[aria-pressed="false"] [data-v="off"]{background:var(--ink); color:var(--paper)}
+html.focusing .bubbles-sw{display:none}
 /* Chinese reads better a touch looser */
 html[lang="zh-CN"] body{line-height:1.7} html[lang="zh-CN"] #solves{line-height:1.45} html[lang="zh-CN"] .feat .card{gap:10px}
 html[lang="zh-CN"] .o-notes .hint{font-size:21px} html[lang="zh-CN"] .bubble-hint{font-size:19.5px}
@@ -615,6 +620,7 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
 </header>
 
 <canvas id="field" aria-hidden="true"></canvas>
+<button type="button" class="lang bubbles-sw" id="bubbles-sw" aria-pressed="true" title="Turn the floating task bubbles on or off"><b>Bubbles</b><span data-v="on">On</span><span data-v="off">Off</span></button>
 <div class="focus-frame" aria-hidden="true"></div>
 <div class="focus-bar" id="focus-bar" role="status" aria-live="polite" hidden>
   <span class="grip" aria-hidden="true" title="Drag to move the bar"></span><span class="ring" aria-hidden="true"></span><span class="nm" id="fb-name"></span><span class="tm" id="fb-time">0:00</span>
@@ -741,11 +747,11 @@ footer a{text-decoration:none} footer a:hover{text-decoration:underline; text-un
   </div>
 </footer>
 
-<script src="i18n.js?v=1794270845"></script>
-<script src="sounds.js?v=1794270845"></script>
-<script src="engine.js?v=1794270845"></script>
-<script src="site.js?v=1794270845"></script>
-<script src="pet.js?v=1794270845"></script>
+<script src="i18n.js?v=1794841029"></script>
+<script src="sounds.js?v=1794841029"></script>
+<script src="engine.js?v=1794841029"></script>
+<script src="site.js?v=1794841029"></script>
+<script src="pet.js?v=1794841029"></script>
 <script>if(/[?&]tune\b/.test(location.search)){ const s = document.createElement("script"); s.src = "tune.js"; document.body.appendChild(s); }</script>
 </body>
 </html>

@@ -423,4 +423,15 @@
     closeEdit(); if(inside) $('#fb-name').textContent = label(inside);
     placeNotes(); alignFeats(); fitCircles(); drawArrows(); TP.setLang?.();
   });
+  /* the bubbles switch: try the bubbles, then turn them off to read in peace; remembered across pages and visits */
+  const sw = $('#bubbles-sw');
+  if(sw){
+    let isOff = false; try{ isOff = localStorage.getItem('tp-bubbles-off') === '1'; }catch(e){}
+    const apply = (now) => { TP.setOff?.(isOff, now); sw.setAttribute('aria-pressed', String(!isOff)); };
+    apply(true);
+    sw.addEventListener('click', () => {
+      isOff = !isOff; try{ localStorage.setItem('tp-bubbles-off', isOff ? '1' : '0'); }catch(e){}
+      apply(false); dispatchEvent(new CustomEvent('tp-bubbles', {detail:!isOff}));
+    });
+  }
 })();
