@@ -69,6 +69,8 @@ Tubby, a bubble bottle: drawn in the current ink with the UI's line logic (4px o
 - Step aside (hide everything for screen sharing) uses the panel's quiet `.tool` and `.seg` styles: a tab hanging under the TODOPOP pill, shown while pointing at the panel, plus a row at the top of the third O's popup. The panel shortcut works like a drawer: once opens or tucks, twice steps aside, once more brings everything back.
 - The focus-timer reset uses the bar's round icon button (`.tool.arrow`), like the steps button beside it. A first version had its own borderless style and stood out.
 
+- Tubby is sized from the TODOPOP pill it leans on, a little taller than the pill (the earlier screen-based size looked too small next to it).
+
 ## Known drift (found by style_inventory.py, to collapse when touched)
 - 26 font sizes (8 to 44px, 9 of them half-pixels) → a scale of about 7.
 - 7 nudged copies of the overshoot curve (.3,1.2 to .3,1.8) → one --ease-pop, maybe one softer one.
@@ -76,4 +78,3 @@ Tubby, a bubble bottle: drawn in the current ink with the UI's line logic (4px o
 - Uppercase captions in 19 size/tracking/weight combinations → one caption class with 2 sizes.
 - The website's `.btn` lifts on hover while the app's fills with ink → pick one.
 - Token names differ between the app (--ink-faint) and the site (--faint).
-- Tubby is sized from the TODOPOP pill it leans on, a little taller than the pill (the earlier screen-based size looked too small next to it).
