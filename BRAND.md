@@ -50,7 +50,7 @@ Pop: press and hold (with a growing ring and a recorded pop sound). Get into a b
 Sentence case, plain everyday words, short. Actions are verbs in the product's world ("Done, pop it!", "+ Step", "Get back in the bubble"). Captions in spaced capitals. No real people's names in examples ("Reply to emails", not "Reply to Melody"). Every string has a Chinese version written as everyday Chinese, not a literal translation.
 
 ## Characters
-Tubby, a bubble bottle: drawn in the current ink with the UI's line logic (4px outline, 2.6px details, round caps). Leans 15° on the panel's logo; size scales with the screen (78 to 140px). Moods: watching, on task, cheering, sleepy, suspicious, nudging, each with a trigger. Its eyes move; the body never mirrors.
+Tubby, a bubble bottle: drawn in the current ink with the UI's line logic (4px outline, 2.6px details, round caps). Leans 15° on the panel's logo; size comes from the pill: about 1.7× the pill’s height (a little taller than the pill), larger on big screens. Moods: watching, on task, cheering, sleepy, suspicious, nudging, each with a trigger. Its eyes move; the body never mirrors.
 
 ## Twins (when one changes, change the others)
 - Default tint or icon outline → desktop icon, phone app icon, Android icon, website favicon and logo, phone screenshot on the website.
@@ -76,3 +76,4 @@ Tubby, a bubble bottle: drawn in the current ink with the UI's line logic (4px o
 - Uppercase captions in 19 size/tracking/weight combinations → one caption class with 2 sizes.
 - The website's `.btn` lifts on hover while the app's fills with ink → pick one.
 - Token names differ between the app (--ink-faint) and the site (--faint).
+- Tubby is sized from the TODOPOP pill it leans on, a little taller than the pill (the earlier screen-based size looked too small next to it).
