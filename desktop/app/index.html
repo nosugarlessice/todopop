@@ -3906,8 +3906,10 @@ class Tubby{ // the desk pet; energy (0..1) scales its idle sway, so it can sett
 }
 
 const box = $('#pet'), hit = $('#pet-hit'), keysEl = $('#pet-keys');
-let SIZE = 78; // grows with the screen: about 84px on a 13-inch laptop, about 127px on a big 1440p desktop
-const sizeNow = () => Math.round(Math.max(78, Math.min(140, H()*.088)));
+let SIZE = 100; // never shorter than the TODOPOP pill it leans on (its bottle about as tall as the pill), and a little bigger on big screens
+let pillH = 72;
+const sizeNow = () => { const r = $('.panel .brand')?.getBoundingClientRect(); if(r && r.height > 20) pillH = r.height;
+  return Math.round(Math.max(pillH*1.7, Math.min(180, H()*.11))); };
 const pet = new Tubby(box, 'watching');
 let on = DESKTOP && !REMOTE && store.get('pet') !== false;
 let spot = store.get('petSpot'); // where it sits when tucked away: its centre, as a share of the screen
