@@ -998,6 +998,7 @@ html.remote .task .name:active{opacity:.6}
 /* Chinese is drawn a third larger, with wider spacing (see fonts.css): anything showing a name makes room for it */
 .chips button, .gedit input, .steps-edit li, .step-in{line-height:normal}
 input.has-cjk{line-height:1.5}
+html[lang="zh-CN"] .note{line-height:1.65} /* CJK notes: lines were touching */
 .redo[style]::before{background:var(--glow)}
 .wday .pip[style]{background:var(--glow)}
 .wday .pip[style]{width:11px; height:11px; border-width:1px}
@@ -1121,7 +1122,6 @@ input.has-cjk{line-height:1.5}
         </div>
         <div class="swatches" id="swatches"></div>
       </div>
-      <span class="note">Outlines and text follow your color.</span>
       <div class="sync" id="sync">
         <div class="sync-top"><span class="field-label" id="sync-label">Phone app</span><span class="sync-state" id="sync-state"></span></div>
         <div class="sync-step" id="sync-off">
@@ -1345,7 +1345,7 @@ const ZH = { // fixed words, English → Chinese
   'Line up along the left edge':'沿左边排成一列', 'Line up along the top edge':'沿顶部排成一行', 'Line up along the bottom edge':'沿底部排成一行', 'Line up along the right edge':'沿右边排成一列',
   'Pause growing':'暂停生长', '30 min':'30 分钟', '1 hour':'1 小时', 'Till tomorrow':'到明天', 'Until I resume':'直到我恢复', 'Paused':'已暂停', 'Resume':'恢复', 'Show one group':'只看一个分组',
   'Popped':'已戳破', 'Week':'周', 'Month':'月', 'Previous':'往前', 'Next':'往后', 'Days before today include sample history.':'今天之前的记录包含示例数据。',
-  'Tint':'主题色', 'Tint hue':'主题色色相', 'Tint saturation':'主题色饱和度', 'Outlines and text follow your color.':'轮廓和文字都会跟着你的颜色变。', 'Language':'语言',
+  'Tint':'主题色', 'Tint hue':'主题色色相', 'Tint saturation':'主题色饱和度', 'Language':'语言',
   'Phone app':'手机 App', 'Your devices':'设备同步', 'Join another computer’s list':'加入另一台电脑的清单', 'Paste the link here':'把链接粘贴到这里', 'Join':'加入', 'Not now':'以后再说', 'Show the code again':'再显示一次二维码', 'Unpair':'解除配对',
   'Now':'当前', 'Focus mode':'专注模式', 'Drag to move the bar':'拖动来移动这个栏', 'Time in focus':'专注时长', 'Where the steps live':'步骤放在哪里',
   '+ Step':'+ 步骤', 'Break it into steps':'拆成小步骤', 'Next step, then Enter':'输入下一步，按回车', 'New step':'新步骤', 'Done, pop it!':'完成，戳破！',
@@ -3730,14 +3730,8 @@ function paintCal(){
     net:L('Couldn’t reach your calendar. TODOPOP will try again in a few minutes.', '暂时连不上你的日历，过几分钟会再试。')};
   $('#calx-err').hidden = !CAL.err; $('#calx-err').textContent = ERR[CAL.err] || ERR.net;
   if(on){
-    const now = Date.now(), ahead = CAL.occ.filter(o => o.end > now), blocks = ahead.filter(o => calTask(o.title)), meets = ahead.filter(o => o.meet && !o.free);
-    const when = ms => new Date(ms).toLocaleString(ZH_ON ? 'zh-CN' : [], {weekday:'short', hour:'numeric', minute:'2-digit'});
-    const next = blocks[0];
-    $('#calx-who').textContent = [
-      next ? L(`Next time block: ${calTask(next.title).name}, ${when(next.start)}.`, `下一个时间块：${calTask(next.title).name}，${when(next.start)}。`)
-           : L('No events this week share a name with a task yet. Name a time block like the task, and its bubble will nudge you when it starts.', '这周还没有和任务同名的日程。把时间块起成任务的名字，开始时泡泡就会提醒你。'),
-      L(`${meets.length} meeting${meets.length === 1 ? '' : 's'} coming up this week.`, `这周还有 ${meets.length} 个会议。`),
-      CAL.at ? L(`Checked ${calAgo()}.`, `${calAgo()}检查过。`) : ''].filter(Boolean).join(' ');
+    $('#calx-who').textContent = CAL.at ? L(`Checked ${calAgo()}.`, `${calAgo()}检查过。`) : '';
+    $('#calx-who').hidden = !CAL.at;
   }
   document.querySelectorAll('#calx-nudge [data-v]').forEach(b => b.classList.toggle('on', (b.dataset.v === 'on') === CAL.nudge));
   document.querySelectorAll('#calx-quiet [data-v]').forEach(b => b.classList.toggle('on', (b.dataset.v === 'on') === CAL.quiet));
@@ -4378,7 +4372,7 @@ function renderSync(){
     const live = [...devices.values()].filter(d => d && d.type), phones = live.filter(d => d.type === 'phone').length, comps = live.length - phones;
     const en = [phones && (phones === 1 ? 'your phone' : phones + ' phones'), comps && (comps === 1 ? 'another computer' : comps + ' other computers')].filter(Boolean).join(' and ');
     const zh = [phones && (phones === 1 ? '你的手机' : `${phones} 台手机`), comps && (comps === 1 ? '另一台电脑' : `另外 ${comps} 台电脑`)].filter(Boolean).join('和');
-    $('#sync-who').textContent = REMOTE ? L('Connected to your computer. Changes show up on both.', '已连接到你的电脑。两边的修改会同步。') : en ? L(`Connected to ${en}. Tasks stay the same everywhere; each computer keeps its own layout.`, `已连接${zh}。任务处处一致，每台电脑保留自己的摆放位置。`) : L('Ready. Scan the code with your phone, or add another computer.', '准备好了。用手机扫码，或者添加另一台电脑。');
+    $('#sync-who').textContent = REMOTE ? L('Connected to your computer. Changes show up on both.', '已连接到你的电脑。两边的修改会同步。') : en ? L(`Connected to ${en}.`, `已连接${zh}。`) : L('Ready. Scan the code with your phone, or add another computer.', '准备好了。用手机扫码，或者添加另一台电脑。');
     $('#sync-show').hidden = REMOTE || !store.get('pairCred');
   } else {
     setSyncState('', REMOTE ? 'Not connected' : 'Off');
