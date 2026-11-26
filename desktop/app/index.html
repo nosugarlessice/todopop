@@ -1146,7 +1146,6 @@ html[lang="zh-CN"] .note{line-height:1.65} /* CJK notes: lines were touching */
         </div>
         <p class="note sync-err" id="calx-err" hidden></p>
       </div>
-      <div class="lang-row"><span class="field-label">Growth speed</span><div class="seg lang-seg" id="speed-seg" role="group" aria-label="Growth speed"><button type="button" data-speed="real">Real time</button><button type="button" data-speed="demo">Demo (fast)</button></div></div>
       <div class="sync offx" id="offx" hidden>
         <div class="sync-top"><span class="field-label">Off-task check</span><span class="sync-state" id="offx-state"></span></div>
         <p class="note" id="offx-why"></p>
@@ -2319,11 +2318,17 @@ function smoothArch(fn){
 /* ---------- speed ---------- */
 // real time, or a sped-up demo for showing TODOPOP to someone (bubbles visibly grow within a minute)
 speed = store.get('speed') === 'demo' ? 'demo' : 'real';
-function paintSpeed(){ document.querySelectorAll('#speed-seg [data-speed]').forEach(b => b.classList.toggle('on', b.dataset.speed === speed)); }
-paintSpeed();
-document.getElementById('speed-seg')?.addEventListener('click', e => { const b = e.target.closest('[data-speed]'); if(!b) return;
-  speed = b.dataset.speed; store.set('speed', speed); paintSpeed();
-  showToast(speed === 'demo' ? L('Demo speed: bubbles grow in seconds. Switch back to Real time when you’re done showing it off.', '演示速度：泡泡几秒内就会长大。演示完记得切回“实时”。') : L('Real time: bubbles grow with the clock again.', '实时：泡泡重新按真实时间生长。'), false); });
+// not in settings: a hidden switch for demos. Click the TODOPOP letters (not the O's) five times within about 1.5 s.
+function setSpeed(v){ speed = v; store.set('speed', speed);
+  showToast(speed === 'demo' ? L('Demo speed: bubbles grow in seconds. Click the TODOPOP letters five times again to go back to real time.', '演示速度：泡泡几秒内就会长大。再连点五下 TODOPOP 字母就能回到实时。') : L('Real time: bubbles grow with the clock again.', '实时：泡泡重新按真实时间生长。'), false); }
+{ let taps = [];
+  // the brand row drags the panel (and captures the pointer), so count a tap as a press and release that barely moved
+  const br = document.querySelector('.panel .brand'); let down = null;
+  br?.addEventListener('pointerdown', e => { down = e.button === 0 && e.target.closest('.logo') && !e.target.closest('.o') ? {x:e.clientX, y:e.clientY} : null; }, true);
+  br?.addEventListener('pointerup', e => { if(!down || Math.hypot(e.clientX - down.x, e.clientY - down.y) > 5) return; down = null;
+    const t = performance.now(); taps = taps.filter(x => t - x < 1600); taps.push(t);
+    if(taps.length >= 5){ taps = []; setSpeed(speed === 'demo' ? 'real' : 'demo'); } }); }
+if(speed === 'demo') setTimeout(() => showToast(L('Demo speed is on. Click the TODOPOP letters five times to go back to real time.', '演示速度开着。连点五下 TODOPOP 字母就能回到实时。'), false), 1500);
 
 /* ---------- pause growing (panel + tray menu) and automatic stop when the screen is full ---------- */
 let pauseUntil = (() => { const v = store.get('pauseUntil'); return typeof v === 'number' ? v : null; })(); // ms timestamp, Infinity stored as -1
@@ -4100,7 +4105,7 @@ const GUIDE = REMOTE ? [
   {t:L('Move it, focus on it, pop it', '拖动、专注、戳破'), p:L('<b>Drag</b> a bubble to move it. <b>Click</b> it to get in and focus. <b>Press and hold</b> to pop it when it’s done.', '<b>拖拽</b>泡泡挪位置。<b>单击</b>钻进去专注。做完了就<b>长按</b>戳破它。'), at:() => elRect(logoO(0)), round:true}, // keeps the + lit: that's where your first bubble comes from
   {t:L('Bubbles grow with time', '泡泡会随时间长大'), p:L('The more urgent a task, the faster its bubble grows. Pop them before they fill your screen.', '越紧急的任务，泡泡长得越快。在它们占满屏幕之前戳破它们。'), at:() => elRect(logoO(0)), round:true}, // keeps the + lit: that's where your first bubble comes from
   {t:L('See what you’ve done', '看看你完成了什么'), p:L('<b>Click ✓</b> for everything you’ve popped, by week or month.', '<b>点 ✓</b> 按周或按月查看戳破过的泡泡。'), at:() => elRect(logoO(1)), round:true},
-  {t:L('Make it yours', '按你的习惯来'), p:L('The <b>third O</b> holds colors, your phone, sound, growth speed and language.', '<b>第三个 O</b> 里有颜色、手机连接、音效、生长速度和语言。'), at:() => elRect(logoO(2)), round:true},
+  {t:L('Make it yours', '按你的习惯来'), p:L('The <b>third O</b> holds colors, your phone, sound and language.', '<b>第三个 O</b> 里有颜色、手机连接、音效和语言。'), at:() => elRect(logoO(2)), round:true},
 ];
 let gi = -1, glive = 0;
 function placeGuide(){
